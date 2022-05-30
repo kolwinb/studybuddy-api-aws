@@ -1,0 +1,82 @@
+var express = require('/media/data/opt/nodejs/lib/node_modules/express');
+var bodyParser = require('/media/data/opt/nodejs/lib/node_modules/body-parser');
+var morgan = require('/media/data/opt/nodejs/lib/node_modules/morgan');
+var config = require('./config.js');
+//var cors = require('/media/data/opt/nodejs/lib/node_modules/cors'); //import cross-origin-resource-sharing
+
+//url mapping
+var url = require('url');
+//for routes
+var app = express();
+
+// get url parameters
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
+
+// morgan used to log requests on console
+app.use(morgan('dev'));
+app.use(bodyParser());
+
+//app.use(cors());
+
+//calling to request handler (route)
+app.use('/',require('./routes/root.js'));
+app.use('/playlist',require('./routes/v1/v1_playlist')); //playlist withou video_url
+app.use('/register',require('./routes/v1/v1_register'));
+app.use('/verify',require('./routes/v1/v1_activate'));
+app.use('/v1.1/register',require('./routes/v1.1/v1.2_register'));
+app.use('/authenticate',require('./routes/v1/v1_auth'));
+app.use('/v1.1/authenticate',require('./routes/v1/v1_auth'));
+app.use('/session',require('./routes/v1/v1_session'));
+app.use('/v1.1/session',require('./routes/v1/v1_session'));
+app.use('/v1.1/vod',require('./routes/v1.1/v1.1_vod'));
+app.use('/v1.1/playlist',require('./routes/v1.1/v1.1_playlist'));
+
+app.use('/251b913e00f95bc8c2273994',require('./routes/v1.2/v1.2_html5')); //playlist without video_url
+app.use('/v1.2/register',require('./routes/v1.2/v1.2_register'));
+app.use('/v1.2/verify',require('./routes/v1.2/v1.2_activate'));
+app.use('/v1.2/authenticate',require('./routes/v1.2/v1.2_auth'));
+app.use('/v1.2/session',require('./routes/v1.2/v1.2_session'));
+app.use('/v1.2/playlist',require('./routes/v1.2/v1.2_playlist'));
+app.use('/v1.2/playlist',require('./routes/v1.2/v1.2_playlist_simple')); //playlist withou video_url
+app.use('/v1.2/vod',require('./routes/v1.2/v1.2_vod'));
+app.use('/v1.2/ad',require('./routes/v1.2/v1.2_preroll')); //advertisment without authentication
+
+app.use('/v2/register',require('./routes/v2/v2_register'));
+app.use('/v2/verify',require('./routes/v2/v2_activate'));
+app.use('/v2/authenticate',require('./routes/v2/v2_auth'));
+app.use('/v2/session',require('./routes/v2/v2_session'));
+app.use('/v2/playlist',require('./routes/v2/v2_playlist'));
+app.use('/v2/playlist',require('./routes/v2/v2_playlist_simple')); //playlist withou video_url
+app.use('/v2/vod',require('./routes/v2/v2_vod'));
+app.use('/v2/ad',require('./routes/v2/v2_preroll')); //advertisment without authentication
+
+//english_for_all
+//https://api.learntv.lk/v1.2/english/vod/english_for_all
+app.use('/v1.2/english/register',require('./routes/v1.2/v1.2_register'));
+app.use('/v1.2/english/verify',require('./routes/v1.2/v1.2_activate'));
+app.use('/v1.2/english/authenticate',require('./routes/v1.2/v1.2_auth'));
+app.use('/v1.2/english/session',require('./routes/v1.2/v1.2_session'));
+app.use('/v1.2/english/vod',require('./routes/v1.2/v1.2_vod'));
+
+//english_for_srilankan
+app.use('/english_for_srilankan/v1/vod',require('./routes/eng_sl-v1/v1_vod'));
+
+//kidstv
+app.use('/kidstv/v1/vod',require('./routes/kidstv-v1/v1_vod'));
+app.use('/kidstv/v1/user/register',require('./routes/kidstv-v1/v1_register'));
+app.use('/kidstv/v1/user/authenticate',require('./routes/kidstv-v1/v1_auth'));
+app.use('/kidstv/v1/user/session',require('./routes/kidstv-v1/v1_session'));
+
+//url mapping
+//var ourl = req.headers.host+'/'+req.url
+//console.log(ourl)
+ var server = app.listen(8082, function () {
+
+  var host = server.address().address
+  var port = server.address().port
+
+  console.log("api.learntv.lk is Listening at http://%s:%s", host, port)
+
+
+})

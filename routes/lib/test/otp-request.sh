@@ -1,0 +1,2 @@
+curl -X POST -H "Content-Type: application/json" -d '{"applicationId": "APP_060570",	"password": "9df31a15a3d809a98d6758baef90f433",	"subscriberId": "tel:94777748260","applicationHash": "abcdefgh","applicationMetaData": {"client": "MOBILEAPP","device": "iPhone 10X","os": "iOS 14","appCode": "https://play.google.com/store/apps/details?id=com.mbrain.learntv" }}' https://api.dialog.lk/subscription/otp/request
+

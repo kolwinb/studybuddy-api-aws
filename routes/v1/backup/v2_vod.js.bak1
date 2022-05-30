@@ -1,0 +1,166 @@
+var express = require('/media/data/opt/nodejs/lib/node_modules/express');
+var mclient = require('/media/data/opt/nodejs/lib/node_modules/mongodb').MongoClient;
+var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+
+var url = "mongodb://192.168.1.110:27017/learntvapi";
+var app = express();
+var fs = require("fs");
+var router = express.Router();
+
+var cert=fs.readFileSync('private.pem');
+
+//get list of all channels
+router.post('/',function(req,res,next) {
+   var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   if (rtoken) {
+jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
+{
+     if (err){
+       res.json({success:false,signature:"invalid"});
+       console.log(decoded);
+     }else {
+       req.decoded = decoded;
+       var contents = fs.readFileSync("/home/learntv-api/json-v2/channels.json");
+       res.send(JSON.parse(contents));
+/*
+       mclient.connect(url,function(err,db) {
+          if(err){
+          console.log("can't connect mongodb");
+          }else{
+           db.collection("vod").find().toArray(function(err, result) {
+         if(err)
+         { console.log("can't find data on mongodb"); }
+         else
+         { 
+         console.log('database connected',result);
+         res.end(JSON.stringify(result)); 
+
+         }
+    });}
+
+     db.close()    
+
+    });
+*/
+    } 
+    });
+    }else {
+       return res.status(403).send({ success: false,message:'No token provided.'});
+  }
+
+ });
+
+//get list of all syllabus from particular channel
+router.post('/:channel',function(req,res,next) {
+   var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   if (rtoken) {
+jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
+{
+     if (err){
+       res.json({success:false,signature:"invalid"});
+       console.log(decoded);
+     }else {
+       req.decoded = decoded;
+       var channel = req.params.channel
+       var contents = fs.readFileSync("/home/learntv-api/json-v2/"+channel+".json");
+       res.send(JSON.parse(contents));
+/*
+       mclient.connect(url,function(err,db) {
+          if(err){
+          console.log("can't connect mongodb");
+          }else{
+           db.collection("vod").find().toArray(function(err, result) {
+         if(err)
+         { console.log("can't find data on mongodb"); }
+         else
+         { 
+         console.log('database connected',result);
+         res.end(JSON.stringify(result)); 
+
+         }
+    });}
+
+     db.close()    
+
+    });
+*/
+    } 
+    });
+    }else {
+       return res.status(403).send({ success: false,message:'No token provided.'});
+  }
+
+ });
+
+//get list of subjects
+router.post('/:channel/:syllabus',function(req,res,next) {
+   var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   if (rtoken) {
+		jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
+	{
+   if (err){
+       res.json({success:false,signature:"invalid"});
+       console.log(decoded);
+   }else {
+       req.decoded = decoded;
+       var channel = req.params.channel;
+       var syllabus = req.params.syllabus;
+       var quality = req.params.quality;
+       var contents = fs.readFileSync("/home/learntv-api/json-v2/"+channel+"_"+syllabus+".json");
+       res.send(JSON.parse(contents));
+/*
+       mclient.connect(url,function(err,db) {
+          if(err){
+      		console.log("can't connect mongodb");
+          }else{
+          	db.collection("vod").find().toArray(function(err, result) {
+         		if(err)
+         			{ console.log("can't find data on mongodb"); }
+         		else{ 
+         			console.log('database connected',result);
+         			res.end(JSON.stringify(result)); 
+				 }
+    		});
+   		}
+
+     		db.close()    
+
+	    });
+*/
+    } 
+    });
+    }else {
+       return res.status(403).send({ success: false,message:'No token provided.'});
+  }
+
+ });
+ 
+ 
+//get list of files with quality
+router.post('/:channel/:syllabus/:subject/:quality',function(req,res,next) {
+   var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   if (rtoken) {
+		jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
+	{
+   if (err){
+       res.json({success:false,signature:"invalid"});
+       console.log(decoded);
+   }else {
+       req.decoded = decoded;
+       var channel = req.params.channel;
+       var syllabus = req.params.syllabus;
+       var subject = req.params.subject;
+       var quality = req.params.quality;
+       var contents = fs.readFileSync("/home/learntv-api/json-v2/"+channel+"_"+syllabus+"_"+subject+"_"+quality+".json");
+       res.send(JSON.parse(contents));
+    } 
+    });
+    }else {
+       return res.status(403).send({ success: false,message:'No token provided.'});
+  }
+
+ });
+
+
+
+module.exports = router

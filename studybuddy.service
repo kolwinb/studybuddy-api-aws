@@ -1,0 +1,13 @@
+[Unit]
+Description=LearnTv Nodejs Api daemon
+After=network-online.target multi-user.target
+
+#After=network.service
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c "cd /media/data/opt/nodejs/studybuddy && ./run.sh"
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,107 @@
+var bodyParser = require('/media/data/opt/nodejs/lib/node_modules/body-parser')
+var express = require('/media/data/opt/nodejs/lib/node_modules/express');
+//var config = require('../../config.js');
+
+//send mails
+var sendmail = require('/media/data/opt/nodejs/lib/node_modules/sendmail')({silent: true,devPort:25,devHost:'localhost'});
+
+//email validator
+var validator = require('/media/data/opt/nodejs/lib/node_modules/email-validator');
+
+//18byt id generator
+var uniqid = require ('/media/data/opt/nodejs/lib/node_modules/uniqid');
+
+//mysql model
+var pool = require('../../models/usermysql.js');
+
+../library not required
+var crypto = require("crypto");
+
+var app = express();
+// parse application/json
+app.use(bodyParser.json());
+var router = express.Router();
+
+//AES-256 data encryption
+algorithm='aes-256-ctr';
+//algorithm='aes-256-cbc';
+password='d6F3Efeq';
+
+const key = Buffer.concat([Buffer.from(password)], Buffer.alloc(32).length);
+console.log("key :"+key);
+//const iv = Buffer.from(Array.prototype.map.call(Buffer.alloc(16), () => {return Math.floor(Math.random() * 256)}));
+const iv = Buffer.from(key.slice(0,16));
+console.log("iv :"+iv);
+
+router.post('/',function(req,res){
+	engparam=req.originalUrl;
+//	varstringify=JSON.stringify(req.body);
+//	varBody=JSON.parse(varstringify);
+	var_mobile=req.body.mobile;
+	var_operator=req.body.operator;
+	var_redeemCode=req.body.redeem_code;
+	var_deviceId=req.body.device_id;
+	var_deviceType=req.body.device_type;
+	var_status='0';
+	var_dateTime= new Date();
+	
+    
+//	var enc_data = aes_256_encrypt('{"subscriber_id":'+var_subscriberId+',"device_id":'+var_deviceId+'}',password)
+	var enc_data = aes_256_encrypt('{"mobile":'+var_mobile+',"operator":'+var_operator+',"redeem_code":'+var_redeemCode+',"device_id":'+var_deviceId+',"device_type":'+var_deviceType+'}',password)
+	console.log("data aes_256 :"+enc_data);
+	//password encryption
+	//const enc_passwd = rsaEncrypt(password, 'crypto/rsa_4096_pub.pem');
+	//console.log('password rsa_4096:', enc_passwd);
+	//decrypt password
+	//*** end mobile app tasks****
+	
+	//decrypt password to get data
+	//const dec_passwd = rsaDecrypt(enc_passwd, 'crypto/rsa_4096_priv.pem');
+	//console.log('decrypt password', dec_passwd);
+	//console.log("decrypt data",aes_256_decrypt(enc_data,password));
+	//****End of Mobile Task*****//
+	
+	dec_data=aes_256_decrypt(enc_data,password);
+	console.log("decrypt data :"+dec_data);
+                                                                                                            
+                                                                                                            
+	data = {
+		"status":"success",
+		"data":  enc_data
+			
+		}
+	res.json(data);
+});
+
+
+//mysql db
+
+
+function aes_256_encrypt(text,passwd){
+	var cipher = crypto.createCipheriv(algorithm,key,iv)
+	var crypted = cipher.update(text,'utf8','hex')
+	crypted += cipher.final('hex');
+	return crypted;
+}
+
+function aes_256_decrypt(text,passwd){
+//	var decipher = crypto.createDecipher(algorithm,passwd)
+//	let textParts = text.split(':');
+//	let deciv = Buffer.from(textParts.shift(), 'hex');
+//	let deciv = Buffer.from(text, 'hex');
+	let iv = key.slice(0, 16);
+	console.log("decrypted iv :"+iv);
+//	let encryptedText = Buffer.from(textParts.join(':'), 'hex');
+	let encryptedText = Buffer.from(text, 'hex');
+    var decipher = crypto.createDecipheriv(algorithm,key,iv)
+	var decrypted = decipher.update(encryptedText)
+	decrypted = Buffer.concat([decrypted, decipher.final()]);
+	 
+	//dec += decipher.final('utf8');
+	return decrypted;
+ }
+ 
+
+
+
+module.exports = router

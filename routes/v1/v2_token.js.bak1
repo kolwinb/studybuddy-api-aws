@@ -1,0 +1,159 @@
+var express = require('/media/data/opt/nodejs/lib/node_modules/express');
+var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+
+//mysql model
+var pool = require('../../models/usermysql.js');
+
+var app = express();
+var router = express.Router();
+../library not required
+var crypto = require("crypto");
+var path = require('path');
+var fs = require("fs");
+
+
+algorithm = 'aes-256-ctr',
+passwd = 'd6F3Efeq';
+IV_LENGTH=4;
+
+router.post('/',function(req,res){
+
+	if (!req.is('application/json')) {
+
+		data = {
+			"status":"error",  
+			"description":"Content type mismatch"
+		}
+		res.json(data);
+    	console.log("content-type is not a application/json type");		
+	} else {
+
+
+		var_data=req.body.data;
+		//console.log(var_data);
+		var data = var_data.split(":");
+		varData=data[0];
+		varKey=data[1];
+				
+		const password = rsaDecrypt(varKey, 'crypto/rsa_4096_priv.pem');
+		console.log('decrypt password', password);
+
+		//****mobile app tasks ****
+		//AES-256 data encryption
+		var enc_data = aes_256_encrypt('{"subscriber_id":"111","email":"bandara@dharmavahini.tv"}',password)
+		console.log("data aes_256 :"+enc_data);
+		//password encryption
+		const enc_passwd = rsaEncrypt(password, 'crypto/rsa_4096_pub.pem');
+		console.log('password rsa_4096:', enc_passwd);
+		//decrypt password
+		//*** end mobile app tasks****
+		
+		//decrypt password to get data 
+		const dec_passwd = rsaDecrypt(enc_passwd, 'crypto/rsa_4096_priv.pem');
+		console.log('decrypt password', dec_passwd);
+		console.log("decrypt data",aes_256_decrypt(enc_data,password));
+		//****End of Mobile Task*****//
+
+		dec_data=aes_256_decrypt(varData,password);
+		console.log(dec_data);
+	//	res.json(varObj.subscriber_id);
+
+
+		var varObj = JSON.parse(dec_data)
+		subscriber_id=varObj.subscriber_id
+		email=varObj.email
+	
+    	pool.getConnection(function(err,con){
+			if (err) {
+				data = {
+					"status":"error",
+					"description":"Internal Server Error"
+					}
+				res.json(data);
+				console.log("INFO:v2_Token.js:can't connect database server");
+			} else {
+			
+				con.query("SELECT ? FROM ??  WHERE subscriber_id = ?",["id","subscribe",subscriber_id], function(err,result){
+					if (!result.length){
+						data = {
+							"status":"fail",
+							"description" : "subscription has not been activated"
+						}
+						res.json(data);
+					}else {
+						con.query("INSERT INTO ?? (id,token) VALUES (?,?)",["token","NULL",var_data],function(err,result){
+							if (err) {
+								data = {
+									"status":"error",
+									"description" : "Internal Server Error"
+								}
+								res.json(data);
+							} else {
+								data = {
+									"status":"success",
+									"description" : "subscription has been activated"
+								}
+												
+								res.json(data);
+							}
+						}); //insert query
+								
+						//save token in database
+				
+					}
+			
+				}); //sql subscriber id query
+			} //database connection error handling
+		});//mysql pool database connection
+	
+		
+
+	} //content type
+});
+
+
+function rsaEncrypt(toEncrypt, relativeOrAbsolutePathToPublicKey) {
+	const absolutePath = path.resolve(relativeOrAbsolutePathToPublicKey)
+	const publicKey = fs.readFileSync(absolutePath, 'utf8')
+  	const buffer = Buffer.from(toEncrypt, 'utf8')
+	const encrypted = crypto.publicEncrypt(publicKey, buffer)
+  	return encrypted.toString('base64')
+}
+  
+function rsaDecrypt(toDecrypt, relativeOrAbsolutePathtoPrivateKey) {
+	const absolutePath = path.resolve(relativeOrAbsolutePathtoPrivateKey)
+  	const privateKey = fs.readFileSync(absolutePath, 'utf8')
+	const buffer = Buffer.from(toDecrypt, 'base64')
+  	const decrypted = crypto.privateDecrypt(
+  		{
+			key: privateKey.toString(),
+  			passphrase: '',
+  		},
+  	buffer,)
+  	return decrypted.toString('utf8')
+}
+
+
+function aes_256_encrypt(text,passwd){
+	let iv = crypto.randomBytes(8).toString('hex');
+	let cipher = crypto.createCipheriv(algorithm, Buffer.from(passwd, 'hex'), iv);
+	let encrypted = cipher.update(text);
+	encrypted = Buffer.concat([encrypted, cipher.final()]);
+	console.log(iv.toString('hex') + ':' + encrypted.toString('hex'));
+	return iv.toString('hex') + ':' + encrypted.toString('hex');
+	
+}
+ 
+function aes_256_decrypt(text,passwd){
+	let textParts = text.split(':');
+	let iv = Buffer.from(textParts.shift(), 'hex');
+	let encryptedText = Buffer.from(textParts.join(':'), 'hex');
+	let decipher = crypto.createDecipheriv(algorithm, Buffer.from(passwd, 'hex'), iv);
+	let decrypted = decipher.update(encryptedText);
+	decrypted = Buffer.concat([decrypted, decipher.final()]);
+	return decrypted.toString();
+}
+
+module.exports = router
+
+
