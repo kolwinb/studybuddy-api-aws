@@ -1,10 +1,21 @@
-var request = require('/media/data/opt/nodejs/lib/node_modules/request');
+const request = require('/media/data/opt/nodejs/lib/node_modules/request');
+const express = require('/media/data/opt/nodejs/lib/node_modules/express');
+const sessions = require('/media/data/opt/nodejs/lib/node_modules/express-session');
 
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var router = express.Router();
+const app = express();
+const router = express.Router();
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('/media/data/opt/nodejs/lib/node_modules/googleapis');
+
+//initialize session usage
+app.use(sessions({
+	secret: "mQ1U9vVGyHULdgZWeQ3HFNXS6uRt7PqU09Vc4IxfrMsmHfxFlt77hu6BAUDazVgZHTvxQQwAer23JneGwWt4ctzAqFK7Snjv3xY4DuWmyULd+6D2WEvPmwAm6V6V6Y6AFfTHaYTqYkERsMmup3N+C/Nti9rk8jd2aJgf7doHi9M=",
+	saveUninitialized: true,
+	resave: true,
+}));
+//app.use(router);
+
 
 const SCOPES = ['https://www.googleapis.com/auth/contacts.readonly',
 				'https://www.googleapis.com/auth/userinfo.profile',
@@ -96,35 +107,99 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
  			return res.json({success:false,signature:"invalid",errorcode:106});
  		} else {
 			console.log("code : " + code);
-//			var googleAuthCallback=request.get("
+			/*
+			setOauth2Client(function(err, oAuth2Client){
+				if(err) console.log("can't connect google server");
+			oAuth2Client.getToken(code, (err, token) => {
+  				if (err) return console.error('Error retrieving access token', err);
+				// Store the token to disk for later program executions
+					fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+						if (err) return console.error(err);
+						console.log('Token stored to', TOKEN_PATH);
+					});
+				oAuth2Client.setCredentials(token);
+				console.log("ssss"+oAuth2Client.client_id);
+
+				});
+			});
+			            
+			*/
+			var signdate = new Date();
 			fs.readFile('/home/data/opt/nodejs/studybuddy/routes/oauth/google-credentials.json', (err, content) => {
 				if (err) return console.log('Error loading client secret file:', err);
 				credentials=JSON.parse(content);
 			
 				const {client_secret, client_id, redirect_uris} = credentials.web;
-				reqUri="https://oauth2.googleapis.com/token?code="+code+"&client_id="+client_id+"&client_secret="+client_secret+"&redirect_uri="+redirect_uris+"&grant_type=authorization_code&code_verifier="
-				console.log(reqUri);
-				request.post(reqUri, (err, resp, body) => {
+				reqAccessToken="https://oauth2.googleapis.com/token?code="+code+"&client_id="+client_id+"&client_secret="+client_secret+"&redirect_uri="+redirect_uris+"&grant_type=authorization_code&code_verifier="
+				//reqRefreshToken="https://oauth2.googleapis.com/token?client_id="+client_id+"&client_secret="+client_secret+"&redirect_uri="+redirect_uris+"&grant_type=refresh_token&refresh_token="
+				console.log(reqAccessToken);
+				request.post(reqAccessToken, (err, resp, body) => {
 					if (err) {
 						console.log("access token error");
+						return res.status(200).send('');
 					} else {
-						
-						return res.json({token:body});
+							token=JSON.parse(body);
+							refreshToken=token.refresh_token;
+							accessToken=token.access_token;
+						if (accessToken) {
+							request({
+										url:'https://people.googleapis.com/v1/people/me?personFields=addresses,birthdays,emailAddresses,genders,phoneNumbers',
+										json: true,
+										method: 'GET',
+										headers: {
+												'Authorization': 'Bearer '+accessToken,
+												'Content-Type': 'application/json',
+												'Accept':'application/json',
+												}
+										}, (err, respo, body) => {
+											resBody=JSON.parse(JSON.stringify(body));
+//											gender=resBody.genders[0].value;
+//											birthday=resBody.birthdays[0].date.year+"-"+resBody.birthdays.date.month+"-"+resBody.birthdays.date.day;
+//											birthday=resBody.birthdays.date;
+//											sourceEmail=resBody.emailAddresses[0].value;
+											
+											content={
+												gender:resBody.genders[0].value,
+												birthday:resBody.birthdays[0].date.year+"-"+resBody.birthdays[0].date.month+"-"+resBody.birthdays[0].date.day,
+												email:resBody.emailAddresses[0].value
+											}
+											
+											return res.json(content);
+										
+										});
+
+
+//							return res.json({access_token:token.access_token});
+
+							
+						} else {
+							console.log("access token is empty");
+							return res.status(200).send('');
+						}
 					}
 //				return res.json({success:true,signature:"valid",client_id:client_id});
 				});
 			});
+
  		}
 	});
 	
-	router.get('/authorize',function(req,res,next){
-
+	router.get('/authorize',function(req,res){
+		//create session epoch
+//		req.session.epoch==Math.floor(new Date().getTime());
+		req.session.epoch=='test';
+		sess=req.session;
+		//get time epoch 
+//		session.txt=='test';
+		console.log("req session : "+sess.epoch);
+		
+		return res.json({"session":Date()});
 			setOauth2Client(function(err, oAuth2Client){
 				if (err) return console.log('authorize : oAuth2Client error');
 				const url = oAuth2Client.generateAuthUrl({
     				access_type: 'offline',
        				scope: SCOPES,
-       				token_id:"test mmmm",
+       				token_id:session.epoch,
        				prompt: 'consent'
        				});	
   				return res.json({success:true,url:url});
@@ -133,5 +208,6 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 	
 	});
 
-module.exports = router
+app.use('/',router);
+module.exports = app
 
