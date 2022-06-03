@@ -1,0 +1,83 @@
+//this class verify jwt token and issue when request
+var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var fs = require("fs");
+
+var cert = fs.readFileSync('private.pem');
+
+//local log manager
+var log = require("../lib/log");
+
+var jwtToken = {
+	jwtAuth: function(email,expSeconds,callback){
+		var newToken = jwt.sign({
+								iss:"learntv",
+								aud:"students",
+								exp: Math.floor(Date.now()/1000)+(expSeconds*1),
+								email:this.email},cert);
+		callback({success: true, token: newToken});
+		       	
+	},
+
+	jwtVerify: function(token,callback){
+		jwt.verify(token,cert,{aud:'urn:studes'},function(err,decoded)
+			{
+ 			if (err){
+ 				log.error("Token Expired");
+				callback(JSON.stringify({success:false,signature:'invalid',errorcode:104}));
+//				res.json({success:false,signature:'invalid',errorcode:104});
+			}else {
+				log.info("Token Verified");
+  				callback(JSON.stringify({success:true,signature:'valid'}));
+//  				res.json({success:true,signature:'valid'});
+  				
+  			}
+
+  			});	
+	}
+
+
+}
+
+
+module.exports = jwtToken
+
+
+/*
+module.exports = function(){
+//function (jtoken,email){
+//	this.jtoken = jtoken;
+//	this.email = email;
+	this.jwtAuthSign = function (email){
+		var token = jwt.sign({
+			iss:"learntv",
+			aud:"students",
+			exp: Math.floor(Date.now()/1000)+(60*60),
+			email:this.email},cert);
+		return token;
+	}
+	
+	this.jwtVerify = function (jtoken){
+//		console.log("jtoken : "+jtoken);
+		jwt.verify(jtoken,cert,{aud:'urn:studes'},function(err,decoded)
+			{
+ 			if (err){
+ 				log.error("Token Expired");
+//   				console.log("Token Expired");
+//   				callback("error");
+				return result="test";
+//				return test = "{success:false,signature:'invalid',errorcode:104}";
+			}else {
+				log.info("Token Issued");
+   				req.decoded = decoded;
+				console.log("signature valid");
+  				return {success:true,signature:'valid'};
+  				
+  			}
+  		});
+		
+	
+	}
+
+}
+
+*/

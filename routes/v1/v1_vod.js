@@ -9,41 +9,23 @@ var router = express.Router();
 
 var cert=fs.readFileSync('private.pem');
 
+//custom jwt module
+var jwtModule = require('../lib/jwtToken.js');
+
 //get list of all channels
 router.post('/',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
-jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
-{
-     if (err){
-       res.json({success:false,signature:"invalid","errorcode":"104"});
-       console.log(decoded);
-     }else {
-       req.decoded = decoded;
-       var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/grades.json");
-       res.send(JSON.parse(contents));
-/*
-       mclient.connect(url,function(err,db) {
-          if(err){
-          console.log("can't connect mongodb");
-          }else{
-           db.collection("vod").find().toArray(function(err, result) {
-         if(err)
-         { console.log("can't find data on mongodb"); }
-         else
-         { 
-         console.log('database connected',result);
-         res.end(JSON.stringify(result)); 
+		jwtModule.jwtVerify(rtoken,function(callback){
+			getJwt=JSON.parse(callback);
+			if (getJwt.signature=='valid'){
+       			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/grades.json");
+       			res.send(JSON.parse(contents));						
+			} else {
+				res.send(getJwt);         
+			}      
+		}); 
 
-         }
-    });}
-
-     db.close()    
-
-    });
-*/
-    } 
-    });
     }else {
        return res.status(403).send({ success: false,message:'No token provided.'});
   }
@@ -54,38 +36,17 @@ jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
 router.post('/:grade',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
-jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
-{
-     if (err){
-       res.json({success:false,signature:"invalid","errorcode":"104"});
-       console.log(decoded);
-     }else {
-       req.decoded = decoded;
-       var grade = req.params.grade
-       var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
-       res.send(JSON.parse(contents));
-/*
-       mclient.connect(url,function(err,db) {
-          if(err){
-          console.log("can't connect mongodb");
-          }else{
-           db.collection("vod").find().toArray(function(err, result) {
-         if(err)
-         { console.log("can't find data on mongodb"); }
-         else
-         { 
-         console.log('database connected',result);
-         res.end(JSON.stringify(result)); 
+		jwtModule.jwtVerify(rtoken,function(callback){
+			getJwt=JSON.parse(callback);
+			if (getJwt.signature=='valid'){
+		      	var grade = req.params.grade
+		      	var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
+		      	res.send(JSON.parse(contents));						
+			} else {
+				res.send(getJwt);         
+			}      
+		}); 
 
-         }
-    });}
-
-     db.close()    
-
-    });
-*/
-    } 
-    });
     }else {
        return res.status(403).send({ success: false,message:'No token provided.'});
   }
@@ -97,39 +58,18 @@ jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
 router.post('/:grade/:syllabus',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
-jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
-{
-     if (err){
-       res.json({success:false,signature:"invalid","errorcode":"104"});
-       console.log(decoded);
-     }else {
-       req.decoded = decoded;
-       var grade = req.params.grade;
-       var syllabus = req.params.syllabus;
-       var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+syllabus+".json");
-       res.send(JSON.parse(contents));
-/*
-       mclient.connect(url,function(err,db) {
-          if(err){
-          console.log("can't connect mongodb");
-          }else{
-           db.collection("vod").find().toArray(function(err, result) {
-         if(err)
-         { console.log("can't find data on mongodb"); }
-         else
-         { 
-         console.log('database connected',result);
-         res.end(JSON.stringify(result)); 
+		jwtModule.jwtVerify(rtoken,function(callback){
+			getJwt=JSON.parse(callback);
+			if (getJwt.signature=='valid'){
+       			var grade = req.params.grade;
+       			var syllabus = req.params.syllabus;
+       			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+syllabus+".json");
+       			res.send(JSON.parse(contents));
+			} else {
+				res.send(getJwt);         
+			}      
+		}); 
 
-         }
-    });}
-
-     db.close()    
-
-    });
-*/
-    } 
-    });
     }else {
        return res.status(403).send({ success: false,message:'No token provided.'});
   }
@@ -140,40 +80,19 @@ jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
 router.post('/:grade/:subject/:quality',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
-jwt.verify(rtoken,cert,{aud:'urn:studes'},function(err,decoded)
-{
-     if (err){
-       res.json({success:false,signature:"invalid","errorcode":"104"});
-       console.log(decoded);
-     }else {
-       req.decoded = decoded;
-       var grade = req.params.grade;
-       var subject = req.params.subject;
-       var quality = req.params.quality;
-       var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+subject+"_"+quality+".json");
-       res.send(JSON.parse(contents));
-/*
-       mclient.connect(url,function(err,db) {
-          if(err){
-          console.log("can't connect mongodb");
-          }else{
-           db.collection("vod").find().toArray(function(err, result) {
-         if(err)
-         { console.log("can't find data on mongodb"); }
-         else
-         { 
-         console.log('database connected',result);
-         res.end(JSON.stringify(result)); 
-
-         }
-    });}
-
-     db.close()    
-
-    });
-*/
-    } 
-    });
+		jwtModule.jwtVerify(rtoken,function(callback){
+			getJwt=JSON.parse(callback);
+			if (getJwt.signature=='valid'){
+       			var grade = req.params.grade;
+       			var subject = req.params.subject;
+       			var quality = req.params.quality;
+       			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+subject+"_"+quality+".json");
+       			res.send(JSON.parse(contents));
+			} else {
+				res.send(getJwt);         
+			}      
+		}); 
+		
     }else {
        return res.status(403).send({ success: false,message:'No token provided.',"errorcode":"105"});
   }

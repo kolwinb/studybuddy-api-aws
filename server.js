@@ -19,6 +19,10 @@ app.use(morgan('dev'));
 
 //calling to request handler (route)
 
+//studentprofile
+app.use('/studybuddy/v1/profile', require('./routes/v1/v1_profile'));
+
+
 //Google Oauth2
 app.use('/studybuddy/v1/googleoauth/',require('./routes/v1/v1_googleOauth2Callback'));
 app.use('/studybuddy/v1/googleoauth/',require('./routes/v1/v1_googleOauth2Callback'));

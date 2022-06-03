@@ -18,6 +18,9 @@ var fs = require("fs");
 var cert = fs.readFileSync('private.pem');
 //mysql
 
+//jwt custome module
+var jwtToken=require('../lib/jwtToken');
+
 function switchTable(req,res,tablename){
 	console.log("table name : " + tablename);
     pool.getConnection(function(err,con){
@@ -35,13 +38,14 @@ function switchTable(req,res,tablename){
        if (!result[0]){
            res.json({success: false, message: 'Authentication failed. User not found.', errorcode:101});
        } else if (result[0].is_active == 1) {
-         var token = jwt.sign({
-                                iss:"learntv",
-                                aud:"students",
-                                exp: Math.floor(Date.now()/1000)+(60*60),
-                                email:result[0].email},cert);
-       console.log("token issued");
-       res.json({success: true, token: token});
+
+
+		//(email,expSeconds,response)
+		jwtToken.jwtAuth(result[0].email,3600,function(callback){
+			res.send(JSON.parse(callback));
+		
+		}); 
+   
       con.query ("UPDATE ?? SET last_sign=?  WHERE email=?",[tablename,signdate,req.body.email],function (err, result) {
 	if (err) {
 		console.log('authenticate timstamp database error');
