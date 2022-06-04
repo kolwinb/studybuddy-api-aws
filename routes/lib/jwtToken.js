@@ -14,7 +14,7 @@ var jwtToken = {
 								aud:"students",
 								exp: Math.floor(Date.now()/1000)+(expSeconds*1),
 								email:this.email},cert);
-		callback({success: true, token: newToken});
+		callback(JSON.stringify({success: true, token: newToken}));
 		       	
 	},
 

@@ -21,6 +21,9 @@ var cert = fs.readFileSync('private.pem');
 //jwt custome module
 var jwtToken=require('../lib/jwtToken');
 
+//log module
+var log = require('../lib/log');
+
 function switchTable(req,res,tablename){
 	console.log("table name : " + tablename);
     pool.getConnection(function(err,con){
@@ -38,8 +41,6 @@ function switchTable(req,res,tablename){
        if (!result[0]){
            res.json({success: false, message: 'Authentication failed. User not found.', errorcode:101});
        } else if (result[0].is_active == 1) {
-
-
 		//(email,expSeconds,response)
 		jwtToken.jwtAuth(result[0].email,3600,function(callback){
 			res.send(JSON.parse(callback));
