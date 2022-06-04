@@ -8,12 +8,14 @@ var cert = fs.readFileSync('private.pem');
 var log = require("../lib/log");
 
 var jwtToken = {
-	jwtAuth: function(email,expSeconds,callback){
+	jwtAuth: function(authOption,expSeconds,callback){
+		var authDate = new Date();
 		var newToken = jwt.sign({
 								iss:"learntv",
 								aud:"students",
+								authTime:authDate.getTime(),
 								exp: Math.floor(Date.now()/1000)+(expSeconds*1),
-								email:this.email},cert);
+								authMethod:this.authOption},cert);
 		callback(JSON.stringify({success: true, token: newToken}));
 		       	
 	},

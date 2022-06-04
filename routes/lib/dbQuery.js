@@ -21,15 +21,45 @@ var getConnection = function(callback) {
                                                           
 
 var dbStatements = {
-	hasEmailPass: function(email,passwd) {
-		getConnection.query("SELECT * FROM ?? WHERE email = ? and password = ?",[tablename,email,password], function (err,result){
-   			if (!result[0]){
-   				return False;
- 			} else if (result[0].is_active == 1) {
-				return True; 		
-			}
+	hasMobile: function(tblName,email,callback) {
+		getConnection(function(con) {
+			con.query("SELECT * FROM ?? WHERE email = ?",[tblName,email], function (err,result){
+   				if (!result[0]){
+   					callback(false);
+ 				} else if (result[0].is_active == 1){
+					callback(true); 		
+				} else {
+					
+				}
+ 			});
+ 			con.release();
  		});
- 		getConnection.release();
+	},
+	hasEmailPass: function(tblName,email,passwd,callback) {
+		getConnection(function(con) {
+			con.query("SELECT * FROM ?? WHERE email = ? and password = ?",[tblName,email,passwd], function (err,result){
+   				if (!result[0]){
+   					callback(false);
+ 				} else if (result[0].is_active == 1){
+					callback(true); 		
+				} else {
+					
+				}
+ 			});
+ 			con.release();
+ 		});
+	},
+	hasMobilePass: function(tblName,mobile,passwd,callback) {
+		getConnection(function(con) {
+			con.query("SELECT * FROM ?? WHERE phone = ? and password = ?",[tblName,mobile,passwd], function (err,result){
+   				if (!result[0]){
+   					callback(false);
+ 				} else if (result[0].is_active == 1) {
+					callback(true); 		
+				}
+ 			});
+ 			con.release();
+ 		});
 	},
 	//query any table
 	getSelectAll: function(tblName,callback) {

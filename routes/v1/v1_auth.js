@@ -24,6 +24,8 @@ var jwtToken=require('../lib/jwtToken');
 //log module
 var log = require('../lib/log');
 
+//sql
+var dbQuery=require('../lib/dbQuery');
 function switchTable(req,res,tablename){
 	console.log("table name : " + tablename);
     pool.getConnection(function(err,con){
@@ -110,5 +112,46 @@ router.post('/',function(req,res){
 });
 
 //});
+
+
+router.post('/mobile',function(req,res){
+    var signdate = new Date();
+	log.info("sign in : "+signdate.toLocaleString());    
+	log.info("sign in : "+signdate.getTime());    
+	var mobile=req.body.mobileNo;
+	var passwd=req.body.password;
+	dbQuery.hasMobilePass("user",mobile,passwd,function(callback){
+		if (!callback){
+           res.json({success: false, message: 'Authentication failed. User not found.', errorcode:101});
+		} else {
+			//(email,expSeconds,response)
+			jwtToken.jwtAuth(mobile,3600,function(callback){
+				res.send(JSON.parse(callback));
+			
+			}); 
+		}
+	
+	});
+});
+
+router.post('/email',function(req,res){
+    var signdate = new Date();
+	log.info("sign in : "+signdate.toLocaleString());    
+	log.info("sign in : "+signdate.getTime());    
+	var email=req.body.email;
+	var passwd=req.body.password;
+	dbQuery.hasEmailPass("user",email,passwd,function(callback){
+		if (!callback){
+           res.json({success: false, message: 'Authentication failed. User not found.', errorcode:101});
+		} else {
+			//(email,expSeconds,response)
+			jwtToken.jwtAuth(email,3600,function(callback){
+				res.send(JSON.parse(callback));
+			
+			}); 
+		}
+	
+	});
+});
 
 module.exports = router

@@ -16,6 +16,9 @@ app.use(sessions({
 }));
 //app.use(router);
 
+const jwtToken = require('../lib/jwtToken');
+const log = require('../lib/log');
+const error = require('../lib/error');
 
 const SCOPES = ['https://www.googleapis.com/auth/contacts.readonly',
 				'https://www.googleapis.com/auth/userinfo.profile',
@@ -143,7 +146,8 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 							accessToken=token.access_token;
 						if (accessToken) {
 							request({
-										url:'https://people.googleapis.com/v1/people/me?personFields=addresses,birthdays,emailAddresses,genders,phoneNumbers',
+										url:'https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,phoneNumbers,genders,birthdays',
+//										url:'https://people.googleapis.com/v1/people/me?personFields=emailAddresses',
 										json: true,
 										method: 'GET',
 										headers: {
@@ -153,18 +157,14 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 												}
 										}, (err, respo, body) => {
 											resBody=JSON.parse(JSON.stringify(body));
-//											gender=resBody.genders[0].value;
-//											birthday=resBody.birthdays[0].date.year+"-"+resBody.birthdays.date.month+"-"+resBody.birthdays.date.day;
-//											birthday=resBody.birthdays.date;
-//											sourceEmail=resBody.emailAddresses[0].value;
-											
+											/*
 											content={
 												gender:resBody.genders[0].value,
 												birthday:resBody.birthdays[0].date.year+"-"+resBody.birthdays[0].date.month+"-"+resBody.birthdays[0].date.day,
 												email:resBody.emailAddresses[0].value
 											}
-											
-											return res.json(content);
+											*/
+											return res.json(resBody);
 										
 										});
 
@@ -187,23 +187,33 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 	router.get('/authorize',function(req,res){
 		//create session epoch
 //		req.session.epoch==Math.floor(new Date().getTime());
-		req.session.epoch=='test';
-		sess=req.session;
+//		req.session.epoch=='test';
+//		sess=req.session;
 		//get time epoch 
 //		session.txt=='test';
-		console.log("req session : "+sess.epoch);
+//		console.log("req session : "+sess.epoch);
 		
-		return res.json({"session":Date()});
+//		return res.json({"session":Date()});
 			setOauth2Client(function(err, oAuth2Client){
 				if (err) return console.log('authorize : oAuth2Client error');
-				const url = oAuth2Client.generateAuthUrl({
+				var timeStamp=new Date().getTime();
+				var token=''
+				jwtToken.jwtAuth(timeStamp,3600,function(callback){
+					var tokenCall=JSON.parse(callback);
+//					log.info(tokenCall.token);
+					token=tokenCall.token;
+				});
+	 			const url = oAuth2Client.generateAuthUrl({
     				access_type: 'offline',
        				scope: SCOPES,
-       				token_id:session.epoch,
+       				token_id:token,
        				prompt: 'consent'
        				});	
-  				return res.json({success:true,url:url});
-
+       			if (url) {
+	  				res.json({success:true,url:url});
+				} else {
+					res.send(error.thirdPartyAuth());
+				}
 			});
 	
 	});

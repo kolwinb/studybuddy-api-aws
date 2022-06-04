@@ -2,6 +2,12 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var errState ={
+	thirdPartyAuth: function(){
+		return JSON.stringify({"success": "false","message":"Return null","errorcode":"302"})
+	},
+	emptyMobile: function(){
+		return JSON.stringify({"success": "false","message":"Mobile Number required","errorcode":"107"})
+	},
 	paramNone: function(){
 		return JSON.stringify({"success": "false","message":"Parameters missing.","errorcode":"106"})
 	},
