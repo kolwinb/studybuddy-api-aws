@@ -2,7 +2,7 @@
 var pool = require('../../models/usermysql.js');
 
 //error module
-var errState = require('../lib/error');
+var error = require('../lib/error');
 
 //log module
 var log = require('../lib/log');
@@ -21,52 +21,70 @@ var getConnection = function(callback) {
                                                           
 
 var dbStatements = {
-	hasMobile: function(tblName,email,callback) {
+	//properties
+	whereEmail: "SELECT * FROM ?? WHERE email = ?",
+	whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
+	whereEmailPasswd: "SELECT * FROM ?? WHERE email = ? and password = ?",
+	wherePhonePasswd: "SELECT * FROM ?? WHERE phone = ? and password = ?",
+	selectAll: "SELECT * FROM ??",
+	whereProvince:"SELECT id,name FROM ?? WHERE province_id = ?",
+	whereDistrict:"SELECT id,name FROM ?? WHERE district_id = ?",
+	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id) VALUES (?,?,?,?,?,?,?,?,?)",	
+	insertOauth:"INSERT INTO ??(id,token,created,updated,user_id) VALUES(?,?,?,?,?)",
+	updateOauth:"UPDATE ?? SET token=?, updated=? WHERE user_id=?",
+	//methods
+	
+	setUpdateOauth: function(query,fields,callback){
 		getConnection(function(con) {
-			con.query("SELECT * FROM ?? WHERE email = ?",[tblName,email], function (err,result){
-   				if (!result[0]){
-   					callback(false);
- 				} else if (result[0].is_active == 1){
-					callback(true); 		
+			con.query(query,fields, function (err,result){
+				if (err) {
+					log.error("db update error");
+					callback(false);
 				} else {
-					
+					log.info("db update done");
+					callback(true);
 				}
  			});
- 			con.release();
+			con.release();
  		});
+	
 	},
-	hasEmailPass: function(tblName,email,passwd,callback) {
+	setUserSqlQuery: function(query,fields,callback) {
+//		log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
-			con.query("SELECT * FROM ?? WHERE email = ? and password = ?",[tblName,email,passwd], function (err,result){
-   				if (!result[0]){
-   					callback(false);
- 				} else if (result[0].is_active == 1){
-					callback(true); 		
+			con.query(query,fields, function (err,result){
+				callback(result);
+//				log.info("sql result : "+result[0].email);
+ 			});
+			con.release();
+ 		});
+ 	},
+ 	
+ 	setUserInsert: function(query,fields,callback) {
+		log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+				if (err) {
+					log.error(fields[0]+" : user insert error");
+					callback(false);
 				} else {
-					
+					log.info(fields[0]+" : user inserted");
+					callback(true);
 				}
+//				callback(err);
+//				log.info("sql result : "+result[0].email);
  			});
- 			con.release();
+			con.release();
  		});
-	},
-	hasMobilePass: function(tblName,mobile,passwd,callback) {
-		getConnection(function(con) {
-			con.query("SELECT * FROM ?? WHERE phone = ? and password = ?",[tblName,mobile,passwd], function (err,result){
-   				if (!result[0]){
-   					callback(false);
- 				} else if (result[0].is_active == 1) {
-					callback(true); 		
-				}
- 			});
- 			con.release();
- 		});
-	},
+ 	},
+ 	
+ 		
 	//query any table
-	getSelectAll: function(tblName,callback) {
+	getSelectAll: function(query,fields,callback) {
 		getConnection(function(con) {
-			con.query("SELECT * FROM ??",[tblName], function (err,result){
+			con.query(query,fields, function (err,result){
    				if (!result[0]){
-   					callback(JSON.stringify(errState.dbQuery()));
+   					callback(JSON.stringify(error.server()));
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
@@ -74,41 +92,6 @@ var dbStatements = {
     						return Object.assign({}, mysqlObj);
     					});
 //					log.info(JSON.stringify(jsonResults));
-					callback(JSON.stringify(jsonResults)); 		
-			}
-		});
-		con.release();
-	});
-	},
-	//query any table with foreign key constrain
-	getDistrict: function(tblName,foreignKey,callback) {
-		getConnection(function(con) {
-			con.query("SELECT id,name FROM ?? WHERE province_id=?",[tblName,foreignKey], function (err,result){
-   				if (!result[0]){
-   					callback(JSON.stringify(errState.dbQuery()));
- 				} else {
-					var jsonResults = result.map((mysqlObj, index) => {
-    						return Object.assign({}, mysqlObj);
-    					});
-
-//					log.info(JSON.stringify(jsonResults));
-					callback(JSON.stringify(jsonResults)); 		
-			}
-		});
-		con.release();
-	});
-	},
-	//query any table with foreign key constrain
-	getSchool: function(tblName,foreignKey,callback) {
-		getConnection(function(con) {
-			con.query("SELECT id,name FROM ?? WHERE district_id=?",[tblName,foreignKey], function (err,result){
-   				if (!result[0]){
-   					callback(JSON.stringify(errState.dbQuery()));
- 				} else {
-					var jsonResults = result.map((mysqlObj, index) => {
-    						return Object.assign({}, mysqlObj);
-    					});
-
 					callback(JSON.stringify(jsonResults)); 		
 			}
 		});

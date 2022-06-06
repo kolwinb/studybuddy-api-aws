@@ -18,7 +18,7 @@ router.post('/',function(req,res,next) {
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
 			getJwt=JSON.parse(callback);
-			if (getJwt.signature=='valid'){
+			if (getJwt.status=='success'){
        			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/grades.json");
        			res.send(JSON.parse(contents));						
 			} else {
@@ -38,7 +38,7 @@ router.post('/:grade',function(req,res,next) {
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
 			getJwt=JSON.parse(callback);
-			if (getJwt.signature=='valid'){
+			if (getJwt.status=='success'){
 		      	var grade = req.params.grade
 		      	var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
 		      	res.send(JSON.parse(contents));						
@@ -60,7 +60,7 @@ router.post('/:grade/:syllabus',function(req,res,next) {
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
 			getJwt=JSON.parse(callback);
-			if (getJwt.signature=='valid'){
+			if (getJwt.status=='success'){
        			var grade = req.params.grade;
        			var syllabus = req.params.syllabus;
        			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+syllabus+".json");
@@ -82,7 +82,7 @@ router.post('/:grade/:subject/:quality',function(req,res,next) {
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
 			getJwt=JSON.parse(callback);
-			if (getJwt.signature=='valid'){
+			if (getJwt.status=='success'){
        			var grade = req.params.grade;
        			var subject = req.params.subject;
        			var quality = req.params.quality;

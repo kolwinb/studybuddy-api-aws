@@ -11,7 +11,9 @@ var cert=fs.readFileSync('private.pem');
 
 
 //custom jwt module
-var jwtModule = require('../lib/jwtToken.js');
+var jwtModule = require('../lib/jwtToken');
+const error = require('../lib/error');
+const log = require('../lib/log');
 
 router.post('/',function(req,res,next) {
 
@@ -22,7 +24,8 @@ router.post('/',function(req,res,next) {
 		});
 		                            
     } else {
-       res.status(403).send({ success: false,message:'No token provided.',errorcode:105});
+    
+       res.send(JSON.parse(error.tokenNone()));
   }
 
  });

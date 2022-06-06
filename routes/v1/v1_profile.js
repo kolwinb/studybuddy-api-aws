@@ -24,9 +24,9 @@ router.post('/country',function(req,res,next) {
    		//verify token
    		jwtModule.jwtVerify(rtoken,function(callback){
 			getJwt=JSON.parse(callback);
-			if (getJwt.signature=='valid'){
+			if (getJwt.status=='success'){
 				//country list
-				dbQuery.getSelectAll("countries",function(callback){
+				dbQuery.getSelectAll(dbQuery.selectAll,["countries",""],function(callback){
 					res.send(JSON.parse(callback));
 				});
 			} else {
@@ -50,9 +50,9 @@ router.post('/province',function(req,res,next) {
    		//verify token
    		jwtModule.jwtVerify(rtoken,function(callback){
 			getJwt=JSON.parse(callback);
-			if (getJwt.signature=='valid'){
+			if (getJwt.status=='success'){
 				//province list
-				dbQuery.getSelectAll("province",function(callback){
+				dbQuery.getSelectAll(dbQuery.selectAll,["province"],function(callback){
 					res.send(JSON.parse(callback));
 				});
 			} else {
@@ -76,9 +76,9 @@ router.post('/district',function(req,res,next) {
    			//verify token
    			jwtModule.jwtVerify(rtoken,function(callback){
 				getJwt=JSON.parse(callback);
-				if (getJwt.signature=='valid'){
+				if (getJwt.status=='success'){
 					//district list
-					dbQuery.getDistrict("district",provinceId,function(callback){
+					dbQuery.getSelectAll(dbQuery.whereProvince,["district",provinceId],function(callback){
 						res.send(JSON.parse(callback));
 					});
 				} else {
@@ -103,9 +103,9 @@ router.post('/school',function(req,res,next) {
    			//verify token
    			jwtModule.jwtVerify(rtoken,function(callback){
 				getJwt=JSON.parse(callback);
-				if (getJwt.signature=='valid'){
+				if (getJwt.status=='success'){
 					//school list for district
-					dbQuery.getSchool("school",districtId,function(callback){
+					dbQuery.getSelectAll(dbQuery.whereDistrict,["school",districtId],function(callback){
 						res.send(JSON.parse(callback));
 					});
 				} else {

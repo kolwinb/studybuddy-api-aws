@@ -16,7 +16,7 @@ var jwtToken = {
 								authTime:authDate.getTime(),
 								exp: Math.floor(Date.now()/1000)+(expSeconds*1),
 								authMethod:this.authOption},cert);
-		callback(JSON.stringify({success: true, token: newToken}));
+		callback(JSON.stringify({status: "success", token: newToken}));
 		       	
 	},
 
@@ -25,11 +25,11 @@ var jwtToken = {
 			{
  			if (err){
  				log.error("Token Expired");
-				callback(JSON.stringify({success:false,signature:'invalid',errorcode:104}));
+				callback(JSON.stringify({"status":"error","error":{"statusCode":"1004","description":"Token expired"}}));
 //				res.json({success:false,signature:'invalid',errorcode:104});
 			}else {
 				log.info("Token Verified");
-  				callback(JSON.stringify({success:true,signature:'valid'}));
+  				callback(JSON.stringify({status:"success",description:"Token verified"}));
 //  				res.json({success:true,signature:'valid'});
   				
   			}

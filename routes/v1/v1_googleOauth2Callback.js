@@ -19,16 +19,17 @@ app.use(sessions({
 const jwtToken = require('../lib/jwtToken');
 const log = require('../lib/log');
 const error = require('../lib/error');
+const dbQuery = require('../lib/dbQuery');
 
-const SCOPES = ['https://www.googleapis.com/auth/contacts.readonly',
+const SCOPES = [
+//				'https://www.googleapis.com/auth/contacts.readonly',
 				'https://www.googleapis.com/auth/userinfo.profile',
-				'https://www.googleapis.com/auth/user.emails.read',
-				'https://www.googleapis.com/auth/user.birthday.read',
-				'https://www.googleapis.com/auth/user.addresses.read',
-				'https://www.googleapis.com/auth/user.gender.read',
-				'https://www.googleapis.com/auth/user.phonenumbers.read',
+//				'https://www.googleapis.com/auth/user.emails.read',
+//				'https://www.googleapis.com/auth/user.birthday.read',
+//				'https://www.googleapis.com/auth/user.addresses.read',
+//				'https://www.googleapis.com/auth/user.gender.read',
+//				'https://www.googleapis.com/auth/user.phonenumbers.read',
 				'https://www.googleapis.com/auth/userinfo.email',
-				'https://www.googleapis.com/auth/userinfo.profile'
 				];
 const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 
@@ -105,6 +106,10 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 
 	router.get('/callback',function(req,res,next) {
  		code=req.query.code;
+ 		tokenId=req.query.token_id;
+ 		log.info("tokenId :"+tokenId);
+ 		log.info(req.query);
+
  		if (code == null){
  			console.log("empty google api code");
  			return res.json({success:false,signature:"invalid",errorcode:106});
@@ -146,7 +151,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 							accessToken=token.access_token;
 						if (accessToken) {
 							request({
-										url:'https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,phoneNumbers,genders,birthdays',
+										url:'https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses',
 //										url:'https://people.googleapis.com/v1/people/me?personFields=emailAddresses',
 										json: true,
 										method: 'GET',
@@ -157,14 +162,53 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 												}
 										}, (err, respo, body) => {
 											resBody=JSON.parse(JSON.stringify(body));
-											/*
+											var dateTime = new Date();
+											
 											content={
-												gender:resBody.genders[0].value,
-												birthday:resBody.birthdays[0].date.year+"-"+resBody.birthdays[0].date.month+"-"+resBody.birthdays[0].date.day,
+											//	gender:resBody.genders[0].value,
+											//	birthday:resBody.birthdays[0].date.year+"-"+resBody.birthdays[0].date.month+"-"+resBody.birthdays[0].date.day,
+												name:resBody.names[0].displayName,
+												familyName:resBody.names[0].familyName,
+												givenName:resBody.names[0].givenName,
 												email:resBody.emailAddresses[0].value
 											}
-											*/
-											return res.json(resBody);
+											
+											dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callback){
+												if (callback[0]){
+													dbQuery.setUpdateOauth(dbQuery.updateOauth,["oauth2_token",tokenId,dateTime,callback[0].id],function(callback){
+														if(callback){
+															log.info("google new oauth token updated");
+															}
+													});
+													/*
+													jwtToken.jwtAuth(email,3600,function(callback){
+														res.send(JSON.parse(callback));
+													});
+													*/
+												} else {
+													dbQuery.setUserInsert(dbQuery.insertUser,["user",content.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callback){
+														if (callback) {
+															dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callback){
+																if (callback[0]){
+																	userId=callback[0].id;
+															 		log.info("tokenId :"+tokenId);
+																	//jwtToken.jwtAuth(email,3600,function(callback){
+																	dbQuery.setUserInsert(dbQuery.insertOauth,["oauth2_token","NULL",tokenId,dateTime,dateTime,userId],function(callback){
+																		if(callback){
+																			log.info("New google oauth Token stored");
+																		}
+																			
+																	});
+																	//	res.send(JSON.parse(callback));
+																	//});		
+																}
+															});
+														}	
+													});
+													
+												}
+											});
+											//return res.json(content);
 										
 										});
 
@@ -215,6 +259,11 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 					res.send(error.thirdPartyAuth());
 				}
 			});
+	
+	});
+
+	router.get('/token',function(req,res){
+	
 	
 	});
 

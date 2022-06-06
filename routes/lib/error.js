@@ -2,23 +2,32 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var errState ={
+	userReject: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1009","description":"Regitration rejected, Email/Mobile found"}})
+	},
+	userNotActivated: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1008","description":"User has been registered. But activation has not been verified."}})
+	},
+	userRegistered: function(){
+		return  JSON.stringify({"status":"success","description":"Activation has been verified"})
+	},
+	userNotFound: function(){
+		return   JSON.stringify({"status":"error","error":{"statusCode":"1001","description":"Authentication Failed. User not found"}})
+	},
 	thirdPartyAuth: function(){
-		return JSON.stringify({"success": "false","message":"Return null","errorcode":"302"})
+		return   JSON.stringify({"status":"error","error":{"statusCode":"302","description":"Return Null"}})
 	},
 	emptyMobile: function(){
-		return JSON.stringify({"success": "false","message":"Mobile Number required","errorcode":"107"})
+		return   JSON.stringify({"status":"error","error":{"statusCode":"1007","description": "Mobile number required"}})
 	},
 	paramNone: function(){
-		return JSON.stringify({"success": "false","message":"Parameters missing.","errorcode":"106"})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1006","description":"Parameters missing"}})
 	},
 	tokenNone: function(){
-		return JSON.stringify({success: false,message:"No token provided.",errorcode:105})
+		return   JSON.stringify({"status":"error","error":{"statusCode":"1005","description":"Token not provided"}})
 	},
-	dbQuery: function() {
-		return  {success: false, message: 'Internal Server Error', errorcode:101}
-		},
 	server: function() {
-		return  {"status":"error","error":{"statusCode":"100","description":"Internal server error"}}
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1000","description":"Internal server error"}})
 		},
 	content: function() {
 		return {"status":"error","error":{"statusCode":"101","description":"Content type mismatch"}}
