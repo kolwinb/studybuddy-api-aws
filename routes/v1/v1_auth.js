@@ -27,7 +27,7 @@ var log = require('../lib/log');
 //sql
 var dbQuery=require('../lib/dbQuery');
 
-const error=require('../lib/error');
+const status=require('../lib/status');
 
 //         con.query ("UPDATE ?? SET uniqid=?,last_sign=?  WHERE email=?",[tablename,valrand,signdate,req.body.email],function (err, result) {
  
@@ -39,15 +39,20 @@ router.post('/mobile',function(req,res){
 	var passwd=req.body.password;
 	dbQuery.setUserSqlQuery(dbQuery.wherePhonePasswd,["user",mobile,passwd],function(callback){
 		if (!callback[0]){
-			res.send(JSON.parse(error.userNotFound()));
+			res.send(JSON.parse(status.userNotFound()));
 		} else if (callback[0].is_active==0){
-			res.send(JSON.parse(error.userNotActivated()));
+			res.send(JSON.parse(status.userNotActivated()));
 		} else {
 			//(email,expSeconds,response)
 			jwtToken.jwtAuth(mobile,3600,function(callback){
 				res.send(JSON.parse(callback));
 			
 			}); 
+			
+			//update lastlogin
+			dbQuery.setSqlUpdate(dbQuery.updateLastLogin,["user",signdate,callback[0].id],function(callbackA){
+			
+			});
 		}
 	
 	});
@@ -62,17 +67,19 @@ router.post('/email',function(req,res){
 //	log.info("email : "+email);
 	dbQuery.setUserSqlQuery(dbQuery.whereEmailPasswd,["user",email,passwd],function(callback){
 		if (!callback[0]){
-			res.send(JSON.parse(error.userNotFound()));
+			res.send(JSON.parse(status.userNotFound()));
 		} else if (callback[0].is_active==0){
-			res.send(JSON.parse(error.userNotActivated()));
+			res.send(JSON.parse(status.userNotActivated()));
 		} else {
 			//(email,expSeconds,response)
 			jwtToken.jwtAuth(email,3600,function(callback){
 				res.send(JSON.parse(callback));
 			
+			});
+			dbQuery.setSqlUpdate(dbQuery.updateLastLogin,["user",signdate,callback[0].id],function(callbackA){
+			
 			}); 
 		}
-	
 	});
 });
 

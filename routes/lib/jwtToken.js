@@ -5,8 +5,8 @@ var fs = require("fs");
 var cert = fs.readFileSync('private.pem');
 
 //local log manager
-var log = require("../lib/log");
-
+var log = require("./log");
+const state = require("./status");
 var jwtToken = {
 	jwtAuth: function(authOption,expSeconds,callback){
 		var authDate = new Date();
@@ -16,7 +16,8 @@ var jwtToken = {
 								authTime:authDate.getTime(),
 								exp: Math.floor(Date.now()/1000)+(expSeconds*1),
 								authMethod:this.authOption},cert);
-		callback(JSON.stringify({status: "success", token: newToken}));
+		content=JSON.stringify({"token":newToken});
+		callback(state.stateSuccess(content));
 		       	
 	},
 
@@ -25,11 +26,13 @@ var jwtToken = {
 			{
  			if (err){
  				log.error("Token Expired");
-				callback(JSON.stringify({"status":"error","error":{"statusCode":"1004","description":"Token expired"}}));
+ 				callback(false);
+//				callback(JSON.stringify({"status":"error","error":{"statusCode":"1004","description":"Token expired"}}));
 //				res.json({success:false,signature:'invalid',errorcode:104});
 			}else {
 				log.info("Token Verified");
-  				callback(JSON.stringify({status:"success",description:"Token verified"}));
+				callback(true);
+//  				callback(JSON.stringify({status:"success",description:"Token verified"}));
 //  				res.json({success:true,signature:'valid'});
   				
   			}

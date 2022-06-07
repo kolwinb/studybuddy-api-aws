@@ -12,7 +12,7 @@ var cert=fs.readFileSync('private.pem');
 
 //custom jwt module
 var jwtModule = require('../lib/jwtToken');
-const error = require('../lib/error');
+const status = require('../lib/status');
 const log = require('../lib/log');
 
 router.post('/',function(req,res,next) {
@@ -20,12 +20,18 @@ router.post('/',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
-			res.send(JSON.parse(callback));
+			if (callback) {
+				contents=JSON.stringify({"description":"Token verified"});
+				res.send(JSON.parse(status.stateSuccess(contents)));
+			} else {
+				res.send(JSON.parse(status.tokenExpired()));
+			
+			}
 		});
 		                            
     } else {
     
-       res.send(JSON.parse(error.tokenNone()));
+       res.send(JSON.parse(status.tokenNone()));
   }
 
  });

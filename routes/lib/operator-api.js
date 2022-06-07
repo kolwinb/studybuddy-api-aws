@@ -1,5 +1,5 @@
 var https = require("https");
-const varErr=require('./error');
+const status=require('./status');
 //module.exports = function (data,url,path,callback) {
 exports.api  = function (data,url,path,callback) {
 	var retData='';
@@ -37,7 +37,7 @@ exports.api  = function (data,url,path,callback) {
 
 	httpreq.on('error', error => {
 		console.error(error)
-		return callback(JSON.parse(varErr.operator));
+		return callback(JSON.parse(status.operator));
 	});
 
 	httpreq.write(data);

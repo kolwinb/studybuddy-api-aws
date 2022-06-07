@@ -18,7 +18,7 @@ app.use(sessions({
 
 const jwtToken = require('../lib/jwtToken');
 const log = require('../lib/log');
-const error = require('../lib/error');
+const status = require('../lib/status');
 const dbQuery = require('../lib/dbQuery');
 
 const SCOPES = [
@@ -106,9 +106,9 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 
 	router.get('/callback',function(req,res,next) {
  		code=req.query.code;
- 		tokenId=req.query.token_id;
- 		log.info("tokenId :"+tokenId);
- 		log.info(req.query);
+		stateToken=req.query.state;
+ //		log.info("steteToken :"+stateToken);
+ //		log.info(req.query);
 
  		if (code == null){
  			console.log("empty google api code");
@@ -144,7 +144,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 				request.post(reqAccessToken, (err, resp, body) => {
 					if (err) {
 						console.log("access token error");
-						return res.status(200).send('');
+						res.status(200).send('');
 					} else {
 							token=JSON.parse(body);
 							refreshToken=token.refresh_token;
@@ -175,10 +175,18 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 											
 											dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callback){
 												if (callback[0]){
-													dbQuery.setUpdateOauth(dbQuery.updateOauth,["oauth2_token",tokenId,dateTime,callback[0].id],function(callback){
-														if(callback){
+													log.info("whereEmail id : "+content.email+" : id "+callback[0].id);
+													//finduserId=callback[0].id;
+													dbQuery.setSqlUpdate(dbQuery.updateOauth,["oauth2_token",stateToken,dateTime,callback[0].id],function(callbackA){
+														if(callbackA){
 															log.info("google new oauth token updated");
-															}
+															//respone herpe
+															res.sendStatus(200);
+														} else {
+															log.error("oauth2_token update server error.")
+															res.sendStatus(200);
+														}
+															
 													});
 													/*
 													jwtToken.jwtAuth(email,3600,function(callback){
@@ -186,16 +194,24 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 													});
 													*/
 												} else {
-													dbQuery.setUserInsert(dbQuery.insertUser,["user",content.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callback){
-														if (callback) {
-															dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callback){
-																if (callback[0]){
-																	userId=callback[0].id;
-															 		log.info("tokenId :"+tokenId);
+													dbQuery.setUserInsert(dbQuery.insertUser,["user",content.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
+														if (callbackB) {
+															dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callbackC){
+																if (callbackC[0]){
+																	//userId=callbackC[0].id;
+															 		log.info("stateToken :"+stateToken);
+															 		log.info("userid : "+callbackC[0].id);
 																	//jwtToken.jwtAuth(email,3600,function(callback){
-																	dbQuery.setUserInsert(dbQuery.insertOauth,["oauth2_token","NULL",tokenId,dateTime,dateTime,userId],function(callback){
-																		if(callback){
+																	dbQuery.setUserInsert(dbQuery.insertOauth,["oauth2_token","NULL",stateToken,dateTime,dateTime,callbackC[0].id],function(callbackD){
+																		if(callbackD){
+																			
 																			log.info("New google oauth Token stored");
+																			res.sendStatus(200);
+																			//response
+																		} else {
+																		
+																			log.error("oauth2_token insert server error");
+																			res.sendStatus(200);
 																		}
 																			
 																	});
@@ -244,21 +260,23 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 				var token=''
 				jwtToken.jwtAuth(timeStamp,3600,function(callback){
 					var tokenCall=JSON.parse(callback);
-//					log.info(tokenCall.token);
-					token=tokenCall.token;
+					log.info("state token : "+tokenCall.data.token);
+					token=tokenCall.data.token;
+	 				const url = oAuth2Client.generateAuthUrl({
+    					access_type: 'offline',
+       					scope: SCOPES,
+       					state:token,
+       					prompt: 'consent'
+       					});	
+       				if (url) {
+	  					res.json({status:"success",url:url});
+					} else {
+						res.send(status.thirdPartyAuth());
+					}
 				});
-	 			const url = oAuth2Client.generateAuthUrl({
-    				access_type: 'offline',
-       				scope: SCOPES,
-       				token_id:token,
-       				prompt: 'consent'
-       				});	
-       			if (url) {
-	  				res.json({success:true,url:url});
-				} else {
-					res.send(error.thirdPartyAuth());
-				}
+
 			});
+
 	
 	});
 
@@ -267,6 +285,30 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 	
 	});
 
+	router.post('/accesstoken',function(req,res){
+		var accessToken=req.body.accessToken;
+		log.info("Access Token :"+accessToken);
+		dbQuery.setUserSqlQuery(dbQuery.whereAccessToken,["oauth2_token",accessToken],function(callback){
+			if (callback[0]){
+				jwtToken.jwtVerify(accessToken,function(callbackA){
+					if (callbackA){
+						log.info("access token verificatioin done");
+						content=JSON.stringify({"description":"Token verified"});
+						res.send(JSON.parse(status.stateSuccess(content)));
+					} else {
+						log.error("access token expired");
+						res.send(JSON.parse(status.googleAccessToken()));
+					}	
+				});		
+			} else {
+				res.send(JSON.parse(status.googleNotAuth()));
+			}
+		
+		});
+	
+	});
+
 app.use('/',router);
 module.exports = app
+
 

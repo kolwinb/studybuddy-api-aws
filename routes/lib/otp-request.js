@@ -27,7 +27,7 @@ var decCrypto = require('./crypto');
 var properties = require('./properties');
 var axios = require('./axios'); //this will send request from nodejs server
 
-const varErr = require('./error');
+const varErr = require('./status');
 
 exports.otpRequest=function(req,callback){
 	engparam=req.originalUrl;

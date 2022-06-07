@@ -1,5 +1,5 @@
 const axios = require('/media/data/opt/nodejs/lib/node_modules/axios');
-const varErr = require('./error');
+const varErr = require('./status');
 
 exports.api  = function (data,url,callback) {
 

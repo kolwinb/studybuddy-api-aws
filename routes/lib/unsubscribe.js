@@ -26,7 +26,7 @@ var operator=require('./operator-api');
 var decCrypto = require('./crypto');
 var properties = require('./properties');
 var axios = require('./axios');
-const varErr = require('./error');
+const varErr = require('./status');
 
 exports.subSend=function(req,callback){
 	engparam=req.originalUrl;

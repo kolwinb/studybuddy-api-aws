@@ -27,7 +27,7 @@ var operator=require('./operator-api');
 var decCrypto = require('./crypto');
 var properties = require('./properties');
 var axios = require('./axios');
-var varErr=require("./error");
+var varErr=require("./status");
 
 exports.otpVerify=function(req,callback){
 	engparam=req.originalUrl;

@@ -25,7 +25,6 @@ app.use('/studybuddy/v1/profile', require('./routes/v1/v1_profile'));
 
 //Google Oauth2
 app.use('/studybuddy/v1/googleoauth/',require('./routes/v1/v1_googleOauth2Callback'));
-app.use('/studybuddy/v1/googleoauth/',require('./routes/v1/v1_googleOauth2Callback'));
 
 //privacy links
 app.use('/studybuddy/v1/pages/',require('./routes/v1/v1_pages'));

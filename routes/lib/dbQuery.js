@@ -1,11 +1,11 @@
 //mysql model
 var pool = require('../../models/usermysql.js');
 
-//error module
-var error = require('../lib/error');
+//./status module
+var status = require('./status');
 
 //log module
-var log = require('../lib/log');
+var log = require('./log');
 
 var getConnection = function(callback) {
 	pool.getConnection(function(err, connection) {
@@ -32,9 +32,11 @@ var dbStatements = {
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id) VALUES (?,?,?,?,?,?,?,?,?)",	
 	insertOauth:"INSERT INTO ??(id,token,created,updated,user_id) VALUES(?,?,?,?,?)",
 	updateOauth:"UPDATE ?? SET token=?, updated=? WHERE user_id=?",
+	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
+	updateLastLogin:"UPDATE ?? SET last_login=? WHERE id = ?",
 	//methods
 	
-	setUpdateOauth: function(query,fields,callback){
+	setSqlUpdate: function(query,fields,callback){
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
@@ -61,7 +63,7 @@ var dbStatements = {
  	},
  	
  	setUserInsert: function(query,fields,callback) {
-		log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
+		log.info("Sql Insert data -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
@@ -84,7 +86,7 @@ var dbStatements = {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
    				if (!result[0]){
-   					callback(JSON.stringify(error.server()));
+   					callback(JSON.stringify(status.server()));
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);

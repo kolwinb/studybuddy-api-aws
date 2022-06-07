@@ -1,18 +1,27 @@
 const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
-var errState ={
+var State ={
+	googleNotAuth: function(content){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1102","description":"Google user is not authenticated."}})
+	},
+	googleAccessToken: function(content){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1101","description":"Google authentication session has been expired."}})
+	},
+	stateSuccess: function(content){
+		return  JSON.stringify({"status":"success","data":JSON.parse(content)})
+	},
 	userReject: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1009","description":"Regitration rejected, Email/Mobile found"}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1009","description":"Regitration rejected, Email/Mobile found."}})
 	},
 	userNotActivated: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1008","description":"User has been registered. But activation has not been verified."}})
 	},
-	userRegistered: function(){
-		return  JSON.stringify({"status":"success","description":"Activation has been verified"})
-	},
+//	userRegistered: function(){
+//		return  JSON.stringify({"status":"success","description":"Activation has been verified."})
+//	},
 	userNotFound: function(){
-		return   JSON.stringify({"status":"error","error":{"statusCode":"1001","description":"Authentication Failed. User not found"}})
+		return   JSON.stringify({"status":"error","error":{"statusCode":"1001","description":"Authentication Failed. User not found."}})
 	},
 	thirdPartyAuth: function(){
 		return   JSON.stringify({"status":"error","error":{"statusCode":"302","description":"Return Null"}})
@@ -25,6 +34,9 @@ var errState ={
 	},
 	tokenNone: function(){
 		return   JSON.stringify({"status":"error","error":{"statusCode":"1005","description":"Token not provided"}})
+	},
+	tokenExpired: function(){
+		return   JSON.stringify({"status":"error","error":{"statusCode":"1004","description":"Token expired"}})
 	},
 	server: function() {
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1000","description":"Internal server error"}})
@@ -78,4 +90,4 @@ var errState ={
 
 }
 
-module.exports = errState;
+module.exports = State;

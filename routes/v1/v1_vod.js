@@ -10,24 +10,26 @@ var router = express.Router();
 var cert=fs.readFileSync('private.pem');
 
 //custom jwt module
-var jwtModule = require('../lib/jwtToken.js');
+var jwtModule = require('../lib/jwtToken');
+const status = require('../lib/status');
 
 //get list of all channels
 router.post('/',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
-			getJwt=JSON.parse(callback);
-			if (getJwt.status=='success'){
+//			getJwt=JSON.parse(callback);
+			if (callback){
        			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/grades.json");
-       			res.send(JSON.parse(contents));						
+       			resStatus=status.stateSuccess(contents);
+       			res.send(JSON.parse(resStatus));						
 			} else {
-				res.send(getJwt);         
+				res.send(status.tokenExpired());         
 			}      
 		}); 
 
     }else {
-       return res.status(403).send({ success: false,message:'No token provided.'});
+       return res.status(403).send(JSON.parse(status.tokenNone()));
   }
 
  });
@@ -37,18 +39,17 @@ router.post('/:grade',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
-			getJwt=JSON.parse(callback);
-			if (getJwt.status=='success'){
+			if (callback){
 		      	var grade = req.params.grade
 		      	var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
-		      	res.send(JSON.parse(contents));						
+		      	res.send(JSON.parse(status.stateSuccess(contents)));						
 			} else {
-				res.send(getJwt);         
+				res.send(status.tokenExpired());         
 			}      
 		}); 
 
     }else {
-       return res.status(403).send({ success: false,message:'No token provided.'});
+       return res.status(403).send(JSON.parse(status.tokenNone()));
   }
 
  });
@@ -59,19 +60,18 @@ router.post('/:grade/:syllabus',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
-			getJwt=JSON.parse(callback);
-			if (getJwt.status=='success'){
+			if (callback){
        			var grade = req.params.grade;
        			var syllabus = req.params.syllabus;
        			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+syllabus+".json");
-       			res.send(JSON.parse(contents));
+       			res.send(JSON.parse(status.stateSuccess(contents)));
 			} else {
-				res.send(getJwt);         
+				res.send(status.tokenExpired());         
 			}      
 		}); 
 
     }else {
-       return res.status(403).send({ success: false,message:'No token provided.'});
+       return res.status(403).send(JSON.parse(status.tokenNone()));
   }
 
  });
@@ -81,20 +81,19 @@ router.post('/:grade/:subject/:quality',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
-			getJwt=JSON.parse(callback);
-			if (getJwt.status=='success'){
+			if (callback){
        			var grade = req.params.grade;
        			var subject = req.params.subject;
        			var quality = req.params.quality;
        			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+subject+"_"+quality+".json");
-       			res.send(JSON.parse(contents));
+       			res.send(JSON.parse(status.stateSuccess(contents)));
 			} else {
-				res.send(getJwt);         
+				res.send(JSON.parse(status.tokenExpired));         
 			}      
 		}); 
 		
     }else {
-       return res.status(403).send({ success: false,message:'No token provided.',"errorcode":"105"});
+       return res.status(403).send(JSON.parse(status.tokenNone()));
   }
 
  });

@@ -9,7 +9,7 @@ var router = express.Router();
 
 //load custom crypto module
 var crypto = require("../lib/crypto");
-const varErr = require("../lib/error");
+const varErr = require("../lib/status");
 
 router.post('/',function(req,res){
 

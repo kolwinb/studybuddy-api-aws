@@ -17,7 +17,7 @@ var app = express();
 var router = express.Router();
 
 const dbQuery=require('../lib/dbQuery');
-const error = require('../lib/error');
+const status = require('../lib/status');
 const log = require('../lib/log');
 const jwtToken = require('../lib/jwtToken');
 
@@ -37,23 +37,27 @@ router.post('/',function(req,res){
 		if (!callback[0]){
 			log.error("user not found");
 			//sql insert here
-			dbQuery.setUserInsert(dbQuery.insertUser,["user",email,password,username,contact,signdate,signdate,valrand,1,'NULL'],function(callback){
+			dbQuery.setUserInsert(dbQuery.insertUser,["user",email,password,username,contact,signdate,signdate,valrand,0,'NULL'],function(callback){
 				if (!callback){
-					res.send(JSON.parse(error.server()));
+					res.send(JSON.parse(status.server()));
 				} else {
-					res.send(JSON.parse(error.userNotActivated()));
+					content=JSON.stringify({"description":"User has been registered. But activation has not been verified."});
+					res.send(JSON.parse(status.stateSuccess(content)));
 				}			
 			});
 		} else if ((callback[0].email == email) || (callback[0].phone == contact)){
-			res.send(JSON.parse(error.userReject()));
+			res.send(JSON.parse(status.userReject()));
+		/*
 		}  else if (callback[0].is_active == 0){
 			log.info("email : "+callback[0].email + " has not verify by sms");
-			res.send(JSON.parse(error.userNotActivated()));
+			res.send(JSON.parse(status.userNotActivated()));
+		
 		} else if (callback[0].is_active == 1){
 			log.info("email : "+callback[0].email + " found");
-			res.send(JSON.parse(error.userRegistered()));
+			content=JSON.stringify({"description":"Mobile successfully activated"});
+			res.send(JSON.parse(status.stateSuccess(content)));
+		*/
 		}
-                                                                                                                                                                                                            
     });
 
 });
