@@ -2,7 +2,10 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var State ={
-	googleNotAuth: function(content){
+	googleTokenTimeout: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1103","description":"Token used too late."}})
+	},
+	googleNotAuth: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1102","description":"Google user is not authenticated."}})
 	},
 	googleAccessToken: function(content){

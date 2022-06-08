@@ -7,6 +7,7 @@ const router = express.Router();
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('/media/data/opt/nodejs/lib/node_modules/googleapis');
+const {OAuth2Client} = require('/media/data/opt/nodejs/lib/node_modules/google-auth-library');
 
 //initialize session usage
 app.use(sessions({
@@ -33,6 +34,7 @@ const SCOPES = [
 				];
 const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 
+/*
 	function getNewToken(oAuth2Client, callback) {
 		const authUrl = oAuth2Client.generateAuthUrl({
 			access_type: 'offline',
@@ -71,7 +73,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 				console.log('Connections:');
 				connections.forEach((person) => {
 					if (person.names && person.names.length > 0) {
-						console.log(person.names[0].displayName);
+						console.log('connection success');
 					} else {
 						console.log('No display name found for connection.');
 					}
@@ -82,7 +84,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
   		});
   	}
 
-
+*/
 	//can make callback as follow
 	//setOauthClient = function(callback){callback()}
 	//function setOauthClient(callback){callback()}
@@ -126,7 +128,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 						console.log('Token stored to', TOKEN_PATH);
 					});
 				oAuth2Client.setCredentials(token);
-				console.log("ssss"+oAuth2Client.client_id);
+//				console.log("Client_id : "+oAuth2Client.client_id);
 
 				});
 			});
@@ -149,6 +151,10 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 							token=JSON.parse(body);
 							refreshToken=token.refresh_token;
 							accessToken=token.access_token;
+							id_token=token.id_token;
+							log.info('client_id : '+ client_id);
+							log.info('id_token : '+id_token);
+						/*
 						if (accessToken) {
 							request({
 										url:'https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses',
@@ -172,7 +178,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 												givenName:resBody.names[0].givenName,
 												email:resBody.emailAddresses[0].value
 											}
-											
+
 											dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callback){
 												if (callback[0]){
 													log.info("whereEmail id : "+content.email+" : id "+callback[0].id);
@@ -181,18 +187,13 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 														if(callbackA){
 															log.info("google new oauth token updated");
 															//respone herpe
-															res.sendStatus(200);
+															//res.sendStatus(200);
 														} else {
 															log.error("oauth2_token update server error.")
-															res.sendStatus(200);
+															//res.sendStatus(200);
 														}
 															
 													});
-													/*
-													jwtToken.jwtAuth(email,3600,function(callback){
-														res.send(JSON.parse(callback));
-													});
-													*/
 												} else {
 													dbQuery.setUserInsert(dbQuery.insertUser,["user",content.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
 														if (callbackB) {
@@ -207,6 +208,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 																			
 																			log.info("New google oauth Token stored");
 																			res.sendStatus(200);
+																			
 																			//response
 																		} else {
 																		
@@ -224,10 +226,10 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 													
 												}
 											});
+						
 											//return res.json(content);
 										
 										});
-
 
 //							return res.json({access_token:token.access_token});
 
@@ -236,7 +238,16 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 							console.log("access token is empty");
 							return res.status(200).send('');
 						}
+						*/
 					}
+					
+					//get info for debug
+					tokenSign={
+						client_id:client_id,
+						id_token:id_token													
+					};	
+					res.json(JSON.parse(JSON.stringify(tokenSign)));
+
 //				return res.json({success:true,signature:"valid",client_id:client_id});
 				});
 			});
@@ -308,6 +319,78 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 	
 	});
 
+	async function verify(CLIENT_ID,token,res) {
+		const client = new OAuth2Client(CLIENT_ID);
+
+  		const ticket = await client.verifyIdToken({
+			idToken: token,
+  			audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+			// Or, if multiple clients access the backend:
+  			//[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+		});
+  		const payload = ticket.getPayload();
+		const userid = payload['sub'];
+  		// If request specified a G Suite domain:
+		// const domain = payload['hd'];
+//			log.info(JSON.stringify(payload,null,2));
+	
+		resBody=JSON.parse(JSON.stringify(payload));
+		var dateTime = new Date();
+		
+		content={
+			givenName:resBody.given_name,
+			email:resBody.email
+		}
+		
+		dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callback){
+			if (callback[0]){
+				log.info("google login : "+content.email+" : id "+callback[0].id);
+				//finduserId=callback[0].id;
+				dbQuery.setSqlUpdate(dbQuery.updateLastLogin,["user",dateTime,callback[0].id],function(callbackAA){
+					if (callbackAA) {
+						log.info("google new oauth token updated");
+						jwtToken.jwtAuth(content.email,3600,function(callbackJwt){
+							res.send(JSON.parse(callbackJwt));
+						});
+					} else {
+						res.send(JSON.parse(status.server()));
+					}
+				});
+	
+			} else {
+				log.info("google New login : "+content.email);
+				dbQuery.setUserInsert(dbQuery.insertUser,["user",content.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
+					if (callbackB) {
+						dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callbackC){
+							if (callbackC[0]){
+								//userId=callbackC[0].id;
+								log.info("userid : "+callbackC[0].id);
+								log.info("New google oauth Token stored");
+								jwtToken.jwtAuth(content.email,3600,function(callbackJwt){
+									res.send(JSON.parse(callbackJwt));
+								});
+							}
+						});
+					} else {
+						res.send(JSON.parse(status.server()));
+						
+					}	
+				
+				});
+				
+			}
+		});
+	}
+
+	router.post('/tokensignin',function(req,res){
+		const CLIENT_ID=req.body.client_id;
+		const token = req.body.id_token;
+		verify(CLIENT_ID,token,res).catch(error => {
+			log.error("google Id-Toekn catch error detected");
+			res.send(JSON.parse(status.googleTokenTimeout()));
+		});
+	});
+	
 app.use('/',router);
 module.exports = app
 
