@@ -19,6 +19,10 @@ app.use(morgan('dev'));
 
 //calling to request handler (route)
 
+//mobile verification
+app.use('/studybuddy/v1/mobile', require('./routes/v1/v1_mobileVerification'));
+
+
 //studentprofile
 app.use('/studybuddy/v1/profile', require('./routes/v1/v1_profile'));
 

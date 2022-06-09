@@ -2,6 +2,9 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var State ={
+	smsFailure: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1010","description":"Can't send SMS OTP."}})
+	},
 	googleTokenTimeout: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1103","description":"Token used too late."}})
 	},
