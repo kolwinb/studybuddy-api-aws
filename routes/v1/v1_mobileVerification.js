@@ -18,30 +18,42 @@ var dbQuery = require('../lib/dbQuery');
 var status = require('../lib/status');
 
 //sms
-const smsSend = require('../lib/smsSend');
+const smsApi = require('../lib/smsApi');
 
-router.post('/country',function(req,res,next) {
-   var rtoken = req.body.token;
+router.post('/send',function(req,res,next) {
+   var apiKey = req.body.api_key;
+   var apiSecret=req.body.api_secret;
+   var mobile=req.body.mobile;
+   
+	smsApi.apiAuth(apiKey,apiSecret,function(callback){
+		if (callback){
+			//otp sms gateway controller
+			smsApi.otpSend(mobile,function(callback){
+				res.send(JSON.parse(callback));
+			});
+		} else {
+			res.send(JSON.parse(status.otpDecline()));
+		}
+	});
 
-   if (rtoken) {
-   		//verify token
-   		jwtModule.jwtVerify(rtoken,function(callback){
-			if (callback){
-				//country list
-				dbQuery.getSelectAll(dbQuery.selectAll,["countries",""],function(callback){
-					res.send(JSON.parse(status.stateSuccess(callback)));
-				});
-			} else {
-				res.send(JSON.parse(status.tokenExpired()));
-			}
-                                                                                                
+ });
 
-   		});
-   		
-    } else {
-       return res.status(403).send(JSON.parse(status.tokenNone()));
-  	}
-
+router.post('/verify',function(req,res,next) {
+   var apiKey = req.body.api_key;
+   var apiSecret=req.body.api_secret;
+   var mobile=req.body.mobile;
+   var otp=req.body.otp;
+   
+	//api key verification
+	smsApi.apiAuth(apiKey,apiSecret,function(callback){
+		if (callback){
+			smsApi.otpVerify(mobile,otp,function(callback){
+				res.send(JSON.parse(callback));
+			});
+		} else {
+			res.send(JSON.parse(status.otpDecline()));
+		}
+	});
  });
 
 
