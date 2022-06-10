@@ -25,17 +25,22 @@ router.post('/send',function(req,res,next) {
    var apiSecret=req.body.api_secret;
    var mobile=req.body.mobile;
    
-	smsApi.apiAuth(apiKey,apiSecret,function(callback){
-		if (callback){
-			//otp sms gateway controller
-			smsApi.otpSend(mobile,function(callback){
-				res.send(JSON.parse(callback));
-			});
-		} else {
-			res.send(JSON.parse(status.otpDecline()));
-		}
-	});
-
+   if ((!apiKey || !apiSecret)){
+   		res.send(JSON.parse(status.unAuthApi()));
+   } else if ((!mobile)) {
+   		res.send(JSON.parse(status.smsNoRequire()));
+   } else {
+		smsApi.apiAuth(apiKey,apiSecret,function(callback){
+			if (callback){
+				//otp sms gateway controller
+				smsApi.otpSend(mobile,function(callback){
+					res.send(JSON.parse(callback));
+				});
+			} else {
+				res.send(JSON.parse(status.otpDecline()));
+			}
+		});
+	}
  });
 
 router.post('/verify',function(req,res,next) {
@@ -44,16 +49,22 @@ router.post('/verify',function(req,res,next) {
    var mobile=req.body.mobile;
    var otp=req.body.otp;
    
-	//api key verification
-	smsApi.apiAuth(apiKey,apiSecret,function(callback){
-		if (callback){
-			smsApi.otpVerify(mobile,otp,function(callback){
-				res.send(JSON.parse(callback));
-			});
-		} else {
-			res.send(JSON.parse(status.otpDecline()));
-		}
-	});
+   if ((!apiKey || !apiSecret)){
+   		res.send(JSON.parse(status.unAuthApi()));
+   } else if ((!mobile)) {
+   		res.send(JSON.parse(status.smsNoRequire()));
+   } else {
+   		//api key verification
+		smsApi.apiAuth(apiKey,apiSecret,function(callback){
+			if (callback){
+				smsApi.otpVerify(mobile,otp,function(callback){
+					res.send(JSON.parse(callback));
+				});
+			} else {
+				res.send(JSON.parse(status.otpDecline()));
+			}
+		});
+	}
  });
 
 

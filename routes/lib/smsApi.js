@@ -9,13 +9,14 @@ var cert = fs.readFileSync('private.pem');
 var log = require("./log");
 const status = require("./status");
 const dbQuery = require("./dbQuery");
+const scope = require("./apiKeys");
 
 const USR='techsas';
 const PWD='Tech#123';
 const MASK='Greentel';
 const MSG='StudyBuddy OTP : ';
-const ApiKey = '40b5e4a44415a80818d65d4d1417df7e9b822e4db286ed5c';
-const SecretKey = '63Srhl71FxVJuj90oJIHbXn7Ryf/sLiFivLw94SYQiC4qDR38dq4TcHTAW0GmJX5i32lLWdC/5+vgroqfda0936V';
+const ApiKey = scope.smsApi.apiKey;
+const SecretKey = scope.smsApi.apiSecret;
 
 var smsSend = {
 	apiAuth: function(apiKey,secretKey,callback){
@@ -92,7 +93,7 @@ var smsSend = {
 					callbackotp(status.otpExpired());
 				}
 			} else {
-				callbackotp(status.smsNotVerify());
+				callbackotp(status.otpNotVerify());
 			
 			}
 		

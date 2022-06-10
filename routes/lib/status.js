@@ -2,17 +2,29 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var State ={
+	regParamErr: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1010","description":"Parameters not match."}})
+	},
+	smsNoRequire: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1207","description":"Mobile number is required."}})
+	},
+	unAuthApi: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1206","description":"Unauthorized API calling.."}})
+	},
+	otpRequired: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1205","description":"OTP verification is required."}})
+	},
 	otpExpired: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1013","description":"OTP has been expired."}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1204","description":"OTP has been expired."}})
 	},
 	otpNotVerify: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1012","description":"OTP has not been verified."}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1203","description":"OTP has not been verified."}})
 	},
 	otpDecline: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1011","description":"SMS request decline."}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1202","description":"SMS request decline."}})
 	},
 	otpFailure: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1010","description":"Can't send SMS OTP."}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1201","description":"Can't send SMS OTP."}})
 	},
 	googleTokenTimeout: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1103","description":"Token used too late."}})
