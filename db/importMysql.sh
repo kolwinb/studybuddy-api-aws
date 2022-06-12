@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+if [ ! $1 ]; then
+	printf "File name required\n"
+else
 line=$(head -n 1 .access)
 uname=${line%:*}
 upass=${line#*:}
@@ -8,5 +12,5 @@ upass=${line#*:}
 #mysql -h192.168.1.120 -u$uname -p$upass studybuddy < school.sql
 #mysql -h192.168.1.120 -u$uname -p$upass studybuddy < country.sql
 #mysql -h192.168.1.120 -u$uname -p$upass studybuddy < token.sql
-mysql -h192.168.1.120 -u$uname -p$upass studybuddy < smsVerification.sql
-
+mysql -h192.168.1.120 -u$uname -p$upass studybuddy < $1
+fi
