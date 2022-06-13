@@ -77,18 +77,19 @@ router.post('/:grade/:syllabus',function(req,res,next) {
  });
 
 //get list of file by quality
-router.post('/:grade/:subject/:quality',function(req,res,next) {
+router.post('/:grade/:syllabus/:subject',function(req,res,next) {
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
 		jwtModule.jwtVerify(rtoken,function(callback){
 			if (callback){
        			var grade = req.params.grade;
+       			var syllabus=req.params.syllabus;
        			var subject = req.params.subject;
        			var quality = req.params.quality;
-       			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+subject+"_"+quality+".json");
+       			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+syllabus+"_"+subject+".json");
        			res.send(JSON.parse(status.stateSuccess(contents)));
 			} else {
-				res.send(JSON.parse(status.tokenExpired));         
+				res.send(JSON.parse(status.tokenExpired()));         
 			}      
 		}); 
 		
