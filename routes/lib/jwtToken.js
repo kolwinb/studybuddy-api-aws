@@ -15,7 +15,7 @@ var jwtToken = {
 								aud:"students",
 								authTime:authDate.getTime(),
 								exp: Math.floor(Date.now()/1000)+(expSeconds*1),
-								authMethod:this.authOption},cert);
+								authMethod:authOption},cert);
 		content=JSON.stringify({"token":newToken});
 		callback(state.stateSuccess(content));
 		       	

@@ -10,7 +10,7 @@ CREATE TABLE `oauth2_token` (
   `token` varchar(50) NOT NULL,
   `created` datetime(6) NOT NULL,
    `updated` datetime(6) NOT NULL,
-   `user_id` datetime(6) NOT NULL,
+   `user_id` int(6) NOT NULL,
    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;

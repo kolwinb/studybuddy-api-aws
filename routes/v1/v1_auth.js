@@ -95,7 +95,11 @@ router.post('/email',function(req,res){
 				res.send(JSON.parse(status.userNotActivated()));
 			} else {
 				//(email,expSeconds,response)
-				jwtToken.jwtAuth(email,3600,function(callback){
+				jwtData={
+					email:callback[0].email,
+					userId:callback[0].id
+				}
+				jwtToken.jwtAuth(jwtData,3600,function(callback){
 					res.send(JSON.parse(callback));
 				
 				});
