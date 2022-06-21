@@ -2,6 +2,12 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var State ={
+	profileAdding: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1012","description":"not allowed."}})
+	},
+	profileError: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1011","description":"Unable to find profile data."}})
+	},
 	regParamErr: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1010","description":"Parameters not match."}})
 	},

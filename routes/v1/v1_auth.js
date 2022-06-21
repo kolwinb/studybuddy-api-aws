@@ -56,11 +56,20 @@ router.post('/mobile',function(req,res){
 				res.send(JSON.parse(status.userNotActivated()));
 			} else {
 				//(email,expSeconds,response)
+				jwtPayload={ 
+					userId:callback[0].id
+					};
+				
+				jwtToken.jwtAuth(jwtPayload,3600,function(callback){
+					res.send(JSON.parse(callback));
+				
+				});
+				/*
 				jwtToken.jwtAuth(mobile,3600,function(callback){
 					res.send(JSON.parse(callback));
 				
 				}); 
-				
+				*/
 				//update lastlogin
 				dbQuery.setSqlUpdate(dbQuery.updateLastLogin,["user",signdate,callback[0].id],function(callbackA){
 				
@@ -95,11 +104,10 @@ router.post('/email',function(req,res){
 				res.send(JSON.parse(status.userNotActivated()));
 			} else {
 				//(email,expSeconds,response)
-				jwtData={
-					email:callback[0].email,
+				jwtPayload={ 
 					userId:callback[0].id
-				}
-				jwtToken.jwtAuth(jwtData,3600,function(callback){
+					};
+				jwtToken.jwtAuth(jwtPayload,3600,function(callback){
 					res.send(JSON.parse(callback));
 				
 				});

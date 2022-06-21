@@ -22,22 +22,30 @@ var getConnection = function(callback) {
 
 var dbStatements = {
 	//properties
+	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
+	whereUserProfile: "SELECT * FROM user_profile INNER JOIN school ON user_profile.school_id = school.id INNER JOIN district ON school.district_id = district.id INNER JOIN province ON province.id = district.province_id WHERE student_id = ?",
 	whereEmail: "SELECT * FROM ?? WHERE email = ?",
 	whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
 	whereEmailPasswd: "SELECT * FROM ?? WHERE email = ? and password = ?",
 	wherePhonePasswd: "SELECT * FROM ?? WHERE phone = ? and password = ?",
 	selectAll: "SELECT * FROM ??",
-	whereProvince:"SELECT id,name FROM ?? WHERE province_id = ?",
-	whereDistrict:"SELECT id,name FROM ?? WHERE district_id = ?",
+	whereSchool:"SELECT id,school_name FROM ?? WHERE district_id = ?",
+	whereDistrict:"SELECT id,district_name FROM ?? WHERE province_id = ?",
+	whereOtpNo:"SELECT * FROM ?? WHERE mobile = ?",
+	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
+
+	insertStudentAnswer:"INSERT INTO  ??(id,user_id,option_id,started,ended) VALUES (?,?,?,?,?)",	
+	insertProfile:"INSERT INTO  ??(id,school_id,student_id,student_name,student_grade) VALUES (?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id) VALUES (?,?,?,?,?,?,?,?,?)",	
 	insertOauth:"INSERT INTO ??(id,token,created,updated,user_id) VALUES(?,?,?,?,?)",
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
-	whereOtpNo:"SELECT * FROM ?? WHERE mobile = ?",
+
+
 	updateOtp:"UPDATE ?? SET otp=?, created=? WHERE mobile=?",
 	updateIsVerify:"UPDATE ?? SET is_verify=?, created=? WHERE mobile=?",
 	updateOauth:"UPDATE ?? SET token=?, updated=? WHERE user_id=?",
-	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
 	updateLastLogin:"UPDATE ?? SET last_login=? WHERE id = ?",
+	updateProfile:"UPDATE ?? SET school_id=?,student_name=?,student_grade=? WHERE student_id=?",
 	//methods
 	
 	setSqlUpdate: function(query,fields,callback){
@@ -89,7 +97,7 @@ var dbStatements = {
 	getSelectAll: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
-   				if (!result[0]){
+   				if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
  					//single row
@@ -97,7 +105,7 @@ var dbStatements = {
 					var jsonResults = result.map((mysqlObj, index) => {
     						return Object.assign({}, mysqlObj);
     					});
-//					log.info(JSON.stringify(jsonResults));
+					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonResults)); 		
 			}
 		});

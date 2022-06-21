@@ -8,6 +8,13 @@ var cert = fs.readFileSync('private.pem');
 var log = require("./log");
 const state = require("./status");
 var jwtToken = {
+	jwtGetUserId: function(token,callback){
+		const jwtPayload=jwt.decode(token);
+		//console.log(jwtPayload.authMethod);
+		callback(jwtPayload.authMethod);	
+	
+	},
+
 	jwtAuth: function(authOption,expSeconds,callback){
 		var authDate = new Date();
 		var newToken = jwt.sign({
@@ -22,7 +29,9 @@ var jwtToken = {
 	},
 
 	jwtVerify: function(token,callback){
-		jwt.verify(token,cert,{aud:'urn:studes'},function(err,decoded)
+//		jwt.verify(token,cert,{aud:'urn:studes'},function(err,decoded)
+;
+		jwt.verify(token,cert,function(err,decoded)
 			{
  			if (err){
  				log.error("Token Expired");
