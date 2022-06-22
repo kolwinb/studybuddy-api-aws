@@ -22,6 +22,10 @@ var getConnection = function(callback) {
 
 var dbStatements = {
 	//properties
+	whereStudentAnswer: "SELECT id FROM ?? WHERE user_id = ? AND question_id = ?",
+	whereQuestionId: "SELECT question_id FROM ?? WHERE id = ?",
+	whereOptionState: "SELECT state FROM mcq_option WHERE id = ?",
+	whereOptionQuestionVideo: "SELECT mcq_option.id as optionId,mcq_question.id as questionId,video.id as videoId FROM mcq_option INNER JOIN mcq_question ON mcq_question.id = mcq_option.question_id INNER JOIN video ON  video.id = mcq_question.video_id WHERE mcq_option.id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
 	whereUserProfile: "SELECT * FROM user_profile INNER JOIN school ON user_profile.school_id = school.id INNER JOIN district ON school.district_id = district.id INNER JOIN province ON province.id = district.province_id WHERE student_id = ?",
 	whereEmail: "SELECT * FROM ?? WHERE email = ?",
@@ -34,7 +38,7 @@ var dbStatements = {
 	whereOtpNo:"SELECT * FROM ?? WHERE mobile = ?",
 	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
 
-	insertStudentAnswer:"INSERT INTO  ??(id,user_id,option_id,started,ended) VALUES (?,?,?,?,?)",	
+	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started) VALUES (?,?,?,?,?)",	
 	insertProfile:"INSERT INTO  ??(id,school_id,student_id,student_name,student_grade) VALUES (?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id) VALUES (?,?,?,?,?,?,?,?,?)",	
 	insertOauth:"INSERT INTO ??(id,token,created,updated,user_id) VALUES(?,?,?,?,?)",

@@ -19,6 +19,10 @@ var SCOPES = {
 	profileApi:{
 		apiKey:'c3e1b0bd9f53bda6d5f2956d5a532795937ee7c776605904',
 		apiSecret:'mw3LfCCa7WhQ4i5A7bHHGxYn4q91qOSBE7I1ki/+a66TwtqqV45qV0CHpMhNTY2Wrbh88mc2ahqDS42HAhLyzg=='
+	},
+	learningApi:{
+		apiKey:'202a3b589d98404fdd00f1583959e1abb62653ce2d45b1e3',
+		apiSecret:'dgXsZwxbb6j6r3wH6jLwfc0WwsMFId1d8sy8pJjgJcvuHvGl5EenFS3NehCbeB2+wh8mmS4QZPHcHDRz/px9ZQ7j'
 	}
                                                         
 }

@@ -1,3 +1,4 @@
+/*
 exports.mobitelUrl="api.mspace.lk";
 exports.dialogUrl="api.dialog.lk";
 exports.idearmart="api.ideamart.io";
@@ -29,4 +30,11 @@ exports.mobitelClient="MOBILEAPP";
 exports.device="Web";
 exports.os="Linux";
 exports.appCode="https://play.google.com/store/apps/details?id=com.mbrain.learntv";
+*/
 
+var config={
+	earning:100
+
+
+}
+module.exports=config;
