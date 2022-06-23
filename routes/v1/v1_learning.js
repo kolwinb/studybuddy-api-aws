@@ -100,7 +100,7 @@ router.post('/answer',function(req,res,next) {
  });
 
 //like video
-router.post('/like',function(req,res,next) {
+router.post('/likes',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -122,16 +122,18 @@ router.post('/like',function(req,res,next) {
 							
 							}
 						});
+					} else {
+						res.send(status.tokenExpired());         
 					}
 				});
 		} else {
-		
+            return res.status(403).send(JSON.parse(status.tokenNone()));		
 		}
 	}
 });
 
 //like video
-router.post('/like1',function(req,res,next) {
+router.post('/favorites',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -149,16 +151,153 @@ router.post('/like1',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 						});
+					} else {
+						res.send(status.tokenExpired());         
 					}
 				});
 		} else {
-		
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
+
+router.post('/like',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+  	const videoId=req.body.video_id;
+ 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+		//			getJwt=JSON.parse(callback);
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+								if (!callbackUser[0]){
+									res.send(JSON.parse(status.misbehaviour()));
+								} else {
+									resData={
+										video_id:videoId
+									};
+									dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_like",studentId,videoId],function(callbackLike){
+										if (!callbackLike[0]){
+											dbQuery.setUserInsert(dbQuery.insertStudentLikeFavorite,["student_like","NULL",studentId,videoId,1],function(callbackIlike){
+												if (callbackIlike){
+													resData.description="like"
+                                            		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
+												} else {
+                                            		res.send(JSON.parse(status.server()));
+												}
+											});	
+										} else if (callbackLike[0].status == 0) {
+											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_like",1,studentId,videoId],function(callbackUlike){
+												if (callbackUlike){
+													resData.description="like"
+                                            		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
+												} else {
+                                            		res.send(JSON.parse(status.server()));
+												}
+											});	
+										} else if (callbackLike[0].status == 1) {
+											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_like",0,studentId,videoId],function(callbackUdislike){
+												if (callbackUdislike){
+ 													resData.description="dislike"
+                                            		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
+												} else {
+                                            		res.send(JSON.parse(status.server()));
+												}
+											});									
+										}
+									});
+								}
+							});
+						});
+					} else {
+						res.send(status.tokenExpired());         
+					}
+				});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
+
+
+router.post('/favorite',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+  	const videoId=req.body.video_id;
+ 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+		//			getJwt=JSON.parse(callback);
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+								if (!callbackUser[0]){
+									res.send(JSON.parse(status.misbehaviour()));
+								} else {
+									resData={
+										video_id:videoId
+									};
+									dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_favorite",studentId,videoId],function(callbackFav){
+										if (!callbackFav[0]){
+											dbQuery.setUserInsert(dbQuery.insertStudentLikeFavorite,["student_favorite","NULL",studentId,videoId,1],function(callbackIfav){
+												if (callbackIfav){
+													resData.description="favorite";
+                                            		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
+												} else {
+                                            		res.send(JSON.parse(status.server()));
+												}
+											});	
+										} else if (callbackFav[0].status == 0) {
+											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_favorite",1,studentId,videoId],function(callbackUfav){
+												if (callbackUfav){
+													resData.description="favorite";
+                                            		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
+												} else {
+                                            		res.send(JSON.parse(status.server()));
+												}
+											});	
+										} else if (callbackFav[0].status == 1) {
+											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_favorite",0,studentId,videoId],function(callbackUunfav){
+												if (callbackUunfav){
+													resData.description="unfavorite";
+                                            		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
+												} else {
+                                            		res.send(JSON.parse(status.server()));
+												}
+											});									
+										}
+									});
+								}
+							});
+						});
+					} else {
+						res.send(status.tokenExpired());         
+					}
+				});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
 		}
 	}
 });
 
 //like video
-router.post('/like2',function(req,res,next) {
+router.post('/dislike',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -176,16 +315,17 @@ router.post('/like2',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 						});
+					} else {
+						res.send(status.tokenExpired());         
 					}
 				});
 		} else {
-		
+            return res.status(403).send(JSON.parse(status.tokenNone()));
 		}
 	}
 });
 
-//like video
-router.post('/like3',function(req,res,next) {
+router.post('/favorite',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -203,10 +343,40 @@ router.post('/like3',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 						});
+					} else {
+						res.send(status.tokenExpired());         
 					}
 				});
 		} else {
-		
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
+
+router.post('/unfavorite',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+  	const videoId=req.body.video_id;
+ 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+		//			getJwt=JSON.parse(callback);
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+						});
+					} else {
+						res.send(status.tokenExpired());         
+					}
+				});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
 		}
 	}
 });

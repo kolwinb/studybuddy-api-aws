@@ -9,7 +9,7 @@ CREATE TABLE `student_like` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `video_id` int(11) NOT NULL,
-  `is_like` tinyint(1) NOT NULL,
+  `status` tinyint(1) NOT NULL,
    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;

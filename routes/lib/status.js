@@ -2,6 +2,9 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var State ={
+	misbehaviour: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1015","description":"request misbehaviour."}})
+	},
 	answerProhibited: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1014","description":"Prohibited action."}})
 	},
