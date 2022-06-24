@@ -42,7 +42,7 @@ router.post('/',function(req,res){
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((!email) && (!contact)) {
 		res.send(JSON.parse(status.regParamErr()));
-	} else if  ((!password) || (!username)){ 
+	} else if  (!password){ 
 		res.send(JSON.parse(status.regParamErr()));
 	} else {
     	dbQuery.setUserSqlQuery(dbQuery.whereEmailOrPhone,["user",email,contact],function(callback){

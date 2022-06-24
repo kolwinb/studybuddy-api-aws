@@ -139,23 +139,82 @@ router.post('/:grade/:syllabus/:subject',function(req,res,next) {
 									//console.log(jsonData);
 									
 									jsonData.forEach(data => {
-										//console.log(data["videoId"]);
-										video_Id=data["videoId"];
-										//data["like"]=getLike(studentId,video_Id);
-										data["favorite"]='false';
-										console.log(dbQuery.getStudentLike(studentId,video_Id));
+										videoId=data["videoId"];
+										//console.log(videoId);
+										//data["like"]=getLike(studentId,videoId);
+										if (videoId){
+											//console.log(videoId);
+											//console.log(getTestLike(studentId,videoId));
+											
+											const getStudentLike = videoId => {
+												return  new Promise((resolve, reject) => {
+													dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_like",studentId,videoId],function(callbackLike){
+														//console.log("studentId : "+studentId);
+														//console.log("videoId : "+videoId);
+													
+														if (callbackLike[0]) {
+															if (callbackLike[0].status == 1) {
+																//console.log(callbackLike[0].status);
+																resolve("True");
+															} else if (callbackLike[0].status == 0) {
+																//console.log(callbackLike[0].status+" : "+studentId+" : "+videoId);
+																resolve("False");
+															}
+														} else {
+															resolve("False");
+														}
+													
+														
+													});														
+												
+												});
+											};
+																						
+											
+											const getLikeState=getStudentLike(videoId)
+														.then(function(likeState) {
+															//console.log(likeState);
+															return likeState;
+														});
+																							
+											console.log("likeState -> "+getLikeState);
+																							
+											/*
+											getStudentLike(videoId)
+												.then(likeState => {
+													console.log("like state : "+likeState+" Vid: "+videoId);
+													data['like']=likeState;
+												})
+											*/
+												/*
+												.catch(err => {
+													console.log(err);
+												})
+												*/
+									}
+										//data["favorite"]='false';
+										//console.log(dbQuery.getStudentLike(studentId,videoId));
+										//getLike(studentId,videoId,data,function(callback){data["like"]=callback;console.log(data);});
+
 									});
 									/*					
 									for (var i in jsonData){
 										//console.log(jsonData[i].videoId);
-										var video_Id=jsonData[i].videoId;
+										var videoId=jsonData[i].videoId;
 										var like="False";
 										var favorite="False";
-										jsonData[i].like=getLike(studentId,video_Id);										
-										console.log(getLike(studentId,video_Id).catch(console.log));							
-										getLike(studentId,video_Id).then(x => {
+										//jsonData[i].like=
+										getLike(studentId,videoId,function(callbackGetLike){
+											console.log(like);
+										});										
+										
+											
+										console.log(getLike(studentId,videoId).catch(console.log));							
+										getLike(studentId,videoId).then(x => {
 											console.log("value : "+x);
 										});
+										
+										
 										
 										//favorites
 										
@@ -188,27 +247,40 @@ router.post('/:grade/:syllabus/:subject',function(req,res,next) {
  });
 
 
-async function getLike(studentId,video_Id){
-	var retValue="False";
-	await dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_like",studentId,video_Id],function(callbackLike){
+
+
+
+
+async function getTestLike(studentId,videoId){
+	return videoId
+	var getLike = new Promise((resolve,reject) => {
+			
 	
-			//console.log("video_id : "+video_Id);
+	});
+	
+}
+
+async function getLike(studentId,videoId,callback){
+	//var retValue="False";
+	dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_like",studentId,videoId],function(callbackLike){
+//	console.log("studentId : "+studentId);
+			//console.log("videoId : "+videoId);
 	
 		if (callbackLike[0]) {
 			if (callbackLike[0].status == 1) {
 				//console.log(callbackLike[0].status);
-				retValue="True";
+				callback("True");
 			} else if (callbackLike[0].status == 0) {
-				//console.log(callbackLike[0].status+" : "+studentId+" : "+video_Id);
-				retValue="False";
+				//console.log(callbackLike[0].status+" : "+studentId+" : "+videoId);
+				callback("False");
 			}
 		} else {
-			retValue="False";
+			callback("False");
 		}
 	
 		
 	});
-	console.log(retValue);
+	//console.log(retValue);
 //	return retValue;
 
 }

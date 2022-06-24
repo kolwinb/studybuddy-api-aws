@@ -29,7 +29,7 @@ var dbStatements = {
 	whereOptionQuestionVideo: "SELECT mcq_option.id as optionId,mcq_question.id as questionId,video.id as videoId FROM mcq_option INNER JOIN mcq_question ON mcq_question.id = mcq_option.question_id INNER JOIN video ON  video.id = mcq_question.video_id WHERE mcq_option.id = ?",
 	whereUser: "SELECT * FROM ??  WHERE id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
-	whereUserProfile: "SELECT * FROM user_profile INNER JOIN school ON user_profile.school_id = school.id INNER JOIN district ON school.district_id = district.id INNER JOIN province ON province.id = district.province_id WHERE student_id = ?",
+	whereUserProfile: "SELECT * FROM user_profile INNER JOIN school ON user_profile.school_id = school.id INNER JOIN district ON school.district_id = district.id INNER JOIN province ON province.id = district.province_id WHERE user_profile.student_id = ?",
 	whereEmail: "SELECT * FROM ?? WHERE email = ?",
 	whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
 	whereEmailPasswd: "SELECT * FROM ?? WHERE email = ? and password = ?",

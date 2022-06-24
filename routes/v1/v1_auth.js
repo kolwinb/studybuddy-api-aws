@@ -86,12 +86,12 @@ router.post('/email',function(req,res){
 	log.info("sign in : "+signdate.getTime());    
 	var email=req.body.email;
 	var passwd=req.body.password;
-/*
-	log.info(req.body.api_key);
-	log.info(req.body.api_secret);
-	log.info(req.body.email);
-	log.info(req.body.password);
-*/
+
+	log.info("key: "+req.body.api_key);
+	log.info("secret: "+req.body.api_secret);
+	log.info("email: "+req.body.email);
+	log.info("pass: "+req.body.password);
+
 	api_key=req.body.api_key;
 	api_secret=req.body.api_secret;
 	

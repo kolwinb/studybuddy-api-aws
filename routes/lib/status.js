@@ -8,12 +8,6 @@ var State ={
 	answerProhibited: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1014","description":"Prohibited action."}})
 	},
-	answerCorrect: function(content){
-		return  JSON.stringify({"status":"correct","data":JSON.parse(content)})
-	},
-	answerIncorrect: function(content){
-		return  JSON.stringify({"status":"incorrect","data":JSON.parse(content)})
-	},
 	studentAnswerWarning: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1013","description":"Given answer is not matched."}})
 	},

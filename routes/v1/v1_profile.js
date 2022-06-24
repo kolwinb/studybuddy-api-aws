@@ -42,7 +42,6 @@ router.post('/info',function(req,res,next) {
 							dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 								if (!callbackUserProfile[0]) {
 									res.send(JSON.parse(status.profileError()));
-
 								} else {
 									//userprofile updating
 									profileData=JSON.stringify({
@@ -52,6 +51,8 @@ router.post('/info',function(req,res,next) {
 										studentName:callbackUserProfile[0].student_name,
 										studentGrade:callbackUserProfile[0].student_grade
 									});
+									
+									
 									res.send(JSON.parse(status.stateSuccess(profileData)));
 								}
 							});

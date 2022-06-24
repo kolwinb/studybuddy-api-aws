@@ -70,11 +70,14 @@ router.post('/answer',function(req,res,next) {
 															};	
 															if (!callbackOState[0].state){
 																Object.assign(resAnswer,{"earning":""});
-       															resStatus=status.answerIncorrect(JSON.stringify(resAnswer));
+																Object.assign(resAnswer,{"answer":"False"});
+																
+       															resStatus=status.stateSuccess(JSON.stringify(resAnswer));
        															res.send(JSON.parse(resStatus));							
 															} else {
 																resAnswer["earning"]=properties.earning;
-       															resStatus=status.answerCorrect(JSON.stringify(resAnswer));
+																resAnswer["answer"]="True";
+       															resStatus=status.stateSuccess(JSON.stringify(resAnswer));
        															res.send(JSON.parse(resStatus));						
 															}
 														});													
@@ -189,7 +192,8 @@ router.post('/like',function(req,res,next) {
 										if (!callbackLike[0]){
 											dbQuery.setUserInsert(dbQuery.insertStudentLikeFavorite,["student_like","NULL",studentId,videoId,1],function(callbackIlike){
 												if (callbackIlike){
-													resData.description="like"
+													resData.like="True";
+													resData.description="like";
                                             		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
 												} else {
                                             		res.send(JSON.parse(status.server()));
@@ -198,7 +202,8 @@ router.post('/like',function(req,res,next) {
 										} else if (callbackLike[0].status == 0) {
 											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_like",1,studentId,videoId],function(callbackUlike){
 												if (callbackUlike){
-													resData.description="like"
+													resData.like="True";
+													resData.description="like";
                                             		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
 												} else {
                                             		res.send(JSON.parse(status.server()));
@@ -207,7 +212,8 @@ router.post('/like',function(req,res,next) {
 										} else if (callbackLike[0].status == 1) {
 											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_like",0,studentId,videoId],function(callbackUdislike){
 												if (callbackUdislike){
- 													resData.description="dislike"
+													resData.like="False";
+ 													resData.description="dislike";
                                             		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
 												} else {
                                             		res.send(JSON.parse(status.server()));
@@ -257,6 +263,7 @@ router.post('/favorite',function(req,res,next) {
 										if (!callbackFav[0]){
 											dbQuery.setUserInsert(dbQuery.insertStudentLikeFavorite,["student_favorite","NULL",studentId,videoId,1],function(callbackIfav){
 												if (callbackIfav){
+													resData.favorite="True";
 													resData.description="favorite";
                                             		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
 												} else {
@@ -266,6 +273,7 @@ router.post('/favorite',function(req,res,next) {
 										} else if (callbackFav[0].status == 0) {
 											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_favorite",1,studentId,videoId],function(callbackUfav){
 												if (callbackUfav){
+													resData.favorite="True";
 													resData.description="favorite";
                                             		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
 												} else {
@@ -275,6 +283,7 @@ router.post('/favorite',function(req,res,next) {
 										} else if (callbackFav[0].status == 1) {
 											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_favorite",0,studentId,videoId],function(callbackUunfav){
 												if (callbackUunfav){
+													resData.favorite="False";
 													resData.description="unfavorite";
                                             		res.send(JSON.parse(status.stateSuccess(JSON.stringify(resData))));
 												} else {
