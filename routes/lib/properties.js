@@ -33,7 +33,8 @@ exports.appCode="https://play.google.com/store/apps/details?id=com.mbrain.learnt
 */
 
 var config={
-	earning:100
+	coin:100,
+	vodVideoUrl:'https://api.learntv.lk/studybuddy/v1/vod/grade-06/Syllabus-2016'
 
 
 }

@@ -17,10 +17,68 @@ var dbQuery = require('../lib/dbQuery');
 //status
 var status = require('../lib/status');
 
+const property = require('../lib/properties');
+
 //apikey
 const scope = require('../lib/apiKeys');
 const api_key = scope.profileApi.apiKey;
 const api_secret = scope.profileApi.apiSecret;
+
+router.post('/data',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							//console.log(studentId);
+							dbQuery.getSelectAll(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+								if (!callbackUserProfile) {
+									res.send(JSON.parse(status.profileError()));
+								} else {
+									userProfile=JSON.parse(callbackUserProfile);
+									//console.log(userProfile);
+									//console.log(userProfile[0]['0'].correctAnswers);
+									console.log("property coin : "+property.coin);
+									
+									profileData=JSON.stringify({
+										correctAnswers:userProfile[0]['0'].correctAnswers,
+										wrongAnswers:userProfile[1]['0'].wrongAnswers,
+										totalLessons:userProfile[2]['0'].totalLessons,
+										totalQestions:userProfile[3]['0'].totalQuestions,
+										province:userProfile[4]['0'].province,
+										district:userProfile[4]['0'].district,
+										school:userProfile[4]['0'].school,
+										studentName:userProfile[4]['0'].studentName,
+										studentGrade:userProfile[4]['0'].studentGrade,
+										earnings:parseInt(userProfile[0]['0'].correctAnswers)*parseInt(property.coin)
+									});
+									
+									
+									res.send(JSON.parse(status.stateSuccess(profileData)));
+									
+								}
+							});
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ });
 
 router.post('/info',function(req,res,next) {
 	const rtoken = req.body.token;

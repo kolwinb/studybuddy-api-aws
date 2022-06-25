@@ -19,7 +19,39 @@ const api_key = scope.learningApi.apiKey;
 const api_secret = scope.learningApi.apiSecret;
 const properties = require('../lib/properties');
 
-//get list of all channels
+//student leaderboard
+router.post('/leaderboard',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+//  	const videoId=req.body.video_id;
+ 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+		//			getJwt=JSON.parse(callback);
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							dbQuery.getSelectAll(dbQuery.whereLeaderBoard,[properties.coin],function(callback){
+								res.send(JSON.parse(status.stateSuccess(callback)));
+							});							
+						});
+					} else {
+						res.send(status.tokenExpired());         
+					}
+				});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
+
+//set student answer
 router.post('/answer',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
@@ -75,7 +107,7 @@ router.post('/answer',function(req,res,next) {
        															resStatus=status.stateSuccess(JSON.stringify(resAnswer));
        															res.send(JSON.parse(resStatus));							
 															} else {
-																resAnswer["earning"]=properties.earning;
+																resAnswer["earning"]=properties.coin;
 																resAnswer["answer"]="True";
        															resStatus=status.stateSuccess(JSON.stringify(resAnswer));
        															res.send(JSON.parse(resStatus));						
@@ -121,8 +153,9 @@ router.post('/likes',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							if (studentId) {
-							
-							
+								dbQuery.getSelectAll(dbQuery.studentLikes,[studentId],function(callback){
+									res.send(JSON.parse(status.stateSuccess(callback)));
+								});															
 							}
 						});
 					} else {
@@ -153,6 +186,15 @@ router.post('/favorites',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
+							if (studentId) {
+								dbQuery.getSelectAll(dbQuery.studentFavorites,[studentId],function(callback){
+									//callback['data'].videoUrl=properties.vodVideoUrl;
+									retJson=JSON.parse(status.stateSuccess(callback));
+									retJson.videoUrl=properties.vodVideoUrl;
+									//console.log(retJson["data"]);
+									res.send(retJson);
+								});																						
+							}
 						});
 					} else {
 						res.send(status.tokenExpired());         
