@@ -34,7 +34,14 @@ exports.appCode="https://play.google.com/store/apps/details?id=com.mbrain.learnt
 
 var config={
 	coin:100,
-	vodVideoUrl:'https://api.learntv.lk/studybuddy/v1/vod/grade-06/Syllabus-2016'
+	apiUrl:'https://api.learntv.lk/studybuddy/v1',
+	vodUrl:'http://edutv.lk/video',
+	thumbUrl:'http://edutv.lk/img',
+	videoQuality:{
+					"small":"240p.m3u",
+					"medium":"360p.m3u",
+					"large":"480p.m3u"
+				}
 
 
 }

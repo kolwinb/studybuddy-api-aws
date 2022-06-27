@@ -179,9 +179,9 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 												email:resBody.emailAddresses[0].value
 											}
 
-											dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callback){
+											dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content],function(callback){
 												if (callback[0]){
-													log.info("whereEmail id : "+content.email+" : id "+callback[0].id);
+													log.info("whereEmail id : "+content+" : id "+callback[0].id);
 													//finduserId=callback[0].id;
 													dbQuery.setSqlUpdate(dbQuery.updateOauth,["oauth2_token",stateToken,dateTime,callback[0].id],function(callbackA){
 														if(callbackA){
@@ -195,9 +195,9 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 															
 													});
 												} else {
-													dbQuery.setUserInsert(dbQuery.insertUser,["user",content.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
+													dbQuery.setUserInsert(dbQuery.insertUser,["user",content,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
 														if (callbackB) {
-															dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callbackC){
+															dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content],function(callbackC){
 																if (callbackC[0]){
 																	//userId=callbackC[0].id;
 															 		log.info("stateToken :"+stateToken);
@@ -257,7 +257,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 	
 	router.get('/authorize',function(req,res){
 		//create session epoch
-//		req.session.epoch==Math.floor(new Date().getTime());
+//		req.session.epoch==MeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsZWFybnR2IiwiYXVkIjoic3R1ZGVudHMiLCJhdXRoVGltZSI6MTY1NjE2NTczNjg4NywiZXhwIjoxNjU2MTY5MzM2LCJhdXRoTWV0aG9kIjoiYmFuZGFyYUBkaGFybWF2YWhpbmkudHYiLCJpYXQiOjE2NTYxNjU3MzZ9.Fn-ylpIaaZrLWXGCGnrzVBqWil4lcaB6RoHomwQNRkoath.floor(new Date().getTime());
 //		req.session.epoch=='test';
 //		sess=req.session;
 		//get time epoch 
@@ -338,18 +338,20 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 		var dateTime = new Date();
 		
 		content={
-			givenName:resBody.given_name,
-			email:resBody.email
+			userId:resBody.email
 		}
 		
-		dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callback){
+		dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",resBody.email],function(callback){
 			if (callback[0]){
-				log.info("google login : "+content.email+" : id "+callback[0].id);
+				log.info("google login : "+content+" : id "+callback[0].id);
 				//finduserId=callback[0].id;
 				dbQuery.setSqlUpdate(dbQuery.updateLastLogin,["user",dateTime,callback[0].id],function(callbackAA){
 					if (callbackAA) {
 						log.info("google new oauth token updated");
-						jwtToken.jwtAuth(content.email,3600,function(callbackJwt){
+						userContent={
+							userId:callback[0].id
+							}
+						jwtToken.jwtAuth(userContent,3600,function(callbackJwt){
 							res.send(JSON.parse(callbackJwt));
 						});
 					} else {
@@ -358,15 +360,17 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 				});
 	
 			} else {
-				log.info("google New login : "+content.email);
-				dbQuery.setUserInsert(dbQuery.insertUser,["user",content.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
+				log.info("google New login : "+content);
+				dbQuery.setUserInsert(dbQuery.insertUser,["user",resBody.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
 					if (callbackB) {
-						dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content.email],function(callbackC){
+						dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",resBody.email],function(callbackC){
 							if (callbackC[0]){
-								//userId=callbackC[0].id;
+								userContent={
+									userId:callbackC[0].id
+								}
 								log.info("userid : "+callbackC[0].id);
 								log.info("New google oauth Token stored");
-								jwtToken.jwtAuth(content.email,3600,function(callbackJwt){
+								jwtToken.jwtAuth(userContent,3600,function(callbackJwt){
 									res.send(JSON.parse(callbackJwt));
 								});
 							}

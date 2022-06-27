@@ -24,7 +24,7 @@ const scope = require('../lib/apiKeys');
 const api_key = scope.profileApi.apiKey;
 const api_secret = scope.profileApi.apiSecret;
 
-router.post('/data',function(req,res,next) {
+router.post('/info',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -80,7 +80,7 @@ router.post('/data',function(req,res,next) {
 	}
  });
 
-router.post('/info',function(req,res,next) {
+router.post('/data',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -132,7 +132,7 @@ router.post('/adding',function(req,res,next) {
 	const apiSecret=req.body.api_secret;
 	const schoolId=req.body.school_id;
 	const studentName=req.body.name;
-	const grade=req.body.grade;
+	const grade=req.body.grade_id;
 	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -148,7 +148,8 @@ router.post('/adding',function(req,res,next) {
 							//console.log(studentId);
 							dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 								if (!callbackUserProfile[0]) {
-									dbQuery.setUserInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,grade],function(callbackProfile){
+									var defaultLang=1
+									dbQuery.setUserInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,grade,defaultLang],function(callbackProfile){
 										if (!callbackProfile){
 											res.send(JSON.parse(status.server()));
 										} else {
@@ -226,6 +227,136 @@ router.post('/updating',function(req,res,next) {
 	}
  });
 
+router.post('/language/info',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+						const studentId=callback.userId;
+							if (studentId){
+								//country list
+								dbQuery.getSelectAll(dbQuery.selectAll,["student_language"],function(callback){
+									res.send(JSON.parse(status.stateSuccess(callback)));
+								});
+							} else {
+								res.send(JSON.parse(status.misbehaviour()));
+							}
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+                                                                                                		
+		
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ });
+
+router.post('/getLanguage',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+						const studentId=callback.userId;
+							if (studentId){
+								//country list
+								dbQuery.getSelectAll(dbQuery.studentLanguage,[studentId],function(callback){
+									res.send(JSON.parse(status.stateSuccess(callback)));
+								});
+							} else {
+								res.send(JSON.parse(status.misbehaviour()));
+							}
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+                                                                                                		
+		
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ });
+ 
+router.post('/setLanguage',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	const languageId=req.body.language_id;
+	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+						const studentId=callback.userId;
+							if (studentId){
+								dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
+									if (callbackUserProfile[0]) {
+										dbQuery.setSqlUpdate(dbQuery.updateStudentLanguage,["user_profile",languageId,studentId],function(callbackProfile){
+											if (!callbackProfile){
+												res.send(JSON.parse(status.server()));
+											} else {
+												content=JSON.stringify({								
+													"description":"Language updated."
+													});
+													
+												res.send(JSON.parse(status.stateSuccess(content)));
+											}
+										});
+									} else {
+										//userprofile already there
+										res.send(JSON.parse(status.profileError()));
+									}
+								});
+							} else {
+								res.send(JSON.parse(status.misbehaviour()));
+							}
+						});
+								
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+                                                                                                		
+		
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ });
+
 router.post('/country',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
@@ -241,7 +372,38 @@ router.post('/country',function(req,res,next) {
    				jwtModule.jwtVerify(rtoken,function(callback){
 					if (callback){
 						//country list
-						dbQuery.getSelectAll(dbQuery.selectAll,["countries",""],function(callback){
+						dbQuery.getSelectAll(dbQuery.selectAll,["countries"],function(callback){
+							res.send(JSON.parse(status.stateSuccess(callback)));
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+                                                                                                		
+		
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ });
+
+router.post('/grade',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						//country list
+						dbQuery.getSelectAll(dbQuery.selectAll,["grade"],function(callback){
 							res.send(JSON.parse(status.stateSuccess(callback)));
 						});
 					} else {

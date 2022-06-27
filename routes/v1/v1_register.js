@@ -70,7 +70,7 @@ router.post('/',function(req,res){
 							res.send(JSON.parse(status.otpNotVerify()));
 						}
 					});
-				} else {
+				} else if (email) {
 					dbQuery.setUserInsert(dbQuery.insertUser,["user",email,password,username,contact,signdate,signdate,valrand,1,'NULL'],function(callbackA){
 						if (!callbackA){
 							res.send(JSON.parse(status.server()));

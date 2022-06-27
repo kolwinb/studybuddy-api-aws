@@ -153,8 +153,14 @@ router.post('/likes',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							if (studentId) {
-								dbQuery.getSelectAll(dbQuery.studentLikes,[studentId],function(callback){
-									res.send(JSON.parse(status.stateSuccess(callback)));
+								dbQuery.getSqlFavoriteLike(dbQuery.studentLikes,[studentId],function(callback){
+									if (callback["status"]=='error'){
+										res.send(JSON.parse(callback));
+									} else {
+										retJson=JSON.parse(status.stateSuccess(callback));
+										//retJson.videoQuality=properties.videoQuality;
+										res.send(retJson);
+									}
 								});															
 							}
 						});
@@ -173,7 +179,6 @@ router.post('/favorites',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
-  	const videoId=req.body.video_id;
  	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -187,12 +192,16 @@ router.post('/favorites',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							if (studentId) {
-								dbQuery.getSelectAll(dbQuery.studentFavorites,[studentId],function(callback){
-									//callback['data'].videoUrl=properties.vodVideoUrl;
-									retJson=JSON.parse(status.stateSuccess(callback));
-									retJson.videoUrl=properties.vodVideoUrl;
-									//console.log(retJson["data"]);
-									res.send(retJson);
+								dbQuery.getSqlFavoriteLike(dbQuery.studentFavorites,[studentId],function(callback){
+									if (callback.status=='error'){
+										res.send(JSON.parse(callback));
+									} else {
+										//callback['data'].videoUrl=properties.vodVideoUrl;
+										retJson=JSON.parse(status.stateSuccess(callback));
+										//retJson.videoUrl=properties.vodVideoUrl;
+										//console.log(retJson["data"]);
+										res.send(retJson);
+									}
 								});																						
 							}
 						});
@@ -347,35 +356,7 @@ router.post('/favorite',function(req,res,next) {
 	}
 });
 
-//like video
-router.post('/dislike',function(req,res,next) {
-	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
-   	const apiKey = req.body.api_key;
-  	const apiSecret=req.body.api_secret;
-  	const videoId=req.body.video_id;
- 	
-	if ((!apiKey || !apiSecret)){
-		res.send(JSON.parse(status.unAuthApi()));
-	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
-		res.send(JSON.parse(status.unAuthApi()));
-	} else {
-   		if (rtoken) {
-				jwtModule.jwtVerify(rtoken,function(callback){
-		//			getJwt=JSON.parse(callback);
-					if (callback){
-						jwtModule.jwtGetUserId(rtoken,function(callback){
-							const studentId=callback.userId
-						});
-					} else {
-						res.send(status.tokenExpired());         
-					}
-				});
-		} else {
-            return res.status(403).send(JSON.parse(status.tokenNone()));
-		}
-	}
-});
-
+/*
 router.post('/favorite',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
@@ -403,33 +384,5 @@ router.post('/favorite',function(req,res,next) {
 		}
 	}
 });
-
-router.post('/unfavorite',function(req,res,next) {
-	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
-   	const apiKey = req.body.api_key;
-  	const apiSecret=req.body.api_secret;
-  	const videoId=req.body.video_id;
- 	
-	if ((!apiKey || !apiSecret)){
-		res.send(JSON.parse(status.unAuthApi()));
-	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
-		res.send(JSON.parse(status.unAuthApi()));
-	} else {
-   		if (rtoken) {
-				jwtModule.jwtVerify(rtoken,function(callback){
-		//			getJwt=JSON.parse(callback);
-					if (callback){
-						jwtModule.jwtGetUserId(rtoken,function(callback){
-							const studentId=callback.userId
-						});
-					} else {
-						res.send(status.tokenExpired());         
-					}
-				});
-		} else {
-            return res.status(403).send(JSON.parse(status.tokenNone()));
-		}
-	}
-});
-
+*/
 module.exports = router

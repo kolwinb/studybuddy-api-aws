@@ -36,9 +36,21 @@ router.post('/',function(req,res,next) {
 				jwtModule.jwtVerify(rtoken,function(callback){
 		//			getJwt=JSON.parse(callback);
 					if (callback){
-       					var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/grades.json");
-       					resStatus=status.stateSuccess(contents);
-       					res.send(JSON.parse(resStatus));						
+       					//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/grades.json");
+       					dbQuery.getSelectGrade(dbQuery.selectGrade,["grade"],function(callbackGrade){
+       						if(callbackGrade.status=='error'){
+       							res.send(JSON.parse(callbackGrade))
+       						} else {
+       							resJson={
+       								"list":JSON.parse(callbackGrade),
+       								"titleS":"ශ්‍රේණිය",
+       								"titleE":"Grades",
+       								"type":"directory"	
+       							}
+		       					resStatus=status.stateSuccess(JSON.stringify(resJson));
+       							res.send(resStatus);						
+       						}
+       					});
 					} else {
 						res.send(status.tokenExpired());         
 					}      
@@ -51,10 +63,11 @@ router.post('/',function(req,res,next) {
  });
 
 //get list of all subject from particular channel
-router.post('/:grade',function(req,res,next) {
+router.post('/getSyllabus',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
+  	const gradeId=req.body.grade_id;
  	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -64,9 +77,122 @@ router.post('/:grade',function(req,res,next) {
    		if (rtoken) {
 				jwtModule.jwtVerify(rtoken,function(callback){
 					if (callback){
-		      			var grade = req.params.grade
-		      			var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
-		      			res.send(JSON.parse(status.stateSuccess(contents)));						
+		      			//var grade = req.params.grade
+		      			//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
+       					dbQuery.getSelectSyllabus(dbQuery.selectSyllabus,[gradeId],function(callbackSyllabus){
+       						varCallback=JSON.parse(callbackSyllabus);
+       						if(varCallback.status=='error'){
+       							res.send(varCallback)
+       						} else {
+       							resJson={
+       								"list":varCallback,
+       								"titleS":"විෂය නිර්දේශයන්",
+       								"titleE":"Syllabus",
+       								"type":"directory"	
+       							}
+		       					resStatus=status.stateSuccess(JSON.stringify(resJson));
+       							res.send(resStatus);						
+       						}
+       					});
+					} else {
+						res.send(status.tokenExpired());         
+					}      
+				}); 
+		
+    		}else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+  	}
+ });
+ 
+ //get list of all subject from particular channel
+router.post('/getSubject',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+  	const gradeId=req.body.grade_id;
+  	const syllabusId=req.body.syllabus_id;
+ 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+		      			//var grade = req.params.grade
+		      			//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
+       					dbQuery.getSelectSubject(dbQuery.selectSubject,[gradeId],function(callbackSubject){
+       						varCallback=JSON.parse(callbackSubject);
+       						if(varCallback.status=='error'){
+       							res.send(varCallback)
+       						} else {
+       							resJson={
+       								"list":varCallback,
+       								"titleS":"විෂයන්",
+       								"titleE":"Subjects",
+       								"type":"directory"	
+       							}
+		       					resStatus=status.stateSuccess(JSON.stringify(resJson));
+       							res.send(resStatus);						
+       						}
+       					});
+					} else {
+						res.send(status.tokenExpired());         
+					}      
+				}); 
+		
+    		}else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+  	}
+ });
+ 
+router.post('/getLessonList',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+  	const gradeId=req.body.grade_id;
+  	const subjectId=req.body.subject_id;
+ 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+		      			//var grade = req.params.grade
+		      			//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
+       					dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,subjectId],function(callbackLessonList){
+       						varCallback=JSON.parse(callbackLessonList);
+       						if(varCallback.status=='error'){
+       							res.send(varCallback)
+       						} else {
+       							/*
+       							resJson={
+       								"list":varCallback,
+       								"quality":[{
+											"name":"small",
+											"quality":"240p"
+											},
+											{
+											"name":"medium",
+											"quality":"360p"
+											},
+											{
+											"name":"large",
+											"quality":"480p"
+											}
+										]
+									}
+								*/
+		       					resStatus=status.stateSuccess(JSON.stringify(varCallback));
+       							res.send(resStatus);						
+       						}
+       					});
 					} else {
 						res.send(status.tokenExpired());         
 					}      
@@ -79,41 +205,15 @@ router.post('/:grade',function(req,res,next) {
  });
  
  
- //get list of syllabus by year from particular channel
-router.post('/:grade/:syllabus',function(req,res,next) {
-	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
-   	const apiKey = req.body.api_key;
-  	const apiSecret=req.body.api_secret;
- 	
-	if ((!apiKey || !apiSecret)){
-		res.send(JSON.parse(status.unAuthApi()));
-	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
-		res.send(JSON.parse(status.unAuthApi()));
-	} else {
-   		if (rtoken) {
-				jwtModule.jwtVerify(rtoken,function(callback){
-					if (callback){
-       					var grade = req.params.grade;
-       					var syllabus = req.params.syllabus;
-       					var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+syllabus+".json");
-       					res.send(JSON.parse(status.stateSuccess(contents)));
-					} else {
-						res.send(status.tokenExpired());         
-					}      
-				}); 
-		
-    		}else {
-       		return res.status(403).send(JSON.parse(status.tokenNone()));
-  		}
-  	}
- });
+ 
 
 //get list of video
-router.post('/:grade/:syllabus/:subject',function(req,res,next) {
+//router.post('/:grade/:syllabus/:subject',function(req,res,next) {
+router.post('/getLesson',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
-
+	const videoId=req.body.video_id;
        					 	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -129,109 +229,15 @@ router.post('/:grade/:syllabus/:subject',function(req,res,next) {
  								if (!callbackUser[0]){
  					  				res.send(JSON.parse(status.misbehaviour()));
  								} else {
- 									const grade = req.params.grade;
-									const syllabus=req.params.syllabus;
-									const subject = req.params.subject;
-									const quality = req.params.quality;
-       								var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+syllabus+"_"+subject+".json");
-									//var jsonStringData=JSON.stringify(contents);
-									var jsonData=JSON.parse(contents);
-									//console.log(jsonData);
-									
-									jsonData.forEach(data => {
-										videoId=data["videoId"];
-										//console.log(videoId);
-										//data["like"]=getLike(studentId,videoId);
-										if (videoId){
-											//console.log(videoId);
-											//console.log(getTestLike(studentId,videoId));
-											
-											const getStudentLike = videoId => {
-												return  new Promise((resolve, reject) => {
-													dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_like",studentId,videoId],function(callbackLike){
-														//console.log("studentId : "+studentId);
-														//console.log("videoId : "+videoId);
-													
-														if (callbackLike[0]) {
-															if (callbackLike[0].status == 1) {
-																//console.log(callbackLike[0].status);
-																resolve("True");
-															} else if (callbackLike[0].status == 0) {
-																//console.log(callbackLike[0].status+" : "+studentId+" : "+videoId);
-																resolve("False");
-															}
-														} else {
-															resolve("False");
-														}
-													
-														
-													});														
-												
-												});
-											};
-																						
-											
-											const getLikeState=getStudentLike(videoId)
-														.then(function(likeState) {
-															//console.log(likeState);
-															return likeState;
-														});
-																							
-											console.log("likeState -> "+getLikeState);
-																							
-											/*
-											getStudentLike(videoId)
-												.then(likeState => {
-													console.log("like state : "+likeState+" Vid: "+videoId);
-													data['like']=likeState;
-												})
-											*/
-												/*
-												.catch(err => {
-													console.log(err);
-												})
-												*/
-									}
-										//data["favorite"]='false';
-										//console.log(dbQuery.getStudentLike(studentId,videoId));
-										//getLike(studentId,videoId,data,function(callback){data["like"]=callback;console.log(data);});
+									dbQuery.getSqlLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
+										varLesson=JSON.parse(callbackLesson)
+										if (callbackLesson[0]){
+										
+										}
+										//console.log(callbackLesson);
+       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 								
+									});																				
 
-									});
-									/*					
-									for (var i in jsonData){
-										//console.log(jsonData[i].videoId);
-										var videoId=jsonData[i].videoId;
-										var like="False";
-										var favorite="False";
-										//jsonData[i].like=
-										getLike(studentId,videoId,function(callbackGetLike){
-											console.log(like);
-										});										
-										
-											
-										console.log(getLike(studentId,videoId).catch(console.log));							
-										getLike(studentId,videoId).then(x => {
-											console.log("value : "+x);
-										});
-										
-										
-										
-										//favorites
-										
-										dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_favorite",studentId,videoId],function (callbackFav){
-											console.log(callbackFav[0]);
-											if (!callbackFav) {
-												jsonData[i].favorite="False";
-											} else if (callbackFav[0].status == 1) {
-												jsonData[i].favorite="True";
-											} else if (callbackFav[0].status == 0) {
-												jsonData[i].favorite="False";
-											}
-										});
-																				
-									}
-									*/
-       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(jsonData)))); 								
        							}
  							});
  						});
@@ -245,77 +251,5 @@ router.post('/:grade/:syllabus/:subject',function(req,res,next) {
   		}
   	}
  });
-
-
-
-
-
-
-async function getTestLike(studentId,videoId){
-	return videoId
-	var getLike = new Promise((resolve,reject) => {
-			
-	
-	});
-	
-}
-
-async function getLike(studentId,videoId,callback){
-	//var retValue="False";
-	dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_like",studentId,videoId],function(callbackLike){
-//	console.log("studentId : "+studentId);
-			//console.log("videoId : "+videoId);
-	
-		if (callbackLike[0]) {
-			if (callbackLike[0].status == 1) {
-				//console.log(callbackLike[0].status);
-				callback("True");
-			} else if (callbackLike[0].status == 0) {
-				//console.log(callbackLike[0].status+" : "+studentId+" : "+videoId);
-				callback("False");
-			}
-		} else {
-			callback("False");
-		}
-	
-		
-	});
-	//console.log(retValue);
-//	return retValue;
-
-}
-
-//get list of video
-router.post('/:grade/:syllabus/:subject/:videoId',function(req,res,next) {
-	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
-   	const apiKey = req.body.api_key;
-  	const apiSecret=req.body.api_secret;
- 	
-	if ((!apiKey || !apiSecret)){
-		res.send(JSON.parse(status.unAuthApi()));
-	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
-		res.send(JSON.parse(status.unAuthApi()));
-	} else {   
-		if (rtoken) {
-			jwtModule.jwtVerify(rtoken,function(callback){
-				if (callback){
-       				var grade = req.params.grade;
-       				var syllabus=req.params.syllabus;
-       				var subject = req.params.subject;
-       				var quality = req.params.quality;
-       				var videoId = req.params.videoId;
-       				var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+"_"+syllabus+"_"+subject+"_"+videoId+".json");
-       				res.send(JSON.parse(status.stateSuccess(contents)));
-				} else {
-					res.send(JSON.parse(status.tokenExpired()));         
-				}      
-			}); 
-			
-    	} else {
-       		return res.status(403).send(JSON.parse(status.tokenNone()));
-  		}
-	}
- });
-
 
 module.exports = router

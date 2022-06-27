@@ -49,7 +49,7 @@ echo "SELECT student_answer.user_id, count(student_answer.user_id) as studentMar
 #	INNER JOIN user_profile ON user_profile.student_id=student_answer.user_id \
 
 printf "\n total question done by subject : \n"
-echo "SELECT count(video.id) as totalAnswers, student_answer.user_id as userId, subject.subject as subject\
+echo "SELECT count(video.id) as totalAnswers, student_answer.user_id as userId, subject.subject_english as subject\
 	FROM student_answer \
 	INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
 	INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
@@ -58,7 +58,7 @@ echo "SELECT count(video.id) as totalAnswers, student_answer.user_id as userId, 
 	WHERE student_answer.user_id=4 AND video.subject_id IN ( SELECT id FROM subject) group by subject.id;" | $msql
 
 printf "\n correct answer by subject : \n"
-echo "SELECT count(video.id) as correctAnswers, student_answer.user_id as userId, subject.subject as subject\
+echo "SELECT count(video.id) as correctAnswers, student_answer.user_id as userId, subject.subject_english as subject\
 	FROM student_answer \
 	INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
 	INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
@@ -67,7 +67,7 @@ echo "SELECT count(video.id) as correctAnswers, student_answer.user_id as userId
 	WHERE student_answer.user_id=4 AND mcq_option.state=1 AND video.subject_id IN ( SELECT id FROM subject) group by subject.id;" | $msql
 
 printf "\n wrong by subject : \n"
-echo "SELECT count(video.id) as wrongAnswers, student_answer.user_id as userId, subject.subject as subject\
+echo "SELECT count(video.id) as wrongAnswers, student_answer.user_id as userId, subject.subject_english as subject\
 	FROM student_answer \
 	INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
 	INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
@@ -84,8 +84,17 @@ echo "SELECT COUNT(video.id) as likes, video.id as videoId, \
 	video.lesson_name as lessonName, \
 	video.short_desc as shortDesc, \
 	video.long_desc as longDesc, \
-	subject.subject as subject \
+	subject.subject_english as subject, \
+	grade.grade_english as grade, \
+	syllabus.syllabus_english as syllabus \
 	FROM video \
 		INNER JOIN student_like ON student_like.video_id=video.id \
 		INNER JOIN subject ON subject.id=video.subject_id \
-		WHERE student_like.status=1 AND student_like.video_id IN (SELECT video_id FROM student_answer WHERE student_answer.user_id=4) GROUP BY student_like.video_id ORDER BY likes DESC;" | $msql
+		INNER JOIN grade ON grade.id=video.grade \
+		INNER JOIN syllabus ON syllabus.id=video.syllabus \
+		WHERE student_like.status=1 AND student_like.video_id IN \
+		(SELECT video_id \
+		FROM student_answer \
+		WHERE student_answer.user_id=4) \
+		GROUP BY student_like.video_id \
+		ORDER BY likes DESC;" | $msql

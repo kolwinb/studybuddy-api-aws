@@ -36,13 +36,9 @@ var jwtToken = {
  			if (err){
  				log.error("Token Expired");
  				callback(false);
-//				callback(JSON.stringify({"status":"error","error":{"statusCode":"1004","description":"Token expired"}}));
-//				res.json({success:false,signature:'invalid',errorcode:104});
 			}else {
 				log.info("Token Verified");
 				callback(true);
-//  				callback(JSON.stringify({status:"success",description:"Token verified"}));
-//  				res.json({success:true,signature:'valid'});
   				
   			}
 
