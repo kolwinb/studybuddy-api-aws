@@ -37,12 +37,8 @@ var config={
 	apiUrl:'https://api.learntv.lk/studybuddy/v1',
 	vodUrl:'http://edutv.lk/video',
 	thumbUrl:'http://edutv.lk/img',
-	videoQuality:{
-					"small":"240p.m3u",
-					"medium":"360p.m3u",
-					"large":"480p.m3u"
-				}
-
+	mcqExpInSec:10,
+	optionExpInSec:60
 
 }
 module.exports=config;

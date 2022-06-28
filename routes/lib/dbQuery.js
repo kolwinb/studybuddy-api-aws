@@ -23,21 +23,39 @@ var getConnection = function(callback) {
 
 var dbStatements = {
 	//properties
-	videoQuestion:"SELECT * FROM mcq_question WHERE mcq_question.video_id=?",
+chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
+					  subject.subject_english as subject\
+						FROM student_answer \
+						INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
+						INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
+						INNER JOIN video ON video.id=mcq_question.video_id \
+						INNER JOIN subject ON subject.id=video.subject_id \
+						WHERE student_answer.user_id=? AND video.subject_id IN ( SELECT id FROM subject) group by subject.id;",
+	                        
+	mcqOption:"SELECT mcq_option.id, mcq_option.option, mcq_option.image, CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect FROM mcq_option WHERE mcq_option.question_id=?",
+				 
 	videoData: "SELECT video.id as videoId, \
 					video.lesson_name as heading, \
 					video.short_desc as shortDesc, \
-					video.long_desc as longDesc \
+					video.long_desc as longDesc, \
+					video.name as fileName, \
+					grade.grade_english as grade, \
+					syllabus.syllabus_english as syllabus, \
+					subject.subject_english as subject \
 					FROM video \
+					INNER JOIN subject ON subject.id=video.subject_id \
+					INNER JOIN grade ON grade.id=video.grade \
+					INNER JOIN syllabus ON syllabus.id=video.syllabus \
 					WHERE video.id=?;\
 					SELECT mcq_question.id,\
 					mcq_question.heading,\
-					mcq_question.question \
+					mcq_question.question, \
+					mcq_question.image \
 					FROM mcq_question \
 					WHERE mcq_question.video_id=?; \
-					SELECT * \
+					SELECT mcq_question.id as question_id, mcq_option.id, mcq_option.option, mcq_option.image \
 					FROM mcq_option \
-					INNER JOIN mcq_question ON mcq_question.option_id=mcq_option.id \
+					INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
 					WHERE mcq_question.video_id=?",
 	studentLanguage: "SELECT sl.id as id, sl.language as language, sl.code as code \
 						FROM student_language as sl \
@@ -179,8 +197,9 @@ var dbStatements = {
 						video.name as fileName \
 						FROM video \
 						INNER JOIN subject ON subject.id=video.subject_id \
-						INNER JOIN syllabus ON syllabus.id=syllabus \
-						WHERE video.grade=? AND video.subject_id=? ;",
+						INNER JOIN syllabus ON syllabus.id=video.syllabus \
+						WHERE video.grade=? AND video.subject_id=?; \
+						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name FROM ?? WHERE district_id = ?",
 	whereDistrict:"SELECT id,district_name FROM ?? WHERE province_id = ?",
@@ -220,7 +239,7 @@ var dbStatements = {
 	
 	},
 	setUserSqlQuery: function(query,fields,callback) {
-//		log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
+		log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				callback(result);
@@ -231,14 +250,14 @@ var dbStatements = {
  	},
  	
  	setUserInsert: function(query,fields,callback) {
-		log.info("Sql Insert data -> Fields : "+fields+" : query : "+query);
+//		log.info("Sql Insert data -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
 					log.error(fields[0]+" : user insert error");
 					callback(false);
 				} else {
-					log.info(fields[0]+" : user inserted");
+					log.info(fields[0]+" : data inserted");
 					callback(true);
 				}
 //				callback(err);
@@ -296,7 +315,8 @@ var dbStatements = {
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
- 					const [video,question,option] = result;
+ 					const [video,question,mcqOption] = result;
+ 					console.log("mcqOption :"+mcqOption[0].id);
 					var jsonVideo = video.map((mysqlObj, index) => {
 							//console.log(jsonVideo);
 							mysqlObj.videoUrls=[{
@@ -318,15 +338,9 @@ var dbStatements = {
 										}
 										]
 							//append mcq
-							mysqlObj.mcq=question.map((questionObj,index) => {
-								//console.log(questionObj.id);
-								con.query("SELECT id from mcq_option WHERE mcq_option.question_id=?",[questionObj.id], function (err,optionResult){
-									questionObj.test="test";
-									questionObj.options=optionResult.map((optionObj,index) => {
-								console.log("optionResult :"+optionObj);
-										return Object.assign({},optionObj);
-									});					
-								});
+							mysqlObj.mcq=question.map((questionObj,questionIndex) => {
+									questionObj.expInSec=properties.mcqExpInSec;
+								
 								return 	Object.assign({},questionObj);
 							});
 
@@ -432,9 +446,18 @@ var dbStatements = {
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
-					var jsonResults = result.map((mysqlObj, index) => {
-							mysqlObj.type="file";
+ 					const [video,favorite] = result
+					var jsonResults = video.map((mysqlObj, index) => {
+							mysqlObj.type="directory";
 							mysqlObj.thumb=properties.vodUrl+'/grade-0'+mysqlObj.grade+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.jpg';
+							/*
+							mysqlObj.favorite=favorite.map((favoriteObj,index) => {
+								if (mysqlObj.id == favoriteObj.video_id){
+									console.log("video id"+mysqlObj.id);
+									return "True"
+								}
+							});
+							*/
     						return Object.assign({}, mysqlObj);
     					});
 					//log.info(JSON.stringify(jsonResults));

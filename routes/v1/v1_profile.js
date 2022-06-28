@@ -24,6 +24,41 @@ const scope = require('../lib/apiKeys');
 const api_key = scope.profileApi.apiKey;
 const api_secret = scope.profileApi.apiSecret;
 
+router.post('/chartSubjectQuestion',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							//console.log(studentId);
+							dbQuery.getSelectAll(dbQuery.chartSubjectQuestion,[studentId],function(callbackChartQuestion){
+								if (!callbackChartQuestion) {
+									res.send(JSON.parse(status.profileError()));
+								} else {
+									//varChartQuestion=JSON.parse(callbackChartQuestion);
+									res.send(JSON.parse(status.stateSuccess(callbackChartQuestion)));
+								}
+							});
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+				});
+		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
 router.post('/info',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;

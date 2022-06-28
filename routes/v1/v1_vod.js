@@ -20,9 +20,9 @@ const api_secret = scope.vodApi.apiSecret;
 
 const dbQuery = require('../lib/dbQuery');
 
-
+const properties = require('../lib/properties');
 //get list of all channels
-router.post('/',function(req,res,next) {
+router.post('/getGradeList',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -63,7 +63,7 @@ router.post('/',function(req,res,next) {
  });
 
 //get list of all subject from particular channel
-router.post('/getSyllabus',function(req,res,next) {
+router.post('/getSyllabusList',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -106,7 +106,7 @@ router.post('/getSyllabus',function(req,res,next) {
  });
  
  //get list of all subject from particular channel
-router.post('/getSubject',function(req,res,next) {
+router.post('/getSubjectList',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -166,32 +166,17 @@ router.post('/getLessonList',function(req,res,next) {
 					if (callback){
 		      			//var grade = req.params.grade
 		      			//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
-       					dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,subjectId],function(callbackLessonList){
-       						varCallback=JSON.parse(callbackLessonList);
-       						if(varCallback.status=='error'){
-       							res.send(varCallback)
-       						} else {
-       							/*
-       							resJson={
-       								"list":varCallback,
-       								"quality":[{
-											"name":"small",
-											"quality":"240p"
-											},
-											{
-											"name":"medium",
-											"quality":"360p"
-											},
-											{
-											"name":"large",
-											"quality":"480p"
-											}
-										]
-									}
-								*/
-		       					resStatus=status.stateSuccess(JSON.stringify(varCallback));
-       							res.send(resStatus);						
-       						}
+						jwtModule.jwtGetUserId(rtoken,function(callbackU){
+ 							const studentId=callbackU.userId;
+       						dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,subjectId,studentId],function(callbackLessonList){
+       							varCallback=JSON.parse(callbackLessonList);
+       							if(varCallback.status=='error'){
+       								res.send(varCallback)
+       							} else {
+		       						resStatus=status.stateSuccess(JSON.stringify(varCallback));
+       								res.send(resStatus);						
+       							}
+       						});
        					});
 					} else {
 						res.send(status.tokenExpired());         
@@ -208,7 +193,6 @@ router.post('/getLessonList',function(req,res,next) {
  
 
 //get list of video
-//router.post('/:grade/:syllabus/:subject',function(req,res,next) {
 router.post('/getLesson',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
@@ -231,11 +215,57 @@ router.post('/getLesson',function(req,res,next) {
  								} else {
 									dbQuery.getSqlLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
 										varLesson=JSON.parse(callbackLesson)
-										if (callbackLesson[0]){
-										
-										}
-										//console.log(callbackLesson);
-       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 								
+										//console.log("callbackUser "+callbackUser);
+										//vconsole.log(callbackLesson);
+	       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 								
+									});																				
+
+       							}
+ 							});
+ 						});
+
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));         
+					}      
+				}); 
+    	} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+  	}
+ });
+ 
+router.post('/getOptionList',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+	const questionId=req.body.question_id;
+       					 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+ 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
+ 							const studentId=callbackU.userId;
+ 							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+ 								if (!callbackUser[0]){
+ 					  				res.send(JSON.parse(status.misbehaviour()));
+ 								} else {
+									dbQuery.getSelectAll(dbQuery.mcqOption,[questionId],function(callbackOption){
+										varOption=JSON.parse(callbackOption)
+										if (varOption.status=='error'){
+											res.send(JSON.parse(status.server()));
+										} else {
+											//console.log("callbackUser "+callbackUser);
+											const resJson={
+												options:varOption,
+												expInSec:properties.optionExpInSec
+											}
+	       									res.send(JSON.parse(status.stateSuccess(JSON.stringify(resJson)))); 		
+	       								}
 									});																				
 
        							}
