@@ -26,13 +26,13 @@ else
 	echo "ALTER TABLE mcq_question  AUTO_INCREMENT = $startAt;" | $msql
 	while read line
 	do
-	col1=$(echo $line | cut -d'~' -f1) #videoid
-	col2=$(echo $line | cut -d'~' -f2) #heading
-	col3=$(echo $line | cut -d'~' -f4) #question
-	col4=$(echo $line | cut -d'~' -f3) #image
+	video_id=$(echo $line | cut -d'~' -f1) #videoid
+	heading=$(echo $line | cut -d'~' -f2) #heading
+	question=$(echo $line | cut -d'~' -f4) #question
+	image=$(echo $line | cut -d'~' -f3) #image
 
 
-	echo "INSERT INTO mcq_question VALUES ('NULL','$col1','$col2','$col3','$col4');" | $msql
+	echo "INSERT INTO mcq_question VALUES ('NULL','$video_id','$heading','$question','$image');" | $msql
 	#echo $district$province
 	done < $dirName/mcq_question.csv
 fi

@@ -38,7 +38,8 @@ var config={
 	vodUrl:'http://edutv.lk/video',
 	thumbUrl:'http://edutv.lk/img',
 	mcqExpInSec:10,
-	optionExpInSec:60
+	optionExpInSec:60,
+	optionCount:4,
 
 }
 module.exports=config;

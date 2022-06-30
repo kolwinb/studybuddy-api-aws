@@ -34,15 +34,20 @@ else
 	#line=$(echo $line | sed 's/\,/\\\,/g')
 	#line=$(echo $line | sed  "s/\./\\\./g")
 	#echo $line
-	col1=$(echo $line|cut -d'~' -f1)
-	col2=$(echo $line | cut -d'~' -f2)
-	col3=$(echo $line | cut -d'~' -f3)
-	col4=$(echo $line | cut -d'~' -f4)
-	col5=$(echo $line | cut -d'~' -f5)
-	col6=$(echo $line | cut -d'~' -f6)
-	col7=$(echo $line | cut -d'~' -f7)
+	grade=$(echo $line|cut -d'~' -f2)
+	syllabus=$(echo $line | cut -d'~' -f1)
+	name=$(echo $line | cut -d'~' -f3)
+	sub=${name%%-*} #extract subject name form video file
+	subject_id=$(echo "SELECT id FROM subject WHERE subject_english like '$sub';" | $msql)
+	episode=$(echo $line | cut -d'~' -f4)
+	term=$(echo $line | cut -d'~' -f5)
+	lesson=$(echo $line | cut -d'~' -f6)
+	lesson_name=$(echo $line | cut -d'~' -f7)
+	short_desc=$(echo $line | cut -d'~' -f8)
+	long_desc=$(echo $line | cut -d'~' -f9)
 
-	echo "INSERT INTO video VALUES ('NULL','$col1','$col2','$col3','$col4','$col5','$col6','$col7');" | $msql
+	echo "subject : "$sub" : id :"$subject_id
+	echo "INSERT INTO video VALUES ('NULL','$grade','$syllabus','$subject_id','$name','$episode','$term','$lesson','$lesson_name','$short_desc','$long_desc');" | $msql
 	#echo $district$province
-	done < $dirName/video.csv
+	done < $dirName/videoList.csv
 fi

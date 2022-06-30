@@ -68,7 +68,7 @@ router.post('/getSyllabusList',function(req,res,next) {
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
   	const gradeId=req.body.grade_id;
- 	
+	console.log("gradeId : "+gradeId); 	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
@@ -155,7 +155,9 @@ router.post('/getLessonList',function(req,res,next) {
   	const apiSecret=req.body.api_secret;
   	const gradeId=req.body.grade_id;
   	const subjectId=req.body.subject_id;
+ 	const syllabusId=req.body.syllabus_id;
  	
+ 	console.log(syllabusId);
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
@@ -168,7 +170,7 @@ router.post('/getLessonList',function(req,res,next) {
 		      			//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
-       						dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,subjectId,studentId],function(callbackLessonList){
+       						dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,syllabusId,subjectId,studentId],function(callbackLessonList){
        							varCallback=JSON.parse(callbackLessonList);
        							if(varCallback.status=='error'){
        								res.send(varCallback)
@@ -216,8 +218,50 @@ router.post('/getLesson',function(req,res,next) {
 									dbQuery.getSqlLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
 										varLesson=JSON.parse(callbackLesson)
 										//console.log("callbackUser "+callbackUser);
-										//vconsole.log(callbackLesson);
-	       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 								
+										//console.log(callbackLesson);
+										varMcq=varLesson[0].mcq;
+										varVideo=varLesson[0]
+
+/*										
+										const setJson=(resultJson) => {
+											varVideo.mcq=resultJson;
+											console.log(varVideo);
+		       								//res.send(JSON.parse(status.stateSuccess(JSON.stringify(resultJson)))); 								
+										};
+										for (key in varMcq){
+											//console.log(varMcq[key].id);
+
+											dbQuery.getSelectAll(dbQuery.mcqOption,[varMcq[key].id],function(callbackOption){
+												varOption=JSON.parse(callbackOption);
+												varMcq[key].options=varOption;	
+												//console.log(JSON.stringify(varLesson));
+												
+											});
+											setJson(varMcq);
+										};
+										
+										//varVideo.mcq=varMcq;
+	       								//res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 								
+										
+										varMcq.forEach(function(mcq){
+											console.log(mcq);
+										});
+									
+										varLesson.forEach(obj => {
+											Object.entries(obj).forEach(([key,value])=> {
+												console.log('key '+key);
+											});
+										
+										});
+										Object.keys(varLesson).forEach(function(key) {
+											console.log('key : '+key+' value : '+varLesson[key]);									
+										
+		       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
+										});
+										
+*/
+		       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
+
 									});																				
 
        							}
@@ -234,7 +278,8 @@ router.post('/getLesson',function(req,res,next) {
   	}
  });
  
-router.post('/getOptionList',function(req,res,next) {
+//router.post('/getOptionList',function(req,res,next) {
+router.post('/getOption',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;

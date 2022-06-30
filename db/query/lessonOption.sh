@@ -19,3 +19,4 @@ echo "SELECT mcq_option.id, \
    INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
    WHERE mcq_question.video_id=6"| $msql
 #	" | $msql
+

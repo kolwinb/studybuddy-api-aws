@@ -53,7 +53,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					mcq_question.image \
 					FROM mcq_question \
 					WHERE mcq_question.video_id=?; \
-					SELECT mcq_option.id, mcq_option.option, mcq_option.image, CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect \
+					SELECT  mcq_option.question_id, mcq_option.id, mcq_option.option, mcq_option.image, CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrec \
 					FROM mcq_option \
 					INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
 					WHERE mcq_question.video_id=?",
@@ -339,24 +339,112 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 										]
 							//append mcq
 							varOptionData=JSON.stringify(option);
-							//console.log(varOptionData);
+							console.log(varOptionData);
 							let countIndex=0;
 							mysqlObj.mcq=question.map((questionObj,questionIndex) => {
-								//console.log(varOptionData);
+								//console.log("qid :"+questionObj.id);
+								//questionObj.test="test";								
+								//varOptions=dbStatements.getOption(questionObj.id);
 								//console.log("options :"+varOptions);
+								jsonOption=JSON.parse(JSON.stringify(option));
 								//console.log(jsonOption);
-								//console.log(option);
+								//console.log(option[2]);
 								//console.log(varOptionData);
 								//console.log(jsonOption[0].question_id);
-								threhold=countIndex+4
-								optA=JSON.parse(JSON.stringify(option[countIndex]));
-								optB=JSON.parse(JSON.stringify(option[countIndex+1]));
-								optC=JSON.parse(JSON.stringify(option[countIndex+2]));
-								optD=JSON.parse(JSON.stringify(option[countIndex+3]));
-								let optArr = new Array();
-								optArr=[optA,optB,optC,optD];
-								questionObj.options=optArr;
-								countIndex+=properties.optionCount; //question 5 iteration problem
+								questionObj.options=JSON.parse(JSON.stringify(option[countIndex]));
+								countIndex+=4;
+//promise
+/*
+const getOption = questionid => {
+  return new Promise((resolve, reject) => {
+	con.query("SELECT mcq_option.id,mcq_option.image,mcq_option.option,mcq_option.state FROM ?? WHERE mcq_option.question_id=?",["mcq_option",questionid], function (err,result){
+		if (!result){
+			callback(JSON.stringify(status.server()));
+		} else {
+			resultOption=result.map((optionObj,index)=> {
+				//console.log(optionObj.option);
+				resolve(Object.assign({},optionObj));
+			});
+		}
+	});
+
+  });
+ }
+  
+  getOption(questionObj.id)
+	.then(optionData => { 
+			console.log("option data :"+optionData.id);
+			questionObj.options=optionData.id;
+			questionObj.test="test";
+			return Object.assign({},questionObj);
+			
+		})
+  	.catch(err => console.error(err));								
+								
+*/								
+								/*
+								for (answers in jsonOption){
+									console.log(jsonOption[answers]);
+								
+								}
+								if (questionObj.id == jsonOption[0].question_id){
+									console.log("question detected : "+jsonOption[0].question_id);
+									questionObj.option=jsonOption[0].question_id;
+
+								}
+								*/
+								/*
+								questionObj.option=option.map((optionObj,index)=> {
+									return 	Object.assign({},optionObj);
+								});
+								*/
+								/*
+								let promise = new promise((resolve,reject) => {
+									dbStatements.getSelectAll(dbStatements.mcqOption,[questionObj.id],function(err,rows,fields){
+										resolve(rows);
+									});
+									
+								});
+								
+								promise.then(result => questionObj.test=result);
+								*/
+/*
+		let optionOut;
+		let Arr = new Array();
+
+		const setQuestionOption=(resultOption) => {
+//			optionOut=resultOption;
+//			console.log(questionObj.id);
+		console.log(resultOption[0]);
+		questionObj.option=resultOption[0];
+		//	Arr.push(resultOption);
+//								return 	Object.assign({},questionObj);
+
+		};
+
+//		console.log(optionOut);
+//			questionObj.answers=optionOut;
+
+			con.query("SELECT mcq_option.id,mcq_option.image,mcq_option.option,mcq_option.state FROM ?? WHERE mcq_option.question_id=?",["mcq_option",questionObj.id], function (err,result){
+   				if (!result){
+   					callback(JSON.stringify(status.server()));
+ 				} else {
+ 					resultOption=result.map((optionObj,index)=> {
+							//console.log(optionObj.option);
+							return 	Object.assign({},optionObj);
+	 					})
+	 				
+	 				//questionObj.answers=resultOption;
+					//console.log("con.query "+questionObj.answers.option);
+	 				
+	 				setQuestionOption(resultOption);
+ 				}
+ 			});
+*/		
+		
+		
+						//console.log("Arr : "+Arr);
+		//					questionObj.options=JSON.stringify(Arr);
 								return 	Object.assign({},questionObj);
 							});
 
