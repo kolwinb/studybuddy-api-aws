@@ -25,12 +25,14 @@ echo "SELECT video.grade as grade,
 	syllabus.syllabus_english as syllabusE, \
 	syllabus.syllabus_sinhala as syllabusS, \
 	student_favorite.status as favorite, \
-	video.name as fileName \
-	FROM video \
-	RIGHT OUTER JOIN student_favorite ON student_favorite.video_id=video.id \
+	video.name as fileName, \
+	student_favorite.status \
+	FROM video, student_favorite \
 	INNER JOIN subject ON subject.id=video.subject_id \
 	INNER JOIN syllabus ON syllabus.id=video.syllabus \
-	WHERE (video.grade=6 AND video.subject_id=6) ;" | $msql
+	WHERE video.grade=6 AND video.syllabus=2016 AND video.subject_id=6 OR student_favorite.user_id=4 AND student_favorite.video_id=6;" | $msql
+#    INNER JOIN student_favorite ON student_favorite.video_id = video.id \
+#	RIGHT OUTER JOIN student_favorite ON student_favorite.video_id=video.id \
 #	WHERE video.grade=6 AND video.subject_id=6;" | $msql
 
 #	WHERE (video.grade=6 AND video.subject_id=6)  AND (student_favorite.video_id=10 OR student_like.video_id=10);" | $msql

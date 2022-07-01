@@ -17,7 +17,6 @@ msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
 
 videoId=$(echo "SELECT count(id) FROM video" | $msql)
 questionId=$(echo "SELECT count(id) FROM mcq_question" | $msql) 
-tqid=1
 
 if [ ! $dirName ]; then
     printf "Empty dir not allowed\n"
