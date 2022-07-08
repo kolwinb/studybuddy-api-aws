@@ -128,7 +128,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								INNER JOIN school ON user_profile.school_id = school.id \
 								INNER JOIN district	ON school.district_id = district.id \
 								INNER JOIN province ON province.id = district.province_id \
-								WHERE user_profile.student_id =?",
+								WHERE user_profile.student_id =?; \
+									SELECT * FROM student_language;",
 	
 	whereLeaderBoard:"SELECT  count(student_answer.user_id) as studentMarks, \
 					count(student_answer.id)*? as coins, \
@@ -392,6 +393,35 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	 		//con.release();
  		});
 	},
+	
+	getProfileInfo: function(query,fields,callback) {
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+   				if (!result){
+   					callback(JSON.stringify(status.server()));
+ 				} else {
+ 					//single row
+ 					//var normalObj = Object.assign({}, results[0]);
+ 					const [correctAnswers,wrongAnswers,totalLessons,totalQuestions,schoolData,languageData] = result;
+ 					var jsonData={
+ 						correctAnswers:correctAnswers[0].correctAnswers,
+ 						wrongAnswers:wrongAnswers[0].wrongAnswers,
+ 						totalLessons:totalLessons[0].totalLessons,
+ 						totalQuestions:totalQuestions[0].totalQuestion,
+ 						schoolInfo:schoolData[0]
+ 						
+ 					}
+					var jsonResults = result.map((mysqlObj, index) => {
+    						return Object.assign({}, mysqlObj);
+    					});
+					//log.info(JSON.stringify(jsonResults));
+					callback(JSON.stringify(jsonData)); 		
+			}
+		});
+		con.release();
+	});
+	},
+	
 	//query any table
 	getSelectAll: function(query,fields,callback) {
 		getConnection(function(con) {

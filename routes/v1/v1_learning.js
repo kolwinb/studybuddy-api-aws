@@ -134,6 +134,7 @@ router.post('/answer',function(req,res,next) {
   	}
  });
 
+/*
 //like video
 router.post('/likes',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
@@ -173,8 +174,9 @@ router.post('/likes',function(req,res,next) {
 		}
 	}
 });
+*/
 
-//like video
+//favorite video
 router.post('/favorites',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
@@ -215,6 +217,7 @@ router.post('/favorites',function(req,res,next) {
 	}
 });
 
+/*
 router.post('/like',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
@@ -284,7 +287,7 @@ router.post('/like',function(req,res,next) {
 		}
 	}
 });
-
+*/
 
 router.post('/favorite',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];

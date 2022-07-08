@@ -219,10 +219,10 @@ router.post('/getLesson',function(req,res,next) {
 										varLesson=JSON.parse(callbackLesson)
 										//console.log("callbackUser "+callbackUser);
 										//console.log(callbackLesson);
+/*										
 										varMcq=varLesson[0].mcq;
 										varVideo=varLesson[0]
 
-/*										
 										const setJson=(resultJson) => {
 											varVideo.mcq=resultJson;
 											console.log(varVideo);
@@ -278,6 +278,7 @@ router.post('/getLesson',function(req,res,next) {
   	}
  });
  
+/*
 //router.post('/getOptionList',function(req,res,next) {
 router.post('/getOption',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
@@ -326,5 +327,6 @@ router.post('/getOption',function(req,res,next) {
   		}
   	}
  });
+*/
 
 module.exports = router

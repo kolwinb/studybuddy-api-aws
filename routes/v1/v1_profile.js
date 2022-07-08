@@ -76,11 +76,12 @@ router.post('/info',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.getSelectAll(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+							dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
 								if (!callbackUserProfile) {
 									res.send(JSON.parse(status.profileError()));
 								} else {
-									userProfile=JSON.parse(callbackUserProfile);
+									//userProfile=JSON.parse(callbackUserProfile);
+									userProfile=JSON.stringify(callbackUserProfile);
 									//console.log(userProfile);
 									//console.log(userProfile[0]['0'].correctAnswers);
 									console.log("property coin : "+property.coin);
@@ -95,11 +96,13 @@ router.post('/info',function(req,res,next) {
 										school:userProfile[4]['0'].school,
 										studentName:userProfile[4]['0'].studentName,
 										studentGrade:userProfile[4]['0'].studentGrade,
-										earnings:parseInt(userProfile[0]['0'].correctAnswers)*parseInt(property.coin)
+										earnings:parseInt(userProfile[0]['0'].correctAnswers)*parseInt(property.coin),
+										languageList:userProfile[5]['0']
 									});
 									
 									
-									res.send(JSON.parse(status.stateSuccess(profileData)));
+									//res.send(JSON.parse(status.stateSuccess(userProfile)));
+									res.send(JSON.parse(status.stateSuccess(JSON.parse(userProfile))));
 									
 								}
 							});
