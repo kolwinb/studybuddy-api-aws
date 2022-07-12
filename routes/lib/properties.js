@@ -40,6 +40,8 @@ var config={
 	mcqExpInSec:10,
 	optionExpInSec:60,
 	optionCount:4,
+	trialLessonLimit:5,
+	lessonUnlimit:100000
 
 }
 module.exports=config;

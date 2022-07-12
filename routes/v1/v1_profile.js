@@ -24,7 +24,7 @@ const scope = require('../lib/apiKeys');
 const api_key = scope.profileApi.apiKey;
 const api_secret = scope.profileApi.apiSecret;
 
-router.post('/chartSubjectQuestion',function(req,res,next) {
+router.post('/getChartSubjectQuestion',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -59,7 +59,7 @@ router.post('/chartSubjectQuestion',function(req,res,next) {
 		}
 	}
 });
-router.post('/info',function(req,res,next) {
+router.post('/getInfo',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -118,7 +118,7 @@ router.post('/info',function(req,res,next) {
 	}
  });
 
-router.post('/data',function(req,res,next) {
+router.post('/getData',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -164,13 +164,14 @@ router.post('/data',function(req,res,next) {
 	}
  });
 
-router.post('/adding',function(req,res,next) {
+router.post('/setSignup',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
 	const schoolId=req.body.school_id;
 	const studentName=req.body.name;
-	const grade=req.body.grade_id;
+	const gradeId=req.body.grade_id;
+	const avatarId=req.body.avatar_id;
 	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -183,11 +184,11 @@ router.post('/adding',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							//console.log(studentId);
+							console.log(studentId);
 							dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 								if (!callbackUserProfile[0]) {
 									var defaultLang=1
-									dbQuery.setUserInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,grade,defaultLang],function(callbackProfile){
+									dbQuery.setUserInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,gradeId,avatarId],function(callbackProfile){
 										if (!callbackProfile){
 											res.send(JSON.parse(status.server()));
 										} else {
@@ -215,13 +216,14 @@ router.post('/adding',function(req,res,next) {
 	}
  });
  
-router.post('/updating',function(req,res,next) {
+router.post('/setEdit',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
 	const schoolId=req.body.school_id;
 	const studentName=req.body.name;
 	const grade=req.body.grade;
+	const avatarId=req.body.avatar_id;
 	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -240,7 +242,7 @@ router.post('/updating',function(req,res,next) {
 									res.send(JSON.parse(status.profileAdding()));
 								} else {
 									//userprofile already there
-									dbQuery.setSqlUpdate(dbQuery.updateProfile,["user_profile",schoolId,studentName,grade,studentId],function(callbackUpdating){
+									dbQuery.setSqlUpdate(dbQuery.updateProfile,["user_profile",schoolId,studentName,grade,studentId,avatarId],function(callbackUpdating){
 										if (callbackUpdating){
 											content=JSON.stringify({
 												"description":"user profile updated"
@@ -395,7 +397,7 @@ router.post('/setLanguage',function(req,res,next) {
 	}
  });
 
-router.post('/country',function(req,res,next) {
+router.post('/getCountry',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -426,7 +428,7 @@ router.post('/country',function(req,res,next) {
 	}
  });
 
-router.post('/grade',function(req,res,next) {
+router.post('/getGrade',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -441,7 +443,7 @@ router.post('/grade',function(req,res,next) {
    				jwtModule.jwtVerify(rtoken,function(callback){
 					if (callback){
 						//country list
-						dbQuery.getSelectAll(dbQuery.selectAll,["grade"],function(callback){
+						dbQuery.getSelectAll(dbQuery.whereGrade,["grade"],function(callback){
 							res.send(JSON.parse(status.stateSuccess(callback)));
 						});
 					} else {
@@ -458,7 +460,7 @@ router.post('/grade',function(req,res,next) {
  });
 
 
-router.post('/province',function(req,res,next) {
+router.post('/getProvince',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -473,7 +475,7 @@ router.post('/province',function(req,res,next) {
    				jwtModule.jwtVerify(rtoken,function(callback){
 					if (callback){
 						//province list
-						dbQuery.getSelectAll(dbQuery.selectAll,["province"],function(callback){
+						dbQuery.getSelectAll(dbQuery.whereProvince,["province"],function(callback){
 							res.send(JSON.parse(status.stateSuccess(callback)));
 						});
 					} else {
@@ -488,7 +490,7 @@ router.post('/province',function(req,res,next) {
   	}
  });
 
-router.post('/district',function(req,res,next) {
+router.post('/getDistrict',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -521,7 +523,7 @@ router.post('/district',function(req,res,next) {
   	}
  }); 
 
-router.post('/school',function(req,res,next) {
+router.post('/getSchool',function(req,res,next) {
 	const districtId = req.body.district_id;
  	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;

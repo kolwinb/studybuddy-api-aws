@@ -60,8 +60,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	studentLanguage: "SELECT sl.id as id, sl.language as language, sl.code as code \
 						FROM student_language as sl \
-						INNER JOIN user_profile ON user_profile.student_language=sl.id \
-						WHERE user_profile.student_id = ?;",
+						INNER JOIN user_profile ON user_profile.language=sl.id \
+						WHERE user_profile.user_id = ?;",
 	studentFavorites:"SELECT video.id as videoId, \
 					video.episode as episode, \
 					video.term as term, \
@@ -119,8 +119,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 											WHERE student_answer.user_id=? \
 											GROUP BY mcq_question.video_id); \
 							SELECT COUNT(question_id) as totalQuestions FROM student_answer WHERE user_id=?; \
-								SELECT user_profile.student_name as studentName, \
-								user_profile.student_grade as studentGrade, \
+								SELECT user_profile.name as studentName, \
+								user_profile.grade as studentGrade, \
 								school.school_name as school, \
 								district.district_english as district, \
 								province.province_english as province \
@@ -128,17 +128,17 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								INNER JOIN school ON user_profile.school_id = school.id \
 								INNER JOIN district	ON school.district_id = district.id \
 								INNER JOIN province ON province.id = district.province_id \
-								WHERE user_profile.student_id =?; \
+								WHERE user_profile.user_id =?; \
 									SELECT * FROM student_language;",
 	
 	whereLeaderBoard:"SELECT  count(student_answer.user_id) as studentMarks, \
 					count(student_answer.id)*? as coins, \
-					user_profile.student_name as studentName, \
+					user_profile.name as studentName, \
 					school.school_name as schoolName,\
 					district.district_english as district,\
 					province.province_english as province \
 	    				FROM student_answer \
-						INNER JOIN user_profile ON user_profile.student_id=student_answer.user_id \
+						INNER JOIN user_profile ON user_profile.user_id=student_answer.user_id \
 						INNER JOIN school ON school.id=user_profile.school_id \
 						INNER JOIN district ON district.id=school.district_id \
 						INNER JOIN province ON province.id=district.province_id \
@@ -159,16 +159,19 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								INNER JOIN video ON  video.id = mcq_question.video_id \
 								WHERE mcq_option.id = ?",
 	whereUser: "SELECT * FROM ??  WHERE id = ?",
+	whereUserRole: "SELECT plan_id FROM ??  WHERE id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
 	whereUserProfile: "SELECT * \
 						FROM user_profile \
 						INNER JOIN school ON user_profile.school_id = school.id \
 						INNER JOIN district ON school.district_id = district.id \
 						INNER JOIN province ON province.id = district.province_id \
-						WHERE user_profile.student_id = ?",
-	whereEmail: "SELECT * FROM ?? WHERE email = ?",
-	whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
-	whereEmailPasswd: "SELECT * FROM ?? WHERE email = ? and password = ?",
+						WHERE user_profile.user_id = ?",
+	whereMobile: "SELECT * FROM ?? WHERE phone = ?",
+	whereReferrerReferred: "SELECT id as referrer_id FROM user WHERE referral_code=?;SELECT id as referee_id FROM user WHERE phone=?",
+	whereAffiliate: "SELECT id FROM user_affiliate WHERE referrer_id=? AND referee_id=?;",
+	//whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
+	//whereEmailPasswd: "SELECT * FROM ?? WHERE email = ? and password = ?",
 	wherePhonePasswd: "SELECT * FROM ?? WHERE phone = ? and password = ?",
 	selectGrade: "SELECT id,grade_english as nameE,\
 					grade_sinhala as nameS FROM ??",
@@ -200,21 +203,30 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						FROM video \
 						INNER JOIN subject ON subject.id=video.subject_id \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
-						WHERE video.grade=? AND video.syllabus=? AND video.subject_id=?; \
+						WHERE video.grade=? AND video.syllabus=? AND video.subject_id=? LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
 	selectAll: "SELECT * FROM ??",
-	whereSchool:"SELECT id,school_name FROM ?? WHERE district_id = ?",
-	whereDistrict:"SELECT id,district_name FROM ?? WHERE province_id = ?",
+	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
+	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
+	whereDistrict:"SELECT id,district_english as nameInEnglish,district_sinhala as nameInSinhala FROM ?? WHERE province_id = ?",
+	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
+	whereGrade:"SELECT id,grade_english as nameInEnglish,grade_sinhala as nameInSinhala FROM ??",
 	whereOtpNo:"SELECT * FROM ?? WHERE mobile = ?",
 	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
 
+	insertAffiliate:"INSERT INTO user_affiliate(id,referrer_id,referee_id,created) VALUES(?,?,?,?)",
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
 	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started) VALUES (?,?,?,?,?)",	
-	insertProfile:"INSERT INTO  ??(id,school_id,student_id,student_name,student_grade) VALUES (?,?,?,?,?)",	
-	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id) VALUES (?,?,?,?,?,?,?,?,?)",	
+	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade,avatar_id) VALUES (?,?,?,?,?,?)",	
+	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,plan_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
+	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
 	insertOauth:"INSERT INTO ??(id,token,created,updated,user_id) VALUES(?,?,?,?,?)",
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
+	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
+	updateUserPassword:"UPDATE ?? SET password=? WHERE id = ? and phone = ?",
+	updateRecoveryCode:"UPDATE ?? SET code=?, created=?, is_verify=? WHERE mobile=?",
+	updateRecoveryCodeActivation:"UPDATE ?? SET created=?, is_verify=? WHERE mobile=?",
 
 	updateStudentLanguage:"UPDATE ?? SET student_language=? WHERE student_id=?",
 	updateStudentLikeFavorite:"UPDATE ?? SET status=? WHERE user_id=? AND video_id=?",
@@ -222,7 +234,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	updateIsVerify:"UPDATE ?? SET is_verify=?, created=? WHERE mobile=?",
 	updateOauth:"UPDATE ?? SET token=?, updated=? WHERE user_id=?",
 	updateLastLogin:"UPDATE ?? SET last_login=? WHERE id = ?",
-	updateProfile:"UPDATE ?? SET school_id=?,student_name=?,student_grade=? WHERE student_id=?",
+	updateProfile:"UPDATE ?? SET school_id=?,student_name=?,student_grade=?,avatar_id=? WHERE student_id=?",
 	//methods
 	
 	setSqlUpdate: function(query,fields,callback){
@@ -244,8 +256,12 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 //		log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
+				if (err) {
+					log.info(err);
+				} else {
 				callback(result);
 //				log.info("sql result : "+result[0].email);
+				}
  			});
 			con.release();
  		});
@@ -256,7 +272,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
-					log.error(fields[0]+" : user insert error");
+					log.error("mysql error : "+err);
 					callback(false);
 				} else {
 					log.info(fields[0]+" : data inserted");

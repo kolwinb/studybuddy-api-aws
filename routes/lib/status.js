@@ -3,13 +3,19 @@ var pool = require('../../models/usermysql.js');
 
 var State ={
 	misbehaviour: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1015","description":"request misbehaviour."}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1017","description":"request misbehaviour."}})
 	},
 	answerProhibited: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1014","description":"Prohibited action."}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1016","description":"Prohibited action."}})
 	},
 	studentAnswerWarning: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1013","description":"Given answer is not matched."}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1015","description":"Given answer is not matched."}})
+	},
+	recoveryCodeVerification: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1014","description":"Recovery code verification required."}})
+	},
+	mobileNotMatch: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1013","description":"Mobile number not match with registered one."}})
 	},
 	profileAdding: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1012","description":"not allowed."}})
@@ -19,6 +25,12 @@ var State ={
 	},
 	regParamErr: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1010","description":"Parameters not match."}})
+	},
+	recoveryCodeNotVerify: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1209","description":"Recovery code verification has been failed."}})
+	},
+	recoveryCodeExpired: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1208","description":"Recovery code timeout."}})
 	},
 	smsNoRequire: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1207","description":"Mobile number is required."}})
@@ -32,6 +44,7 @@ var State ={
 	otpExpired: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1204","description":"OTP has been expired."}})
 	},
+
 	otpNotVerify: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1203","description":"OTP has not been verified."}})
 	},

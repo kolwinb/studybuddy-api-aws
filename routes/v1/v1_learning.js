@@ -20,7 +20,7 @@ const api_secret = scope.learningApi.apiSecret;
 const properties = require('../lib/properties');
 
 //student leaderboard
-router.post('/leaderboard',function(req,res,next) {
+router.post('/getLeaderboard',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -52,7 +52,7 @@ router.post('/leaderboard',function(req,res,next) {
 });
 
 //set student answer
-router.post('/answer',function(req,res,next) {
+router.post('/setAnswer',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -177,7 +177,7 @@ router.post('/likes',function(req,res,next) {
 */
 
 //favorite video
-router.post('/favorites',function(req,res,next) {
+router.post('/getFavorites',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -289,7 +289,7 @@ router.post('/like',function(req,res,next) {
 });
 */
 
-router.post('/favorite',function(req,res,next) {
+router.post('/setFavorite',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;

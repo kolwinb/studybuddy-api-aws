@@ -24,7 +24,7 @@ app.use('/studybuddy/v1/student/learning', require('./routes/v1/v1_learning'));
 
 
 //mobile verification
-app.use('/studybuddy/v1/mobile/otp', require('./routes/v1/v1_mobileVerification'));
+app.use('/studybuddy/v1/mobile', require('./routes/v1/v1_mobileVerification'));
 
 
 //studentprofile
@@ -32,7 +32,7 @@ app.use('/studybuddy/v1/profile', require('./routes/v1/v1_profile'));
 
 
 //Google Oauth2
-app.use('/studybuddy/v1/googleoauth/',require('./routes/v1/v1_googleOauth2Callback'));
+//app.use('/studybuddy/v1/googleoauth/',require('./routes/v1/v1_googleOauth2Callback'));
 
 //privacy links
 app.use('/studybuddy/v1/pages/',require('./routes/v1/v1_pages'));

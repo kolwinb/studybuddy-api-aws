@@ -170,13 +170,34 @@ router.post('/getLessonList',function(req,res,next) {
 		      			//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
-       						dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,syllabusId,subjectId,studentId],function(callbackLessonList){
-       							varCallback=JSON.parse(callbackLessonList);
-       							if(varCallback.status=='error'){
-       								res.send(varCallback)
-       							} else {
-		       						resStatus=status.stateSuccess(JSON.stringify(varCallback));
-       								res.send(resStatus);						
+ 							dbQuery.setUserSqlQuery(dbQuery.whereUserRole,["user",studentId],function(callbackRole){
+ 								if (!callbackRole[0]){
+ 									res.send(JSON.parse(status.server()));
+ 								} else {
+ 									switch(callbackRole[0].plan_id){
+ 									case 1:
+       									dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,syllabusId,subjectId,properties.lessonUnlimit,studentId],function(callbackLessonList){
+       										varCallback=JSON.parse(callbackLessonList);
+       										if(varCallback.status=='error'){
+       											res.send(JSON.parse(varCallback))
+       										} else {
+		       									resStatus=status.stateSuccess(JSON.stringify(varCallback));
+       											res.send(resStatus);						
+       										}
+       									});
+       									break;
+       								case 2:
+       									dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,syllabusId,subjectId,properties.trialLessonLimit,studentId],function(callbackLessonList){
+       										varCallback=JSON.parse(callbackLessonList);
+       										if(varCallback.status=='error'){
+       											res.send(JSON.parse(varCallback))
+       										} else {
+		       									resStatus=status.stateSuccess(JSON.stringify(varCallback));
+       											res.send(resStatus);						
+       										}
+       									});       								
+       									break;
+       								}
        							}
        						});
        					});
@@ -219,48 +240,7 @@ router.post('/getLesson',function(req,res,next) {
 										varLesson=JSON.parse(callbackLesson)
 										//console.log("callbackUser "+callbackUser);
 										//console.log(callbackLesson);
-/*										
-										varMcq=varLesson[0].mcq;
-										varVideo=varLesson[0]
-
-										const setJson=(resultJson) => {
-											varVideo.mcq=resultJson;
-											console.log(varVideo);
-		       								//res.send(JSON.parse(status.stateSuccess(JSON.stringify(resultJson)))); 								
-										};
-										for (key in varMcq){
-											//console.log(varMcq[key].id);
-
-											dbQuery.getSelectAll(dbQuery.mcqOption,[varMcq[key].id],function(callbackOption){
-												varOption=JSON.parse(callbackOption);
-												varMcq[key].options=varOption;	
-												//console.log(JSON.stringify(varLesson));
-												
-											});
-											setJson(varMcq);
-										};
-										
-										//varVideo.mcq=varMcq;
-	       								//res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 								
-										
-										varMcq.forEach(function(mcq){
-											console.log(mcq);
-										});
-									
-										varLesson.forEach(obj => {
-											Object.entries(obj).forEach(([key,value])=> {
-												console.log('key '+key);
-											});
-										
-										});
-										Object.keys(varLesson).forEach(function(key) {
-											console.log('key : '+key+' value : '+varLesson[key]);									
-										
-		       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
-										});
-										
-*/
-		       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
+	       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
 
 									});																				
 
@@ -278,55 +258,5 @@ router.post('/getLesson',function(req,res,next) {
   	}
  });
  
-/*
-//router.post('/getOptionList',function(req,res,next) {
-router.post('/getOption',function(req,res,next) {
-	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
-   	const apiKey = req.body.api_key;
-  	const apiSecret=req.body.api_secret;
-	const questionId=req.body.question_id;
-       					 	
-	if ((!apiKey || !apiSecret)){
-		res.send(JSON.parse(status.unAuthApi()));
-	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
-		res.send(JSON.parse(status.unAuthApi()));
-	} else {
-   		if (rtoken) {
-				jwtModule.jwtVerify(rtoken,function(callback){
-					if (callback){
- 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
- 							const studentId=callbackU.userId;
- 							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
- 								if (!callbackUser[0]){
- 					  				res.send(JSON.parse(status.misbehaviour()));
- 								} else {
-									dbQuery.getSelectAll(dbQuery.mcqOption,[questionId],function(callbackOption){
-										varOption=JSON.parse(callbackOption)
-										if (varOption.status=='error'){
-											res.send(JSON.parse(status.server()));
-										} else {
-											//console.log("callbackUser "+callbackUser);
-											const resJson={
-												options:varOption,
-												expInSec:properties.optionExpInSec
-											}
-	       									res.send(JSON.parse(status.stateSuccess(JSON.stringify(resJson)))); 		
-	       								}
-									});																				
-
-       							}
- 							});
- 						});
-
-					} else {
-						res.send(JSON.parse(status.tokenExpired()));         
-					}      
-				}); 
-    	} else {
-       		return res.status(403).send(JSON.parse(status.tokenNone()));
-  		}
-  	}
- });
-*/
 
 module.exports = router
