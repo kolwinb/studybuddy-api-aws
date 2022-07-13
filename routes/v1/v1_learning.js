@@ -102,13 +102,13 @@ router.post('/setAnswer',function(req,res,next) {
 															};	
 															if (!callbackOState[0].state){
 																Object.assign(resAnswer,{"earning":""});
-																Object.assign(resAnswer,{"answer":"False"});
+																Object.assign(resAnswer,{"isCorrect":"False"});
 																
        															resStatus=status.stateSuccess(JSON.stringify(resAnswer));
        															res.send(JSON.parse(resStatus));							
 															} else {
 																resAnswer["earning"]=properties.coin;
-																resAnswer["answer"]="True";
+																resAnswer["isCorrect"]="True";
        															resStatus=status.stateSuccess(JSON.stringify(resAnswer));
        															res.send(JSON.parse(resStatus));						
 															}

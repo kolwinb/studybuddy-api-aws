@@ -258,5 +258,47 @@ router.post('/getLesson',function(req,res,next) {
   	}
  });
  
+ router.post('/getLessonToken',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+	const videoId=req.body.video_id;
+       					 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+ 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
+ 							const studentId=callbackU.userId;
+ 							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+ 								if (!callbackUser[0]){
+ 					  				res.send(JSON.parse(status.misbehaviour()));
+ 								} else {
+									dbQuery.getSqlLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
+										varLesson=JSON.parse(callbackLesson)
+										//console.log("callbackUser "+callbackUser);
+										//console.log(callbackLesson);
+	       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
+
+									});																				
+
+       							}
+ 							});
+ 						});
+
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));         
+					}      
+				}); 
+    	} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+  	}
+ });
+ 
 
 module.exports = router

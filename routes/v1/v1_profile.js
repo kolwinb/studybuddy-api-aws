@@ -76,7 +76,7 @@ router.post('/getInfo',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+							dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
 								if (!callbackUserProfile) {
 									res.send(JSON.parse(status.profileError()));
 								} else {
@@ -85,7 +85,7 @@ router.post('/getInfo',function(req,res,next) {
 									//console.log(userProfile);
 									//console.log(userProfile[0]['0'].correctAnswers);
 									console.log("property coin : "+property.coin);
-									
+									/*
 									profileData=JSON.stringify({
 										correctAnswers:userProfile[0]['0'].correctAnswers,
 										wrongAnswers:userProfile[1]['0'].wrongAnswers,
@@ -99,7 +99,7 @@ router.post('/getInfo',function(req,res,next) {
 										earnings:parseInt(userProfile[0]['0'].correctAnswers)*parseInt(property.coin),
 										languageList:userProfile[5]['0']
 									});
-									
+									*/
 									
 									//res.send(JSON.parse(status.stateSuccess(userProfile)));
 									res.send(JSON.parse(status.stateSuccess(JSON.parse(userProfile))));
