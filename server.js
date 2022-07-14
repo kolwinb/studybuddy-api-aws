@@ -34,6 +34,10 @@ app.use('/studybuddy/v1/profile', require('./routes/v1/v1_profile'));
 //Google Oauth2
 //app.use('/studybuddy/v1/googleoauth/',require('./routes/v1/v1_googleOauth2Callback'));
 
+//RSA
+app.use('/studybuddy/v1/rsa/',require('./routes/v1/rsaEncryption'));
+app.use('/studybuddy/v1/rsa/',require('./routes/v1/rsaEncryption'));
+
 //privacy links
 app.use('/studybuddy/v1/pages/',require('./routes/v1/v1_pages'));
 

@@ -149,7 +149,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								user_profile.teacher_name as teacherName, \
 								user_profile.teacher_contact as teacherContact, \
 								user_profile.teacher_email as teacherEmail, \
-								user_subscription.name as subscriptonPlanName, \
+								user_subscription.name as subscriptonPlan, \
 								CONVERT(user.date_joined,DATETIME) as planStartedAt, \
 								CASE \
 									WHEN user.plan_id = 1 \
@@ -181,8 +181,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 									INNER JOIN video ON video.id=mcq_question.video_id \
 									INNER JOIN subject ON subject.id=video.subject_id \
 									WHERE student_answer.user_id=? AND video.subject_id IN \
-										( SELECT id FROM subject) group by subject.id;",
-//						SELECT * FROM student_language;",
+										( SELECT id FROM subject) group by subject.id; \
+									SELECT * FROM student_language;",
 	
 	whereLeaderBoard:"SELECT  count(student_answer.user_id) as studentMarks, \
 					count(student_answer.id)*? as coins, \
@@ -475,15 +475,20 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					const chartSubject = chartOfSubject.map((mysqlObj, index) => {
     						return Object.assign({}, mysqlObj);
     					}); 					
+    				
+					const langList = languageData.map((mysqlObj, index) => {
+						return Object.assign({}, mysqlObj);
+					}); 					
  					const jsonData={
 // 						correctAnswers:correctAnswers[0].correctAnswers,
  //						wrongAnswers:wrongAnswers[0].wrongAnswers,
  //						totalLessons:totalLessons[0].totalLessons,
  //						totalQuestions:totalQuestions[0].totalQuestion,
- //						chartOptionSubject:chartSub[0],
+ //						chartOnSubject:chartSub[0],
  						personalInfo:personalData[0],
- 						activities:activityData[0],
- 						chartOfSubject:chartSubject
+ 						activityList:activityData[0],
+ 						chartOfSubject:chartSubject,
+ 						languageList:langList
  						
  					}
 					var jsonResults = result.map((mysqlObj, index) => {
