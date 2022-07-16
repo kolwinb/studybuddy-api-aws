@@ -24,6 +24,74 @@ const scope = require('../lib/apiKeys');
 const api_key = scope.profileApi.apiKey;
 const api_secret = scope.profileApi.apiSecret;
 
+router.post('/setAccountDetail',function(req,res,next) {
+	const authToken = req.header('Authorization');
+	const apiKey = req.header('x-api-key');
+	const apiSecret = req.header('x-api-secret');
+	var bodyJson=JSON.parse(JSON.stringify(req.body));
+	
+	
+	const address=bodyJson.address;
+	const favoriteSubject=bodyJson.favoriteSubject;
+	const birthday=bodyJson.birthday;
+	const nic=bodyJson.nic;
+	const socialLink=bodyJson.socialLink;
+	const email=bodyJson.email;
+	const parentName=bodyJson.parentName;
+	const parentContact=bodyJson.parentContact;
+	const parentEmail=bodyJson.parentEmail;
+	const schoolAddress=bodyJson.schoolAddress;
+	const schoolContact=bodyJson.schoolContact;
+	const schoolEmail=bodyJson.schoolEmail;
+	const teacherName=bodyJson.teacherName;
+	const teacherContact=bodyJson.teacherContact;
+	const teacherEmail=bodyJson.teacherEmail;
+	
+	if (!authToken){
+		console.log("Authorization header missing");
+		res.send(JSON.parse(status.authHeader()));
+	} else  if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if (!bodyJson){
+		res.send(JSON.parse(status.paramNone()));
+	} else {
+		const arrToken = authToken.split(" ");
+		const rtoken = arrToken[1];
+		if (rtoken) {
+			jwtModule.jwtVerify(rtoken,function(callback){
+				//          getJwt=JSON.parse(callback);
+				if (callback){
+					jwtModule.jwtGetUserId(rtoken,function(callback){
+						const studentId=callback.userId
+						dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+							if (!callbackUser[0]){
+								res.send(JSON.parse(status.misbehaviour()));
+							} else {
+								dbQuery.setSqlUpdate(dbQuery.updateAccountDetail,[address,favoriteSubject,birthday,nic,socialLink,email,parentName,parentContact,parentEmail,schoolAddress,schoolContact,schoolEmail,teacherName,teacherContact,teacherEmail,studentId],function(callbackDetails){
+									if (!callbackDetails){
+										res.send(JSON.parse(status.profileError()));
+									} else {
+										resJson=JSON.stringify({"description":"Account details is updated"});
+                                		res.send(JSON.parse(status.stateSuccess(resJson)));
+                                
+									}
+								});									
+							}
+						});
+						
+					});
+				} else {
+					res.send(status.tokenExpired());
+				}
+			});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
+
 router.post('/getChartSubjectQuestion',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;

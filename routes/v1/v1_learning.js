@@ -51,6 +51,145 @@ router.post('/getLeaderboard',function(req,res,next) {
 	}
 });
 
+
+router.post('/setBulkAnswer',function(req,res,next) {
+	const authToken = req.header('Authorization');
+	const apiKey = req.header('x-api-key');
+	const apiSecret = req.header('x-api-secret');
+    const bodyJson=JSON.parse(JSON.stringify(req.body));
+	
+	var respJson={};
+	
+	if (!authToken){
+		console.log("Authorization header missing");
+		res.send(JSON.parse(status.authHeader()));
+	} else	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if (!bodyJson){
+		res.send(JSON.parse(status.paramNone()));
+	} else {
+		const arrToken = authToken.split(" ");
+		const rtoken = arrToken[1];
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+		//			getJwt=JSON.parse(callback);
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							//console.log(studentId);
+							let arrJson= {};
+							//var listMcq=[];
+							Object.keys(bodyJson).forEach(function(key){
+								mcqArr=bodyJson[key].mcq;
+								const videoId=bodyJson[key].videoId;
+								var arrMcq=[];
+								Object.keys(mcqArr).forEach(function(keyA){
+									//console.log('key :'+key+', videoId:'+bodyJson[key].videoId+' key :'+keyA+', questionId:'+mcqArr[keyA].questionId);
+									const questionId=mcqArr[keyA].questionId;
+									const optionId=mcqArr[keyA].optionId;
+									const started=mcqArr[keyA].startedAt;
+									const ended=mcqArr[keyA].endedAt;
+									dbQuery.setUserSqlQuery(dbQuery.whereStudentAnswer,["student_answer",studentId,questionId],function(callbackSO){
+										if (callbackSO[0]){
+													//res.send(JSON.parse(status.answerProhibited()));
+													Object.assign(arrJson,{
+																"status":status.answerProhibited(),
+																"questinId":questionId
+																});
+													var questionData={
+														"questionId":questionId
+													}
+													//arrJson.push(questionData);
+													
+													//arrMcq=JSON.parse(status.answerProhibited());
+													//console.log("arrJson :"+JSON.stringify(arrJson));
+													//console.log("videoId :"+videoId+" qid "+questionId+" oid "+optionId);
+													if (bodyJson.length-1 == key){
+														if (mcqArr.length-1 == keyA){
+															res.send(JSON.parse(status.answerProhibited()));
+															//console.log(arrJson);
+															console.log("length : "+bodyJson.length+" key : "+key+" proibited user action occured");
+														}
+													}
+										} else {
+											dbQuery.setUserSqlQuery(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
+												if (!callbackOQV[0]) {
+													res.send(JSON.parse(status.server()));
+												} else {
+													oId=callbackOQV[0].optionId;
+													qId=callbackOQV[0].questionId;
+													vId=callbackOQV[0].videoId;
+													//const dateNow = new Date();
+													console.log("userId: "+studentId+" : StudentAnswer:QueryData Found -> oId: "+oId+" qId: "+qId+" vId : "+vId)
+													if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
+														dbQuery.setUserInsert(dbQuery.insertStudentAnswer,["student_answer","NULL",studentId,questionId,optionId,started,ended],function(callbackSAnswer){
+   															if(!callbackSAnswer){
+																res.send(JSON.parse(status.server()));
+															} else {
+																dbQuery.setUserSqlQuery(dbQuery.whereOptionState,[optionId],function(callbackOState){
+																	var resAnswer=JSON.stringify({
+																		option_id:oId,
+																		question_id:qId,
+																		video_id:vId
+																		});
+																	if (!callbackOState[0].state){
+																		Object.assign(resAnswer,{"earning":""});
+																		Object.assign(resAnswer,{"isCorrect":"False"});
+																		
+       																	resStatus=status.stateSuccess(JSON.stringify(resAnswer)); 
+       																	//res.send(JSON.parse(resStatus));
+																	} else {
+																		resAnswer["earning"]=properties.coin;
+																		resAnswer["isCorrect"]="True";
+       																	resStatus=status.stateSuccess(JSON.stringify(resAnswer));
+       																	//res.send(JSON.parse(resStatus));						
+       																}
+																	if (bodyJson.length-1 == key){
+																		if (mcqArr.length-1 == keyA){
+																			resStatus=status.stateSuccess(JSON.stringify({"description":"questions are updated"}));
+       																		res.send(JSON.parse(resStatus));
+																		}
+																	}    
+																	
+       																//arrMcq=resAnswer;
+																	//console.log("arrOption :"+resAnswer);				
+																	//console.log("questionId :"+questionId +"success");
+																});													
+															}
+														});
+       												} else {
+       												
+       													//console.log("questionId :"+questionId +"error"+"student answers again videoId :"+videoId);
+       													//responseJson[key].mcq[keyA].status=studentAnswerWarning();
+														//res.send(JSON.parse(status.studentAnswerWarning()));
+       												}
+  												}
+											});
+										}
+//Object.assign(respJson,arrJson);
+									});
+								//arrJson.data={"videoId":key,"mcq":arrMcq};
+								});
+							});
+//							console.log(respJson);
+//							res.send(JSON.parse(JSON.stringify(arrJson)));
+//	res.send(JSON.parse(status.studentAnswerWarning()));
+       					});
+
+					} else {
+						res.send(status.tokenExpired());         
+					}      
+				}); 
+		
+    	} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+  	}
+
+});
+
 //set student answer
 router.post('/setAnswer',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];

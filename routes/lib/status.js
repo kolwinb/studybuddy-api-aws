@@ -2,6 +2,9 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var State ={
+	authHeader: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1017","description":"Authorization is required."}})
+	},
 	misbehaviour: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1017","description":"request misbehaviour."}})
 	},
@@ -85,7 +88,7 @@ var State ={
 		return   JSON.stringify({"status":"error","error":{"statusCode":"1007","description": "Mobile number required"}})
 	},
 	paramNone: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1006","description":"Parameters missing"}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1006","description":"Data is missing"}})
 	},
 	tokenNone: function(){
 		return   JSON.stringify({"status":"error","error":{"statusCode":"1005","description":"Token not provided"}})

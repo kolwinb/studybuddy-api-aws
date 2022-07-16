@@ -269,7 +269,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	insertAffiliate:"INSERT INTO user_affiliate(id,referrer_id,referee_id,created) VALUES(?,?,?,?)",
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
-	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started) VALUES (?,?,?,?,?)",	
+	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started,ended) VALUES (?,?,?,?,?,?)",	
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade,avatar_id) VALUES (?,?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,plan_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
 	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
@@ -288,12 +288,29 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	updateOauth:"UPDATE ?? SET token=?, updated=? WHERE user_id=?",
 	updateLastLogin:"UPDATE ?? SET last_login=? WHERE id = ?",
 	updateProfile:"UPDATE ?? SET school_id=?,student_name=?,student_grade=?,avatar_id=? WHERE student_id=?",
+	updateAccountDetail:"UPDATE user_profile SET \
+			address=?, \
+			favorite_subject=?,\
+			dateofbirth=?, \
+			nic=?, \
+			sociallink=?, \
+			email=?, \
+			parent_name=?, \
+			parent_contact=?, \
+			parent_email=?, \
+			school_address=?, \
+			school_contact=?, \
+			school_email=?, \
+			teacher_name=?, \
+			teacher_contact=?, \
+			teacher_email=? \
+			WHERE user_id=?;",
 	//methods
-	
 	setSqlUpdate: function(query,fields,callback){
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
+					throw err;
 					log.error("db update error");
 					callback(false);
 				} else {
