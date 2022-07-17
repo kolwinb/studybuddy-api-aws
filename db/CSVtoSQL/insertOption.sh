@@ -23,7 +23,7 @@ else
 	msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
 	let startAt=$(echo "SELECT count(id) FROM mcq_option;" | $msql)+1
 	echo $startAt
-	echo "ALTER TABLE mcq_question  AUTO_INCREMENT = $startAt;" | $msql
+	echo "ALTER TABLE mcq_option  AUTO_INCREMENT = $startAt;" | $msql
 	while read line
 	do
 	question_id=$(echo $line | cut -d'~' -f1) #questionid

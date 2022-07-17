@@ -33,6 +33,7 @@ router.post('/setAccountDetail',function(req,res,next) {
 	
 	const address=bodyJson.address;
 	const favoriteSubject=bodyJson.favoriteSubject;
+	const ambition=bodyJson.ambition;
 	const birthday=bodyJson.birthday;
 	const nic=bodyJson.nic;
 	const socialLink=bodyJson.socialLink;
@@ -69,7 +70,7 @@ router.post('/setAccountDetail',function(req,res,next) {
 							if (!callbackUser[0]){
 								res.send(JSON.parse(status.misbehaviour()));
 							} else {
-								dbQuery.setSqlUpdate(dbQuery.updateAccountDetail,[address,favoriteSubject,birthday,nic,socialLink,email,parentName,parentContact,parentEmail,schoolAddress,schoolContact,schoolEmail,teacherName,teacherContact,teacherEmail,studentId],function(callbackDetails){
+								dbQuery.setSqlUpdate(dbQuery.updateAccountDetail,[address,favoriteSubject,ambition,birthday,nic,socialLink,email,parentName,parentContact,parentEmail,schoolAddress,schoolContact,schoolEmail,teacherName,teacherContact,teacherEmail,studentId],function(callbackDetails){
 									if (!callbackDetails){
 										res.send(JSON.parse(status.profileError()));
 									} else {
@@ -144,7 +145,7 @@ router.post('/getInfo',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+							dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
 								if (!callbackUserProfile) {
 									res.send(JSON.parse(status.profileError()));
 								} else {

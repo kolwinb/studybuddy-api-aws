@@ -26,7 +26,7 @@ router.post('/',function(req,res){
 //	var_subscriberId=req.body.subscriber_id;
 //	var_deviceId=req.body.device_id;
 //	var_vodId=req.body.vod_id;
-
+	console.log(var_data);
 //	var_status='0';
 //	var_dateTime= new Date();
 	

@@ -41,7 +41,24 @@ var config={
 	optionExpInSec:60,
 	optionCount:4,
 	trialLessonLimit:5,
-	lessonUnlimit:100000
-
+	lessonUnlimit:100000,
+	reward:{
+			address: 20,
+			favoriteSubject: 20,
+			ambition: 40,
+			birthday: 20,
+			nic: 20,
+			socialLink: 40,
+			email: 40,
+			parentName: 20,
+			parentContact: 40,
+			parentEmail: 40,
+			schoolAddress: 20,
+			schoolContact: 40,
+			schoolEmail: 40,
+			teacherName: 20,
+			teacherContact: 40,
+			teacherEmail: 40
+		}
 }
 module.exports=config;

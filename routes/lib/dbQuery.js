@@ -136,8 +136,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								user_profile.grade as studentGrade, \
 								user_profile.address as address, \
 								user_profile.favorite_subject as favoriteSubject, \
-								user_profile.dateofbirth as dateOfBirth, \
-								user_profile.nic as NIC, \
+								user_profile.ambition as ambition, \
+								DATE_FORMAT(user_profile.dateofbirth,'%Y-%m-%d') as birthday, \
+								user_profile.nic as nic, \
 								user_profile.sociallink as socialLink, \
 								user_profile.email as email, \
 								user_profile.parent_name as parentName, \
@@ -150,7 +151,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								user_profile.teacher_contact as teacherContact, \
 								user_profile.teacher_email as teacherEmail, \
 								user_subscription.name as subscriptonPlan, \
-								CONVERT(user.date_joined,DATETIME) as planStartedAt, \
+								DATE_FORMAT(user.date_joined,'%Y-%m-%d %H:%m:%s') as planStartedAt, \
 								CASE \
 									WHEN user.plan_id = 1 \
 									THEN '' \
@@ -182,7 +183,200 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 									INNER JOIN subject ON subject.id=video.subject_id \
 									WHERE student_answer.user_id=? AND video.subject_id IN \
 										( SELECT id FROM subject) group by subject.id; \
-									SELECT * FROM student_language;",
+									SELECT COUNT(DISTINCT(video.id)) AS totalLessons, \
+									DATE_FORMAT(started,'%a') AS dayName \
+									FROM student_answer \
+									INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
+									INNER JOIN video ON video.id=mcq_question.video_id \
+									WHERE user_id=? GROUP BY DATE_FORMAT(started,'%a'); \
+									SELECT * FROM student_language; \
+									SELECT \
+										(SUM(DISTINCT( \
+											CASE \
+												WHEN up.address IS NULL \
+													THEN 0 \
+													ELSE "+escape(properties.reward.address)+" \
+											END + \
+											CASE \
+											WHEN up.favorite_subject IS NULL \
+												THEN 0 \
+												ELSE "+escape(properties.reward.favoriteSubject)+" \
+											END + \
+											CASE \
+												WHEN up.ambition IS NULL \
+													THEN 0 \
+													ELSE "+escape(properties.reward.ambition)+" \
+											END + \
+											CASE \
+												WHEN up.dateofbirth IS NULL \
+													THEN 0 \
+													ELSE "+escape(properties.reward.birthday)+" \
+											END + \
+											CASE \
+												WHEN up.nic IS NULL \
+													THEN 0 \
+													ELSE "+escape(properties.reward.nic)+" \
+											END + \
+											CASE \
+												WHEN up.sociallink IS NULL \
+													THEN 0 \
+													ELSE "+escape(properties.reward.socialLink)+" \
+											END + \
+											CASE \
+												WHEN up.email IS NULL \
+													THEN 0 \
+													ELSE "+escape(properties.reward.email)+" \
+											END + \
+   											CASE \
+   												WHEN up.parent_name IS NULL \
+   													THEN 0 \
+   													ELSE "+escape(properties.reward.parentName)+" \
+   											END + \
+   											CASE \
+   												WHEN up.parent_contact IS NULL \
+   													THEN 0 \
+   													ELSE "+escape(properties.reward.parentContact)+" \
+   											END + \
+   											CASE \
+   												WHEN up.parent_email IS NULL \
+   													THEN 0 \
+   													ELSE "+escape(properties.reward.parentEmail)+" \
+   											END + \
+   											CASE \
+   												WHEN up.school_address IS NULL \
+   													THEN 0 \
+   													ELSE "+escape(properties.reward.schoolAddress)+" \
+   											END + \
+   											CASE \
+   												WHEN up.school_contact IS NULL \
+   													THEN 0 \
+   													ELSE "+escape(properties.reward.schoolContact)+" \
+   											END + \
+   											CASE \
+   												WHEN up.school_email IS NULL \
+   													THEN 0 \
+   													ELSE "+escape(properties.reward.schoolEmail)+" \
+   											END + \
+   											CASE \
+   												WHEN up.teacher_name IS NULL \
+   													THEN 0 \
+   													ELSE "+escape(properties.reward.teacherName)+" \
+   											END + \
+  											CASE \
+  												WHEN up.teacher_contact IS NULL \
+  													THEN 0 \
+  													ELSE "+escape(properties.reward.teacherContact)+" \
+  											END + \
+  											CASE \
+  												WHEN up.teacher_email IS NULL \
+  													THEN 0 \
+  													ELSE "+escape(properties.reward.teacherEmail)+" \
+  											END \
+  										))  + \
+										SUM(CASE \
+											WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
+												THEN 100 \
+												ELSE 0 \
+											END + \
+											CASE \
+											WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 15 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 30 \
+												THEN 75 \
+												ELSE 0 \
+											END + \
+											CASE \
+											WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 30 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 45 \
+												THEN 50 \
+												ELSE 0 \
+											END + \
+											CASE \
+											WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 45 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 60 \
+												THEN 25 \
+												ELSE 0 \
+											END)) AS totalRewards, \
+  										(CASE \
+  											WHEN up.address IS NULL \
+		  										THEN 0 \
+  												ELSE "+escape(properties.reward.address)+" \
+  										END) AS address, \
+  										(CASE \
+  											WHEN up.favorite_subject IS NULL \
+		  										THEN 0 \
+			  									ELSE "+escape(properties.reward.favoriteSubject)+" \
+	  									END) AS favoiteSubject, \
+ 										(CASE \
+ 											WHEN up.ambition IS NULL \
+ 												THEN 0 \
+ 												ELSE "+escape(properties.reward.ambition)+" \
+ 										END) AS ambition, \
+ 										(CASE \
+ 											WHEN up.dateofbirth IS NULL \
+ 												THEN 0 \
+ 												ELSE "+escape(properties.reward.birthday)+" \
+ 										END) AS birthday, \
+	 									(CASE \
+		 									WHEN up.nic IS NULL \
+ 												THEN 0 \
+ 												ELSE "+escape(properties.reward.nic)+" \
+ 										END) AS nic, \
+	 									(CASE \
+ 											WHEN up.sociallink IS NULL \
+ 												THEN 0 \
+ 												ELSE "+escape(properties.reward.socialLink)+" \
+ 										END) socialLink, \
+	 									(CASE \
+ 											WHEN up.email IS NULL \
+ 												THEN 0 \
+ 												ELSE "+escape(properties.reward.email)+" \
+ 										END) AS email, \
+	 									(CASE \
+ 											WHEN up.parent_name IS NULL \
+ 												THEN 0 \
+ 												ELSE "+escape(properties.reward.parentName)+" \
+ 										END) AS parentName, \
+	 									(CASE \
+ 											WHEN up.parent_contact IS NULL \
+ 												THEN 0 \
+ 												ELSE "+escape(properties.reward.parentContact)+" \
+ 										END) AS parentContact, \
+		 								(CASE \
+ 											WHEN up.parent_email IS NULL \
+ 												THEN 0 \
+ 												ELSE "+escape(properties.reward.parentEmail)+" \
+ 										END) AS parentEmail, \
+										(CASE \
+											WHEN up.school_address IS NULL \
+												THEN 0 \
+												ELSE "+escape(properties.reward.schoolAddress)+" \
+										END) AS schoolAddress, \
+										(CASE \
+											WHEN up.school_contact IS NULL \
+												THEN 0 \
+												ELSE "+escape(properties.reward.schoolContact)+" \
+										END) AS schoolContact, \
+										(CASE \
+											WHEN up.school_email IS NULL \
+												THEN 0 \
+												ELSE "+escape(properties.reward.schoolEmail)+" \
+										END) AS schoolEmail, \
+										(CASE \
+											WHEN up.teacher_name IS NULL \
+												THEN 0 \
+												ELSE "+escape(properties.reward.teacherName)+" \
+										END) AS teacherName, \
+										(CASE \
+											WHEN up.teacher_contact IS NULL \
+												THEN 0 \
+												ELSE "+escape(properties.reward.teacherContact)+" \
+										END) AS teacherContact, \
+										(CASE \
+											WHEN up.teacher_email IS NULL \
+												THEN 0 \
+												ELSE "+escape(properties.reward.teacherEmail)+" \
+										END) AS teacherEmail \
+									FROM user_profile as up \
+									INNER JOIN student_answer as sa ON sa.user_id=up.user_id \
+									INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
+									WHERE up.user_id=? AND mo.state=1;",
 	
 	whereLeaderBoard:"SELECT  count(student_answer.user_id) as studentMarks, \
 					count(student_answer.id)*? as coins, \
@@ -252,7 +446,30 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						video.id as id, \
 						syllabus.syllabus_english as syllabusE, \
 						syllabus.syllabus_sinhala as syllabusS, \
-						video.name as fileName \
+						video.name as fileName, \
+						(SELECT (CASE \
+							WHEN count(student_favorite.id) = 0 \
+								THEN 'False' \
+								ELSE 'True' \
+								END) \
+							FROM student_favorite \
+							WHERE student_favorite.video_id=video.id AND student_favorite.user_id=?) AS favoritedState, \
+						(SELECT (CASE \
+							WHEN count(student_answer.id)=0 \
+								THEN 'False' \
+								ELSE 'True' \
+							END) \
+							FROM student_answer \
+							INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
+							WHERE mcq_question.video_id=video.id AND student_answer.user_id=?) AS completedState, \
+						(SELECT COUNT(student_answer.id) \
+								FROM student_answer \
+								INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
+								INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
+								WHERE mcq_question.video_id=video.id AND mcq_option.state=1 AND student_answer.user_id=?) as totalCorrectAnswers, \
+						(SELECT COUNT(mcq_question.id) \
+								FROM mcq_question \
+ 								WHERE mcq_question.video_id=video.id) as totalQuestions \
 						FROM video \
 						INNER JOIN subject ON subject.id=video.subject_id \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
@@ -291,6 +508,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	updateAccountDetail:"UPDATE user_profile SET \
 			address=?, \
 			favorite_subject=?,\
+			ambition=?, \
 			dateofbirth=?, \
 			nic=?, \
 			sociallink=?, \
@@ -366,7 +584,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
 					var jsonResults = result.map((mysqlObj, index) => {
-
+/*
 							mysqlObj.videoData=[{
 										"name":"small",
 										"quality":"240p",
@@ -385,7 +603,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 							"videoUrl":properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_480p.m3u'
 										}
 										]
+*/
     						return Object.assign({}, mysqlObj);
+  
     					});
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonResults)); 		
@@ -488,10 +708,15 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
- 					const [activityData,personalData,chartOfSubject,languageData] = result;
+ 					const [activityData,personalData,chartOfSubject,chartOfDay,languageData,walletData] = result;
+ 					
 					const chartSubject = chartOfSubject.map((mysqlObj, index) => {
     						return Object.assign({}, mysqlObj);
-    					}); 					
+    					}); 	
+					const chartDay = chartOfDay.map((mysqlObj, index) => {
+    						return Object.assign({}, mysqlObj);
+    					}); 			
+    							
     				
 					const langList = languageData.map((mysqlObj, index) => {
 						return Object.assign({}, mysqlObj);
@@ -503,8 +728,10 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  //						totalQuestions:totalQuestions[0].totalQuestion,
  //						chartOnSubject:chartSub[0],
  						personalInfo:personalData[0],
+ 						wallet:walletData[0],
  						activityList:activityData[0],
  						chartOfSubject:chartSubject,
+ 						chartOfDay:chartDay,
  						languageList:langList
  						
  					}
@@ -606,7 +833,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	getLessonList: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
-   				if (!result){
+				if (err){
+					throw err;
+				} else if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
  					//single row

@@ -176,7 +176,7 @@ router.post('/getLessonList',function(req,res,next) {
  								} else {
  									switch(callbackRole[0].plan_id){
  									case 1:
-       									dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,syllabusId,subjectId,properties.lessonUnlimit,studentId],function(callbackLessonList){
+       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,properties.lessonUnlimit,studentId],function(callbackLessonList){
        										varCallback=JSON.parse(callbackLessonList);
        										if(varCallback.status=='error'){
        											res.send(JSON.parse(varCallback))
@@ -187,7 +187,7 @@ router.post('/getLessonList',function(req,res,next) {
        									});
        									break;
        								case 2:
-       									dbQuery.getLessonList(dbQuery.selectLessonList,[gradeId,syllabusId,subjectId,properties.trialLessonLimit,studentId],function(callbackLessonList){
+       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,properties.trialLessonLimit,studentId],function(callbackLessonList){
        										varCallback=JSON.parse(callbackLessonList);
        										if(varCallback.status=='error'){
        											res.send(JSON.parse(varCallback))
