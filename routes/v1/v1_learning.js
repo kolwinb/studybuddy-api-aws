@@ -20,7 +20,7 @@ const api_secret = scope.learningApi.apiSecret;
 const properties = require('../lib/properties');
 
 //student leaderboard
-router.post('/getLeaderboard',function(req,res,next) {
+router.post('/getCommonLeaderboard',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -37,7 +37,7 @@ router.post('/getLeaderboard',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getSelectAll(dbQuery.whereLeaderBoard,[properties.coin],function(callback){
+							dbQuery.getSelectAll(dbQuery.whereLeaderBoard,[],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});
@@ -198,6 +198,8 @@ router.post('/setAnswer',function(req,res,next) {
   	const videoId=req.body.video_id;
   	const questionId=req.body.question_id;
   	const optionId=req.body.option_id;
+  	const started=req.body.started_at;
+  	const ended=req.body.ended_at;
  	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -229,8 +231,9 @@ router.post('/setAnswer',function(req,res,next) {
 											const dateNow = new Date();
 											//console.log("userId: "+studentId+" : StudentAnswer:QueryData Found -> oId: "+oId+" qId: "+qId+" vId : "+vId)
 											if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
-												dbQuery.setUserInsert(dbQuery.insertStudentAnswer,["student_answer","NULL",studentId,questionId,optionId,dateNow],function(callbackSAnswer){
+												dbQuery.setUserInsert(dbQuery.insertStudentAnswer,["student_answer","NULL",studentId,questionId,optionId,started,ended],function(callbackSAnswer){
    													if(!callbackSAnswer){
+   														console.log("answer insert error");
 														res.send(JSON.parse(status.server()));
 													} else {
 														dbQuery.setUserSqlQuery(dbQuery.whereOptionState,[optionId],function(callbackOState){

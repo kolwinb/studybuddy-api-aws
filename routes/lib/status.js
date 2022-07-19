@@ -2,8 +2,14 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var State ={
+	planExpired: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1020","description":"Subscription plan has been expired."}})
+	},
+	wrongReferral: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1019","description":"Wrong referral code"}})
+	},
 	authHeader: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1017","description":"Authorization is required."}})
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1018","description":"Authorization is required."}})
 	},
 	misbehaviour: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1017","description":"request misbehaviour."}})

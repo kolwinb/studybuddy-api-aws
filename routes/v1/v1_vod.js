@@ -170,13 +170,21 @@ router.post('/getLessonList',function(req,res,next) {
 		      			//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
- 							dbQuery.setUserSqlQuery(dbQuery.whereUserRole,["user",studentId],function(callbackRole){
+ 							dbQuery.setUserSqlQuery(dbQuery.whereUserPlan,[studentId],function(callbackRole){
  								if (!callbackRole[0]){
  									res.send(JSON.parse(status.server()));
  								} else {
- 									switch(callbackRole[0].plan_id){
- 									case 1:
-       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,properties.lessonUnlimit,studentId],function(callbackLessonList){
+ 									//console.log('planId : '+callbackRole[0].plan_id+' plan started : '+callbackRole[0].plan_started+" , lessonLimit :"+callbackRole[0].planLimit);
+ 									const planLimit=callbackRole[0].planLimit;
+ 									//const planStarted=callbackRole[0].plan_started;
+ 									//switch(planLimit){
+ 									//case 0:
+ 									if (planLimit == 0){
+  										console.log("student id :"+studentId+" plan Limit :" + planLimit);
+										res.send(JSON.parse(status.planExpired()));
+ 										/*
+       									//dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,properties.lessonUnlimit,studentId],function(callbackLessonList){
+       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,planLimit,studentId],function(callbackLessonList){
        										varCallback=JSON.parse(callbackLessonList);
        										if(varCallback.status=='error'){
        											res.send(JSON.parse(varCallback))
@@ -185,9 +193,12 @@ router.post('/getLessonList',function(req,res,next) {
        											res.send(resStatus);						
        										}
        									});
-       									break;
-       								case 2:
-       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,properties.trialLessonLimit,studentId],function(callbackLessonList){
+       									*/
+       								//	break;
+       								
+       								//case (> 0):
+       								} else {
+       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,planLimit,studentId],function(callbackLessonList){
        										varCallback=JSON.parse(callbackLessonList);
        										if(varCallback.status=='error'){
        											res.send(JSON.parse(varCallback))
@@ -196,7 +207,7 @@ router.post('/getLessonList',function(req,res,next) {
        											res.send(resStatus);						
        										}
        									});       								
-       									break;
+       									//break;
        								}
        							}
        						});

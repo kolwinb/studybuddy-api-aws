@@ -52,3 +52,56 @@ echo "	SELECT (SELECT count(student_answer.user_id) as correctAnswers \
  				(SELECT COUNT(question_id) as totalQuestions FROM student_answer WHERE user_id=7) as t4;" | $msql
 
 
+echo " SELECT user_profile.name as studentName, \
+IFNULL(user_profile.avatar_id,0) as avatarId, \
+user_profile.grade as studentGrade, \
+user_profile.address as address, \
+user_profile.favorite_subject as favoriteSubject, \
+user_profile.ambition as ambition, \
+DATE_FORMAT(user_profile.dateofbirth,'%Y-%m-%d') as birthday, \
+user_profile.nic as nic, \
+user_profile.sociallink as socialLink, \
+user_profile.email as email, \
+user_profile.parent_name as parentName, \
+user_profile.parent_contact as parentContact, \
+user_profile.parent_email as parentEmail, \
+user_profile.school_address as schoolAddress, \
+user_profile.school_contact as schoolContact, \
+user_profile.school_email as schoolEmail, \
+user_profile.teacher_name as teacherName, \
+user_profile.teacher_contact as teacherContact, \
+user_profile.teacher_email as teacherEmail, \
+subscription_plan.name as subscriptionType, \
+user.phone as mobile, \
+DATE_FORMAT(user.plan_started,'%Y-%m-%d %H:%m:%s') as subscriptionStartedAt, \
+CASE \
+WHEN user.plan_id = 1 \
+THEN '' \
+WHEN user.plan_id=2 \
+THEN DATE_ADD(user.plan_started,INTERVAL 7 DAY) \
+WHEN user.plan_id=3 \
+THEN DATE_ADD(user.plan_started,INTERVAL 1 MONTH) \
+WHEN user.plan_id=4 \
+THEN DATE_ADD(user.plan_started,INTERVAL 3 MONTH) \
+WHEN user.plan_id=5 \
+THEN DATE_ADD(user.plan_started,INTERVAL 12 MONTH) \
+END AS subscriptionExpIn, \
+school.school_name as school, \
+district.district_english as district, \
+province.province_english as province, \
+IFNULL(student_language.language,0) as language \
+FROM user \
+CROSS JOIN user_profile ON user_profile.user_id = user.id \
+CROSS JOIN school ON user_profile.school_id = school.id \
+CROSS JOIN district ON school.district_id = district.id \
+CROSS JOIN province ON province.id = district.province_id \
+CROSS JOIN subscription_plan ON subscription_plan.id = user.plan_id \
+CROSS JOIN student_language ON student_language.id=user_profile.language_id \
+WHERE user.id =55; "| $msql
+
+#(SELECT (CASE \
+#	WHEN student_language.language IS NULL \
+#		THEN 'Null' \
+#		ELSE 'hello' \
+#END) as language) \
+#INNER JOIN student_language ON student_language.id=user_profile.language_id \

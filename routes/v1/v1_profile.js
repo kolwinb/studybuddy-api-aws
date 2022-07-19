@@ -74,7 +74,7 @@ router.post('/setAccountDetail',function(req,res,next) {
 									if (!callbackDetails){
 										res.send(JSON.parse(status.profileError()));
 									} else {
-										resJson=JSON.stringify({"description":"Account details is updated"});
+										resJson=JSON.stringify({"description":"Account details are updated"});
                                 		res.send(JSON.parse(status.stateSuccess(resJson)));
                                 
 									}
@@ -145,7 +145,7 @@ router.post('/getInfo',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+							dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
 								if (!callbackUserProfile) {
 									res.send(JSON.parse(status.profileError()));
 								} else {
@@ -256,8 +256,8 @@ router.post('/setSignup',function(req,res,next) {
 							console.log(studentId);
 							dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 								if (!callbackUserProfile[0]) {
-									var defaultLang=1
-									dbQuery.setUserInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,gradeId,avatarId],function(callbackProfile){
+									var defaultLang=1;
+									dbQuery.setUserInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,gradeId,avatarId,defaultLang],function(callbackProfile){
 										if (!callbackProfile){
 											res.send(JSON.parse(status.server()));
 										} else {
@@ -432,12 +432,12 @@ router.post('/setLanguage',function(req,res,next) {
 							if (studentId){
 								dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 									if (callbackUserProfile[0]) {
-										dbQuery.setSqlUpdate(dbQuery.updateStudentLanguage,["user_profile",languageId,studentId],function(callbackProfile){
+										dbQuery.setSqlUpdate(dbQuery.updateStudentLanguage,[languageId,studentId],function(callbackProfile){
 											if (!callbackProfile){
 												res.send(JSON.parse(status.server()));
 											} else {
 												content=JSON.stringify({								
-													"description":"Language updated."
+													"description":"Language has been updated."
 													});
 													
 												res.send(JSON.parse(status.stateSuccess(content)));

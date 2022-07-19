@@ -109,13 +109,13 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 							SELECT count(student_answer.user_id) as correctAnswers \
 							FROM student_answer \
 							INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
-							WHERE student_answer.user_id=? and mcq_option.state=1 \
+							WHERE student_answer.user_id=user.id and mcq_option.state=1 \
 						) as correctAnswers, \
 						( \
 							SELECT count(student_answer.user_id) as wrongAnswers \
 							FROM student_answer \
 							INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
-							WHERE student_answer.user_id=? and mcq_option.state=0 \
+							WHERE student_answer.user_id=user.id and mcq_option.state=0 \
 						) as wrongAnswers, \
 						( \
 							SELECT count(video.id) as totalLessons \
@@ -123,263 +123,287 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 							WHERE video.id IN (SELECT mcq_question.video_id \
 											FROM mcq_question \
 											INNER JOIN student_answer ON student_answer.question_id=mcq_question.id \
-											WHERE student_answer.user_id=? \
+											WHERE student_answer.user_id=user.id \
 											GROUP BY mcq_question.video_id) \
 						) as totalLessons, \
 						( \
 							SELECT COUNT(question_id) as totalQuestions \
 							FROM student_answer  \
-							WHERE user_id=? \
-						) as totalQuestions; \
-								SELECT user_profile.name as studentName, \
-								user_profile.avatar_id as avatarId, \
-								user_profile.grade as studentGrade, \
-								user_profile.address as address, \
-								user_profile.favorite_subject as favoriteSubject, \
-								user_profile.ambition as ambition, \
-								DATE_FORMAT(user_profile.dateofbirth,'%Y-%m-%d') as birthday, \
-								user_profile.nic as nic, \
-								user_profile.sociallink as socialLink, \
-								user_profile.email as email, \
-								user_profile.parent_name as parentName, \
-								user_profile.parent_contact as parentContact, \
-								user_profile.parent_email as parentEmail, \
-								user_profile.school_address as schoolAddress, \
-								user_profile.school_contact as schoolContact, \
-								user_profile.school_email as schoolEmail, \
-								user_profile.teacher_name as teacherName, \
-								user_profile.teacher_contact as teacherContact, \
-								user_profile.teacher_email as teacherEmail, \
-								user_subscription.name as subscriptonPlan, \
-								DATE_FORMAT(user.date_joined,'%Y-%m-%d %H:%m:%s') as planStartedAt, \
-								CASE \
-									WHEN user.plan_id = 1 \
-									THEN '' \
-									WHEN user.plan_id=2 \
-									THEN DATE_ADD(user.date_joined,INTERVAL 7 DAY) \
-									WHEN user.plan_id=3 \
-									THEN DATE_ADD(user.date_joined,INTERVAL 1 MONTH) \
-									WHEN user.plan_id=4 \
-									THEN DATE_ADD(user.date_joined,INTERVAL 3 MONTH) \
-									WHEN user.plan_id=5 \
-									THEN DATE_ADD(user.date_joined,INTERVAL 12 MONTH) \
-								END AS planExpIn, \
-								school.school_name as school, \
-								district.district_english as district, \
-								province.province_english as province \
-								FROM user_profile \
-								INNER JOIN school ON user_profile.school_id = school.id \
-								INNER JOIN district	ON school.district_id = district.id \
-								INNER JOIN province ON province.id = district.province_id \
-								INNER JOIN user ON user.id = user_profile.user_id \
-								INNER JOIN user_subscription ON user_subscription.id = user.plan_id \
-								WHERE user_profile.user_id =?; \
-								SELECT count(video.id) as totalQuestions, \
-					  			subject.subject_english as subject\
-									FROM student_answer \
-									INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
-									INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
-									INNER JOIN video ON video.id=mcq_question.video_id \
-									INNER JOIN subject ON subject.id=video.subject_id \
-									WHERE student_answer.user_id=? AND video.subject_id IN \
-										( SELECT id FROM subject) group by subject.id; \
-									SELECT COUNT(DISTINCT(video.id)) AS totalLessons, \
-									DATE_FORMAT(started,'%a') AS dayName \
-									FROM student_answer \
-									INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
-									INNER JOIN video ON video.id=mcq_question.video_id \
-									WHERE user_id=? GROUP BY DATE_FORMAT(started,'%a'); \
-									SELECT * FROM student_language; \
-									SELECT \
-										(SUM(DISTINCT( \
-											CASE \
-												WHEN up.address IS NULL \
-													THEN 0 \
-													ELSE "+escape(properties.reward.address)+" \
-											END + \
-											CASE \
-											WHEN up.favorite_subject IS NULL \
-												THEN 0 \
-												ELSE "+escape(properties.reward.favoriteSubject)+" \
-											END + \
-											CASE \
-												WHEN up.ambition IS NULL \
-													THEN 0 \
-													ELSE "+escape(properties.reward.ambition)+" \
-											END + \
-											CASE \
-												WHEN up.dateofbirth IS NULL \
-													THEN 0 \
-													ELSE "+escape(properties.reward.birthday)+" \
-											END + \
-											CASE \
-												WHEN up.nic IS NULL \
-													THEN 0 \
-													ELSE "+escape(properties.reward.nic)+" \
-											END + \
-											CASE \
-												WHEN up.sociallink IS NULL \
-													THEN 0 \
-													ELSE "+escape(properties.reward.socialLink)+" \
-											END + \
-											CASE \
-												WHEN up.email IS NULL \
-													THEN 0 \
-													ELSE "+escape(properties.reward.email)+" \
-											END + \
-   											CASE \
-   												WHEN up.parent_name IS NULL \
-   													THEN 0 \
-   													ELSE "+escape(properties.reward.parentName)+" \
-   											END + \
-   											CASE \
-   												WHEN up.parent_contact IS NULL \
-   													THEN 0 \
-   													ELSE "+escape(properties.reward.parentContact)+" \
-   											END + \
-   											CASE \
-   												WHEN up.parent_email IS NULL \
-   													THEN 0 \
-   													ELSE "+escape(properties.reward.parentEmail)+" \
-   											END + \
-   											CASE \
-   												WHEN up.school_address IS NULL \
-   													THEN 0 \
-   													ELSE "+escape(properties.reward.schoolAddress)+" \
-   											END + \
-   											CASE \
-   												WHEN up.school_contact IS NULL \
-   													THEN 0 \
-   													ELSE "+escape(properties.reward.schoolContact)+" \
-   											END + \
-   											CASE \
-   												WHEN up.school_email IS NULL \
-   													THEN 0 \
-   													ELSE "+escape(properties.reward.schoolEmail)+" \
-   											END + \
-   											CASE \
-   												WHEN up.teacher_name IS NULL \
-   													THEN 0 \
-   													ELSE "+escape(properties.reward.teacherName)+" \
-   											END + \
-  											CASE \
-  												WHEN up.teacher_contact IS NULL \
-  													THEN 0 \
-  													ELSE "+escape(properties.reward.teacherContact)+" \
-  											END + \
-  											CASE \
-  												WHEN up.teacher_email IS NULL \
-  													THEN 0 \
-  													ELSE "+escape(properties.reward.teacherEmail)+" \
-  											END \
-  										))  + \
-										SUM(CASE \
-											WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
-												THEN 100 \
-												ELSE 0 \
-											END + \
-											CASE \
-											WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 15 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 30 \
-												THEN 75 \
-												ELSE 0 \
-											END + \
-											CASE \
-											WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 30 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 45 \
-												THEN 50 \
-												ELSE 0 \
-											END + \
-											CASE \
-											WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 45 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 60 \
-												THEN 25 \
-												ELSE 0 \
-											END)) AS totalRewards, \
-  										(CASE \
-  											WHEN up.address IS NULL \
-		  										THEN 0 \
-  												ELSE "+escape(properties.reward.address)+" \
-  										END) AS address, \
-  										(CASE \
-  											WHEN up.favorite_subject IS NULL \
-		  										THEN 0 \
-			  									ELSE "+escape(properties.reward.favoriteSubject)+" \
-	  									END) AS favoiteSubject, \
- 										(CASE \
- 											WHEN up.ambition IS NULL \
- 												THEN 0 \
- 												ELSE "+escape(properties.reward.ambition)+" \
- 										END) AS ambition, \
- 										(CASE \
- 											WHEN up.dateofbirth IS NULL \
- 												THEN 0 \
- 												ELSE "+escape(properties.reward.birthday)+" \
- 										END) AS birthday, \
-	 									(CASE \
-		 									WHEN up.nic IS NULL \
- 												THEN 0 \
- 												ELSE "+escape(properties.reward.nic)+" \
- 										END) AS nic, \
-	 									(CASE \
- 											WHEN up.sociallink IS NULL \
- 												THEN 0 \
- 												ELSE "+escape(properties.reward.socialLink)+" \
- 										END) socialLink, \
-	 									(CASE \
- 											WHEN up.email IS NULL \
- 												THEN 0 \
- 												ELSE "+escape(properties.reward.email)+" \
- 										END) AS email, \
-	 									(CASE \
- 											WHEN up.parent_name IS NULL \
- 												THEN 0 \
- 												ELSE "+escape(properties.reward.parentName)+" \
- 										END) AS parentName, \
-	 									(CASE \
- 											WHEN up.parent_contact IS NULL \
- 												THEN 0 \
- 												ELSE "+escape(properties.reward.parentContact)+" \
- 										END) AS parentContact, \
-		 								(CASE \
- 											WHEN up.parent_email IS NULL \
- 												THEN 0 \
- 												ELSE "+escape(properties.reward.parentEmail)+" \
- 										END) AS parentEmail, \
-										(CASE \
-											WHEN up.school_address IS NULL \
-												THEN 0 \
-												ELSE "+escape(properties.reward.schoolAddress)+" \
-										END) AS schoolAddress, \
-										(CASE \
-											WHEN up.school_contact IS NULL \
-												THEN 0 \
-												ELSE "+escape(properties.reward.schoolContact)+" \
-										END) AS schoolContact, \
-										(CASE \
-											WHEN up.school_email IS NULL \
-												THEN 0 \
-												ELSE "+escape(properties.reward.schoolEmail)+" \
-										END) AS schoolEmail, \
-										(CASE \
-											WHEN up.teacher_name IS NULL \
-												THEN 0 \
-												ELSE "+escape(properties.reward.teacherName)+" \
-										END) AS teacherName, \
-										(CASE \
-											WHEN up.teacher_contact IS NULL \
-												THEN 0 \
-												ELSE "+escape(properties.reward.teacherContact)+" \
-										END) AS teacherContact, \
-										(CASE \
-											WHEN up.teacher_email IS NULL \
-												THEN 0 \
-												ELSE "+escape(properties.reward.teacherEmail)+" \
-										END) AS teacherEmail \
-									FROM user_profile as up \
-									INNER JOIN student_answer as sa ON sa.user_id=up.user_id \
-									INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
-									WHERE up.user_id=? AND mo.state=1;",
-	
-	whereLeaderBoard:"SELECT  count(student_answer.user_id) as studentMarks, \
-					count(student_answer.id)*? as coins, \
+							WHERE user_id=user.id \
+						) as totalQuestions \
+				FROM user \
+				WHERE user.id=?; \
+				SELECT user_profile.name as studentName, \
+					user_profile.avatar_id as avatarId, \
+					user_profile.grade as studentGrade, \
+					user_profile.address as address, \
+					user_profile.favorite_subject as favoriteSubject, \
+					user_profile.ambition as ambition, \
+					DATE_FORMAT(user_profile.dateofbirth,'%Y-%m-%d') as birthday, \
+					user_profile.nic as nic, \
+					user_profile.sociallink as socialLink, \
+					user_profile.email as email, \
+					user_profile.parent_name as parentName, \
+					user_profile.parent_contact as parentContact, \
+					user_profile.parent_email as parentEmail, \
+					user_profile.school_address as schoolAddress, \
+					user_profile.school_contact as schoolContact, \
+					user_profile.school_email as schoolEmail, \
+					user_profile.teacher_name as teacherName, \
+					user_profile.teacher_contact as teacherContact, \
+					user_profile.teacher_email as teacherEmail, \
+					subscription_plan.name as subscriptionType, \
+					DATE_FORMAT(user.plan_started,'%Y-%m-%d %H:%m:%s') as subscriptionStartedAt, \
+					CASE \
+						WHEN user.plan_id = 1 \
+						THEN '' \
+						WHEN user.plan_id=2 \
+						THEN DATE_ADD(user.plan_started,INTERVAL 7 DAY) \
+						WHEN user.plan_id=3 \
+						THEN DATE_ADD(user.plan_started,INTERVAL 1 MONTH) \
+						WHEN user.plan_id=4 \
+						THEN DATE_ADD(user.plan_started,INTERVAL 3 MONTH) \
+						WHEN user.plan_id=5 \
+						THEN DATE_ADD(user.plan_started,INTERVAL 12 MONTH) \
+					END AS subscriptionExpIn, \
+					school.school_name as school, \
+					district.district_english as district, \
+					province.province_english as province, \
+					student_language.language as language \
+				FROM user_profile \
+				INNER JOIN school ON user_profile.school_id = school.id \
+				INNER JOIN district	ON school.district_id = district.id \
+				INNER JOIN province ON province.id = district.province_id \
+				INNER JOIN user ON user.id = user_profile.user_id \
+				INNER JOIN subscription_plan ON subscription_plan.id = user.plan_id \
+				INNER JOIN student_language ON student_language.id=user_profile.language_id \
+				WHERE user_profile.user_id =?; \
+				SELECT count(video.id) as totalQuestions, \
+					subject.subject_english as subject\
+					FROM student_answer \
+					INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
+					INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
+					INNER JOIN video ON video.id=mcq_question.video_id \
+					INNER JOIN subject ON subject.id=video.subject_id \
+					WHERE student_answer.user_id=? AND video.subject_id IN \
+					( SELECT id FROM subject) group by subject.id; \
+				SELECT COUNT(DISTINCT(video.id)) AS totalLessons, \
+					DATE_FORMAT(started,'%a') AS dayName \
+					FROM student_answer \
+					INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
+					INNER JOIN video ON video.id=mcq_question.video_id \
+					WHERE user_id=? \
+					GROUP BY DATE_FORMAT(started,'%a'); \
+					SELECT \
+						(SUM(DISTINCT( \
+							CASE \
+								WHEN up.address IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.address)+" \
+							END + \
+							CASE \
+							WHEN up.favorite_subject IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.favoriteSubject)+" \
+							END + \
+							CASE \
+								WHEN up.ambition IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.ambition)+" \
+							END + \
+							CASE \
+								WHEN up.dateofbirth IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.birthday)+" \
+							END + \
+							CASE \
+								WHEN up.nic IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.nic)+" \
+							END + \
+							CASE \
+								WHEN up.sociallink IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.socialLink)+" \
+							END + \
+							CASE \
+								WHEN up.email IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.email)+" \
+							END + \
+   							CASE \
+   								WHEN up.parent_name IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.parentName)+" \
+   							END + \
+   							CASE \
+   								WHEN up.parent_contact IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.parentContact)+" \
+   							END + \
+   							CASE \
+   								WHEN up.parent_email IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.parentEmail)+" \
+   							END + \
+   							CASE \
+   								WHEN up.school_address IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.schoolAddress)+" \
+   							END + \
+   							CASE \
+   								WHEN up.school_contact IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.schoolContact)+" \
+   							END + \
+   							CASE \
+   								WHEN up.school_email IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.schoolEmail)+" \
+   							END + \
+   							CASE \
+   								WHEN up.teacher_name IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.teacherName)+" \
+   							END + \
+  							CASE \
+  								WHEN up.teacher_contact IS NULL \
+  									THEN 0 \
+  									ELSE "+escape(properties.reward.teacherContact)+" \
+  							END + \
+  							CASE \
+  								WHEN up.teacher_email IS NULL \
+  									THEN 0 \
+  									ELSE "+escape(properties.reward.teacherEmail)+" \
+  							END \
+  						))  + \
+						SUM(CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
+								THEN 100 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 15 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 30 \
+								THEN 75 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 30 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 45 \
+								THEN 50 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 45 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 60 \
+								THEN 25 \
+								ELSE 0 \
+							END)) AS totalRewards, \
+  						(CASE \
+  							WHEN up.address IS NULL \
+		  						THEN 0 \
+  								ELSE "+escape(properties.reward.address)+" \
+  						END) AS address, \
+  						(CASE \
+  							WHEN up.favorite_subject IS NULL \
+		  						THEN 0 \
+			  					ELSE "+escape(properties.reward.favoriteSubject)+" \
+	  					END) AS favoiteSubject, \
+ 						(CASE \
+ 							WHEN up.ambition IS NULL \
+ 								THEN 0 \
+ 								ELSE "+escape(properties.reward.ambition)+" \
+ 						END) AS ambition, \
+ 						(CASE \
+ 							WHEN up.dateofbirth IS NULL \
+ 								THEN 0 \
+ 								ELSE "+escape(properties.reward.birthday)+" \
+ 						END) AS birthday, \
+	 					(CASE \
+		 					WHEN up.nic IS NULL \
+ 								THEN 0 \
+ 								ELSE "+escape(properties.reward.nic)+" \
+ 						END) AS nic, \
+	 					(CASE \
+ 							WHEN up.sociallink IS NULL \
+ 								THEN 0 \
+ 								ELSE "+escape(properties.reward.socialLink)+" \
+ 						END) socialLink, \
+	 					(CASE \
+ 							WHEN up.email IS NULL \
+ 								THEN 0 \
+ 								ELSE "+escape(properties.reward.email)+" \
+ 						END) AS email, \
+	 					(CASE \
+ 							WHEN up.parent_name IS NULL \
+ 								THEN 0 \
+ 								ELSE "+escape(properties.reward.parentName)+" \
+ 						END) AS parentName, \
+	 					(CASE \
+ 							WHEN up.parent_contact IS NULL \
+ 								THEN 0 \
+ 								ELSE "+escape(properties.reward.parentContact)+" \
+ 						END) AS parentContact, \
+		 				(CASE \
+ 							WHEN up.parent_email IS NULL \
+ 								THEN 0 \
+ 								ELSE "+escape(properties.reward.parentEmail)+" \
+ 						END) AS parentEmail, \
+						(CASE \
+							WHEN up.school_address IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.schoolAddress)+" \
+						END) AS schoolAddress, \
+						(CASE \
+							WHEN up.school_contact IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.schoolContact)+" \
+						END) AS schoolContact, \
+						(CASE \
+							WHEN up.school_email IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.schoolEmail)+" \
+						END) AS schoolEmail, \
+						(CASE \
+							WHEN up.teacher_name IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.teacherName)+" \
+						END) AS teacherName, \
+						(CASE \
+							WHEN up.teacher_contact IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.teacherContact)+" \
+						END) AS teacherContact, \
+						(CASE \
+							WHEN up.teacher_email IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.teacherEmail)+" \
+						END) AS teacherEmail \
+					FROM user_profile as up \
+					INNER JOIN student_answer as sa ON sa.user_id=up.user_id \
+					INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
+					WHERE up.user_id=? AND mo.state=1; \
+					SELECT * FROM student_language; \
+					SELECT * FROM subscription_plan;",
+	whereLeaderBoard:"SELECT  SUM(CASE \
+							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 0 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 15 \
+								THEN 100 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 15 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 30 \
+								THEN 75 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 30 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 45 \
+								THEN 50 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 45 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 60 \
+								THEN 25 \
+								ELSE 0 \
+							END) as coins, \
+					count(student_answer.id) as correctAnswers, \
 					user_profile.name as studentName, \
 					school.school_name as schoolName,\
 					district.district_english as district,\
@@ -392,7 +416,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
 						WHERE mcq_option.state=1 \
 						GROUP BY student_answer.user_id \
-						ORDER BY studentMarks DESC \
+						ORDER BY correctAnswers DESC \
 						LIMIT 20",
 	whereStudentLikeFavorite: "SELECT * FROM ?? WHERE user_id = ? and video_id = ?",
 	whereStudentAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ?",
@@ -406,7 +430,20 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								INNER JOIN video ON  video.id = mcq_question.video_id \
 								WHERE mcq_option.id = ?",
 	whereUser: "SELECT * FROM ??  WHERE id = ?",
-	whereUserRole: "SELECT plan_id FROM ??  WHERE id = ?",
+	whereUserPlan: "SELECT  \
+					(CASE \
+						WHEN plan_id = 1 \
+						THEN 1000 \
+						WHEN plan_id=2 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL 7 DAY) THEN 5 ELSE 0 END) \
+						WHEN plan_id=3 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL 1 MONTH) THEN 1000 ELSE 0 END) \
+						WHEN plan_id=4 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL 3 MONTH) THEN 1000 ELSE 0 END) \
+						WHEN plan_id=5 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL 12 MONTH) THEN 1000 ELSE 0 END) \
+					END) AS planLimit \
+					FROM user  WHERE id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
 	whereUserProfile: "SELECT * \
 						FROM user_profile \
@@ -415,7 +452,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						INNER JOIN province ON province.id = district.province_id \
 						WHERE user_profile.user_id = ?",
 	whereMobile: "SELECT * FROM ?? WHERE phone = ?",
-	whereReferrerReferred: "SELECT id as referrer_id FROM user WHERE referral_code=?;SELECT id as referee_id FROM user WHERE phone=?",
+	whereReferrerReferee: "SELECT id as referee_id FROM user WHERE referral_code=?;SELECT id as referrer_id FROM user WHERE phone=?",
 	whereAffiliate: "SELECT id FROM user_affiliate WHERE referrer_id=? AND referee_id=?;",
 	//whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
 	//whereEmailPasswd: "SELECT * FROM ?? WHERE email = ? and password = ?",
@@ -487,18 +524,18 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertAffiliate:"INSERT INTO user_affiliate(id,referrer_id,referee_id,created) VALUES(?,?,?,?)",
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
 	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started,ended) VALUES (?,?,?,?,?,?)",	
-	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade,avatar_id) VALUES (?,?,?,?,?,?)",	
-	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,plan_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
+	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
+	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,plan_id,referral_code,device_id,plan_started) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",	
 	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
 	insertOauth:"INSERT INTO ??(id,token,created,updated,user_id) VALUES(?,?,?,?,?)",
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
-	updateUserPassword:"UPDATE ?? SET password=? WHERE id = ? and phone = ?",
+	updateUserPassword:"UPDATE ?? SET password=? WHERE phone = ?",
 	updateRecoveryCode:"UPDATE ?? SET code=?, created=?, is_verify=? WHERE mobile=?",
 	updateRecoveryCodeActivation:"UPDATE ?? SET created=?, is_verify=? WHERE mobile=?",
 
-	updateStudentLanguage:"UPDATE ?? SET student_language=? WHERE student_id=?",
+	updateStudentLanguage:"UPDATE user_profile SET language_id=? WHERE user_id=?",
 	updateStudentLikeFavorite:"UPDATE ?? SET status=? WHERE user_id=? AND video_id=?",
 	updateOtp:"UPDATE ?? SET otp=?, created=? WHERE mobile=?",
 	updateIsVerify:"UPDATE ?? SET is_verify=?, created=? WHERE mobile=?",
@@ -708,31 +745,28 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
- 					const [activityData,personalData,chartOfSubject,chartOfDay,languageData,walletData] = result;
+ 					const [activityData,personalData,chartOfSubject,chartOfDay,walletData,languageData,subscriptionPlan] = result;
  					
 					const chartSubject = chartOfSubject.map((mysqlObj, index) => {
     						return Object.assign({}, mysqlObj);
-    					}); 	
+    					});
+    				 	
 					const chartDay = chartOfDay.map((mysqlObj, index) => {
     						return Object.assign({}, mysqlObj);
     					}); 			
-    							
     				
 					const langList = languageData.map((mysqlObj, index) => {
 						return Object.assign({}, mysqlObj);
-					}); 					
+					});
+					 					
  					const jsonData={
-// 						correctAnswers:correctAnswers[0].correctAnswers,
- //						wrongAnswers:wrongAnswers[0].wrongAnswers,
- //						totalLessons:totalLessons[0].totalLessons,
- //						totalQuestions:totalQuestions[0].totalQuestion,
- //						chartOnSubject:chartSub[0],
  						personalInfo:personalData[0],
- 						wallet:walletData[0],
+						wallet:walletData[0],
  						activityList:activityData[0],
  						chartOfSubject:chartSubject,
  						chartOfDay:chartDay,
- 						languageList:langList
+ 						languageList:langList,
+ 						subscriptionTypeList:subscriptionPlan
  						
  					}
 					var jsonResults = result.map((mysqlObj, index) => {

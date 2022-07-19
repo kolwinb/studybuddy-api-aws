@@ -81,22 +81,40 @@ router.post('/getRecoveryCode',function(req,res,next) {
    } else if ((!mobile)) {
    		res.send(JSON.parse(status.smsNoRequire()));
    } else {
-		dbQuery.setUserSqlQuery(dbQuery.whereMobile,["user",mobile],function(callbackUser){
-			if (!callbackUser[0]){
-				res.send(JSON.parse(status.misbehaviour()));
-			} else {
-				smsApi.apiAuth(apiKey,apiSecret,function(callback){
-					if (callback){
-						//otp sms gateway controller
-						smsApi.sendRecoveryCode(mobile,function(callback){
-							res.send(JSON.parse(callback));
+        if (rtoken) {
+			jwtModule.jwtVerify(rtoken,function(callback){
+				if (callback){
+					jwtModule.jwtGetUserId(rtoken,function(callbackU){
+						const studentId=callbackU.userId;
+						dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+							if (!callbackUser[0]){
+								res.send(JSON.parse(status.misbehaviour()));
+							} else {
+								const registeredMobile=callbackUser[0].phone;
+								if (mobile != registeredMobile){
+                                    res.send(JSON.parse(status.mobileNotMatch()));
+								} else {
+									smsApi.apiAuth(apiKey,apiSecret,function(callback){
+										if (callback){
+											//otp sms gateway controller
+											smsApi.sendRecoveryCode(mobile,function(callback){
+												res.send(JSON.parse(callback));
+											});
+										} else {
+											res.send(JSON.parse(status.otpDecline()));
+										}
+									});								
+								}
+							}
 						});
-					} else {
-						res.send(JSON.parse(status.otpDecline()));
-					}
-				});								
-			}
-		});
+					});
+				} else {
+                    res.send(status.tokenExpired());
+				}
+			});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
 	}
  });
 
@@ -113,22 +131,40 @@ router.post('/setRecoveryCode',function(req,res,next) {
    } else if ((!mobile)) {
    		res.send(JSON.parse(status.smsNoRequire()));
    } else {
-		dbQuery.setUserSqlQuery(dbQuery.whereMobile,["user",mobile],function(callbackUser){
-			if (!callbackUser[0]){
-				res.send(JSON.parse(status.misbehaviour()));
-			} else {
-				smsApi.apiAuth(apiKey,apiSecret,function(callback){
-					if (callback){
-						//otp sms gateway controller
-						smsApi.verifyRecoveryCode(mobile,recoveryCode,function(callback){
-							res.send(JSON.parse(callback));
+        if (rtoken) {
+			jwtModule.jwtVerify(rtoken,function(callback){
+				if (callback){
+					jwtModule.jwtGetUserId(rtoken,function(callbackU){
+						const studentId=callbackU.userId;
+						dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+							if (!callbackUser[0]){
+								res.send(JSON.parse(status.misbehaviour()));
+							} else {
+								const registeredMobile=callbackUser[0].phone;
+								if (mobile != registeredMobile){
+                                    res.send(JSON.parse(status.mobileNotMatch()));
+								} else {
+									smsApi.apiAuth(apiKey,apiSecret,function(callback){
+										if (callback){
+											//otp sms gateway controller
+											smsApi.verifyRecoveryCode(mobile,recoveryCode,function(callback){
+												res.send(JSON.parse(callback));
+											});
+										} else {
+											res.send(JSON.parse(status.otpDecline()));
+										}
+									});								
+								}
+							}
 						});
-					} else {
-						res.send(JSON.parse(status.otpDecline()));
-					}
-				});
-			}
-		});
+					});
+				} else {
+                    res.send(status.tokenExpired());
+				}
+			});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
 	}
  });
 

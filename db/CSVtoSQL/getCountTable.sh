@@ -16,6 +16,8 @@ echo " select count(name) as sicenceVideo from video where name like '%science-%
 select count(name) as englishVideo from video where name like '%english-%'; \
 select count(name) as historyVideo from video where name like '%history-%'; \
 select count(name) as ictVideo from video where name like '%ict-%'; \
+select count(name) as geographyVideo from video where name like '%geography-%'; \
+select count(name) as mathsVideo from video where name like '%maths-%'; \
 select count(name) as sinhalaVideo from video where name like '%sinhala-%';" | $msql
 
 echo " select count(mcq_question.id) as scienceMcq from video INNER JOIN mcq_question ON mcq_question.video_id=video.id where video.name like '%science-%'; \
