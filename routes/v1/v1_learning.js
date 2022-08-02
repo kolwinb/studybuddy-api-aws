@@ -20,7 +20,7 @@ const api_secret = scope.learningApi.apiSecret;
 const properties = require('../lib/properties');
 
 //student leaderboard
-router.post('/getCommonLeaderboard',function(req,res,next) {
+router.post('/getLeaderboard',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
@@ -59,6 +59,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
     const bodyJson=JSON.parse(JSON.stringify(req.body));
 	
 	var respJson={};
+	console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
 	
 	if (!authToken){
 		console.log("Authorization header missing");

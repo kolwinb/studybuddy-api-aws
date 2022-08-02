@@ -46,7 +46,7 @@ router.post('/getOtp',function(req,res,next) {
 router.post('/setOtp',function(req,res,next) {
    var apiKey = req.body.api_key;
    var apiSecret=req.body.api_secret;
-   var mobile=req.body.mobile;
+   var mobile=req.body.mobileNo;
    var otp=req.body.otp;
    
    if ((!apiKey || !apiSecret)){

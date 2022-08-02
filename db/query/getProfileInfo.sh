@@ -51,6 +51,7 @@ echo "	SELECT (SELECT count(student_answer.user_id) as correctAnswers \
  				GROUP BY mcq_question.video_id)) as t3, \
  				(SELECT COUNT(question_id) as totalQuestions FROM student_answer WHERE user_id=7) as t4;" | $msql
 
+echo "profile personalInfo"
 
 echo " SELECT user_profile.name as studentName, \
 IFNULL(user_profile.avatar_id,0) as avatarId, \
@@ -97,7 +98,38 @@ CROSS JOIN district ON school.district_id = district.id \
 CROSS JOIN province ON province.id = district.province_id \
 CROSS JOIN subscription_plan ON subscription_plan.id = user.plan_id \
 CROSS JOIN student_language ON student_language.id=user_profile.language_id \
-WHERE user.id =55; "| $msql
+WHERE user.id =1; "| $msql
+
+echo "Activities"
+
+echo "SELECT count(student_answer.user_id) as correctAnswers \
+   FROM student_answer \
+   INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
+   WHERE student_answer.user_id=user.id and mcq_option.state=1 \
+   ) as correctAnswers, \
+   ( \
+   SELECT count(student_answer.user_id) as wrongAnswers \
+   FROM student_answer \
+   INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
+   WHERE student_answer.user_id=user.id and mcq_option.state=0 \
+   ) as wrongAnswers, \
+   ( \
+   SELECT count(video.id) as totalLessons \
+	FROM video \
+	WHERE video.id IN (SELECT mcq_question.video_id \
+	FROM mcq_question \
+	INNER JOIN student_answer ON student_answer.question_id=mcq_question.id \
+	WHERE student_answer.user_id=user.id \
+	GROUP BY mcq_question.video_id) \
+	) as totalLessons, \
+	( \
+	SELECT COUNT(question_id) as totalQuestions \
+	FROM student_answer  \
+	WHERE user_id=user.id \
+	) as totalQuestions \
+	FROM user \
+	WHERE user.id=?; " | $msql
+
 
 #(SELECT (CASE \
 #	WHEN student_language.language IS NULL \

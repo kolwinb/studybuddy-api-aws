@@ -115,7 +115,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 							SELECT count(student_answer.user_id) as wrongAnswers \
 							FROM student_answer \
 							INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
-							WHERE student_answer.user_id=user.id and mcq_option.state=0 \
+							WHERE student_answer.user_id=user.id AND mcq_option.state=0 \
 						) as wrongAnswers, \
 						( \
 							SELECT count(video.id) as totalLessons \
@@ -306,7 +306,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
   							WHEN up.favorite_subject IS NULL \
 		  						THEN 0 \
 			  					ELSE "+escape(properties.reward.favoriteSubject)+" \
-	  					END) AS favoiteSubject, \
+	  					END) AS favoriteSubject, \
  						(CASE \
  							WHEN up.ambition IS NULL \
  								THEN 0 \
@@ -445,6 +445,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					END) AS planLimit \
 					FROM user  WHERE id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
+	whereProfileData:"SELECT * FROM user_profile WHERE user_id=?",
 	whereUserProfile: "SELECT * \
 						FROM user_profile \
 						INNER JOIN school ON user_profile.school_id = school.id \
@@ -485,9 +486,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						syllabus.syllabus_sinhala as syllabusS, \
 						video.name as fileName, \
 						(SELECT (CASE \
-							WHEN count(student_favorite.id) = 0 \
-								THEN 'False' \
-								ELSE 'True' \
+								WHEN count(student_favorite.status) = 0 OR student_favorite.status = 0 \
+									THEN 'False' \
+									ELSE 'True' \
 								END) \
 							FROM student_favorite \
 							WHERE student_favorite.video_id=video.id AND student_favorite.user_id=?) AS favoritedState, \
@@ -741,7 +742,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
    				if (!result){
-   					callback(JSON.stringify(status.server()));
+   					callback(status.server());
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
@@ -810,7 +811,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
 					var jsonResults = result.map((mysqlObj, index) => {
-							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.jpg';
+							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.png';
     						return Object.assign({}, mysqlObj);
     					});
 					//log.info(JSON.stringify(jsonResults));
@@ -831,7 +832,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
 					var jsonResults = result.map((mysqlObj, index) => {
-							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.jpg';
+							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.png';
     						return Object.assign({}, mysqlObj);
     					});
 					//log.info(JSON.stringify(jsonResults));
@@ -852,7 +853,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
 					var jsonResults = result.map((mysqlObj, index) => {
-							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.jpg';
+							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.png';
     						return Object.assign({}, mysqlObj);
     					});
 					//log.info(JSON.stringify(jsonResults));
@@ -877,7 +878,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  					const [video,favorite] = result
 					var jsonResults = video.map((mysqlObj, index) => {
 							mysqlObj.type="directory";
-							mysqlObj.thumb=properties.vodUrl+'/grade-0'+mysqlObj.grade+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.jpg';
+							mysqlObj.thumb=properties.vodUrl+'/grade-0'+mysqlObj.grade+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.png';
 							/*
 							mysqlObj.favorite=favorite.map((favoriteObj,index) => {
 								if (mysqlObj.id == favoriteObj.video_id){
