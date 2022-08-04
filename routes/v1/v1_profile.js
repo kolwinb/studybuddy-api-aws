@@ -640,4 +640,45 @@ router.post('/getSchool',function(req,res,next) {
 
  });
 
+router.post('/setSubscription',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	const planId=req.body.plan_id;
+	const gradeId=req.body.grade_id;
+	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							//console.log(studentId);
+							dbQuery.setUserSqlQuery(dbQuery.whereSubscriptionPlan,[studentId,planId],function(callbackUser){
+								console.log(callbackUser[0]);
+								if (!callbackUser[0]) {
+									res.send(JSON.parse(status.planNotFound()));
+								} else {
+									content=JSON.stringify({"test":"test"});
+									res.send(JSON.parse(status.stateSuccess(content)));
+								}
+							});
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ });
+
+
 module.exports = router

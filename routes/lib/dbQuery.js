@@ -134,6 +134,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				FROM user \
 				WHERE user.id=?; \
 				SELECT user_profile.name as studentName, \
+					user.referral_code as referralCode, \
 					user_profile.avatar_id as avatarId, \
 					user_profile.grade as studentGrade, \
 					user_profile.address as address, \
@@ -403,6 +404,24 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								THEN 25 \
 								ELSE 0 \
 							END) as coins, \
+						( \
+							SELECT COUNT(mcq_option.id) \
+							FROM mcq_option \
+							INNER JOIN student_answer ON student_answer.option_id=mcq_option.id \
+							WHERE mcq_option.state=0 AND student_answer.user_id=user_profile.user_id \
+						) as wrongAnswers, \
+						( \
+							SELECT COUNT(referrer_id) \
+							 FROM user_affiliate \
+							 WHERE user_affiliate.referrer_id=user_profile.user_id \
+						) as totalInvitation, \
+						(\
+							SELECT COUNT(video.id)/5 \
+							FROM student_answer \
+							INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
+							INNER JOIN video ON video.id=mcq_question.video_id \
+							WHERE student_answer.user_id=user_profile.user_id \
+						) as totalLesson, \
 					count(student_answer.id) as correctAnswers, \
 					user_profile.name as studentName, \
 					school.school_name as schoolName,\
@@ -417,7 +436,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHERE mcq_option.state=1 \
 						GROUP BY student_answer.user_id \
 						ORDER BY correctAnswers DESC \
-						LIMIT 20",
+						LIMIT 20;",
 	whereStudentLikeFavorite: "SELECT * FROM ?? WHERE user_id = ? and video_id = ?",
 	whereStudentAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ?",
 	whereQuestionId: "SELECT question_id FROM ?? WHERE id = ?",
@@ -430,6 +449,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								INNER JOIN video ON  video.id = mcq_question.video_id \
 								WHERE mcq_option.id = ?",
 	whereUser: "SELECT * FROM ??  WHERE id = ?",
+	whereSubscriptionPlan: "SELECT plan_id \
+							FROM user WHERE id=? AND plan_id >=3;",
 	whereUserPlan: "SELECT  \
 					(CASE \
 						WHEN plan_id = 1 \
@@ -522,6 +543,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	whereOtpNo:"SELECT * FROM ?? WHERE mobile = ?",
 	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
 
+	insertPlan:"INSERT INTO student_subscription_grade(id,user_id,grade_id,started) VALUES(?,?,?,?)",
 	insertAffiliate:"INSERT INTO user_affiliate(id,referrer_id,referee_id,created) VALUES(?,?,?,?)",
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
 	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started,ended) VALUES (?,?,?,?,?,?)",	

@@ -2,6 +2,9 @@ const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
 var State ={
+	planNotFound: function(){
+		return  JSON.stringify({"status":"error","error":{"statusCode":"1021","description":"Subscription plan has not been found."}})
+	},
 	planExpired: function(){
 		return  JSON.stringify({"status":"error","error":{"statusCode":"1020","description":"Subscription plan has been expired."}})
 	},
