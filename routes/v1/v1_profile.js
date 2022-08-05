@@ -93,6 +93,56 @@ router.post('/setAccountDetail',function(req,res,next) {
 	}
 });
 
+router.post('/resetPassword',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	const currentPassword=req.body.current_password;
+	const newPassword=req.body.new_password;
+	
+	console.log("token :"+rtoken+", currentPassword :"+currentPassword+", new password :"+newPassword+", apikey :"+apiKey+", apisecret :"+apiSecret);
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							//console.log("user_id :"+studentId);
+							dbQuery.setUserSqlQuery(dbQuery.whereUserPassword,[studentId,currentPassword],function(callbackUser){
+								//console.log(callbackUser[0]);
+								if (!callbackUser[0]){
+									res.send(JSON.parse(status.misbehaviour()));
+								} else {
+									if (currentPassword == newPassword){
+										res.send(JSON.parse(status.resetPasswordFail()));
+									} else {
+										dbQuery.setSqlUpdate(dbQuery.updateNewPassword,[newPassword,studentId],function(callbackPassword){
+											if (!callbackPassword){
+												res.send(JSON.parse(status.server()));
+											} else {
+												retJson=JSON.stringify({"description":"Password resetting has been done."});
+												res.send(JSON.parse(status.stateSuccess(retJson)));
+											}
+										});
+									}
+								}
+							});
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+				});
+		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
+
 router.post('/getChartSubjectQuestion',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
@@ -128,6 +178,7 @@ router.post('/getChartSubjectQuestion',function(req,res,next) {
 		}
 	}
 });
+
 router.post('/getInfo',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;

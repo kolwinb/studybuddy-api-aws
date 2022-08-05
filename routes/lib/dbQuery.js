@@ -414,14 +414,14 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 							SELECT COUNT(referrer_id) \
 							 FROM user_affiliate \
 							 WHERE user_affiliate.referrer_id=user_profile.user_id \
-						) as totalInvitation, \
+						) as totalInvites, \
 						(\
 							SELECT COUNT(video.id)/5 \
 							FROM student_answer \
 							INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
 							INNER JOIN video ON video.id=mcq_question.video_id \
 							WHERE student_answer.user_id=user_profile.user_id \
-						) as totalLesson, \
+						) as totalLessons, \
 					count(student_answer.id) as correctAnswers, \
 					user_profile.name as studentName, \
 					school.school_name as schoolName,\
@@ -449,6 +449,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								INNER JOIN video ON  video.id = mcq_question.video_id \
 								WHERE mcq_option.id = ?",
 	whereUser: "SELECT * FROM ??  WHERE id = ?",
+	whereUserPassword: "SELECT id FROM user WHERE id = ? AND password = ?",
 	whereSubscriptionPlan: "SELECT plan_id \
 							FROM user WHERE id=? AND plan_id >=3;",
 	whereUserPlan: "SELECT  \
@@ -554,6 +555,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
+	updateNewPassword:"UPDATE user SET password = ? WHERE id = ?",
 	updateUserPassword:"UPDATE ?? SET password=? WHERE phone = ?",
 	updateRecoveryCode:"UPDATE ?? SET code=?, created=?, is_verify=? WHERE mobile=?",
 	updateRecoveryCodeActivation:"UPDATE ?? SET created=?, is_verify=? WHERE mobile=?",
@@ -589,10 +591,10 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			con.query(query,fields, function (err,result){
 				if (err) {
 					throw err;
-					log.error("db update error");
+					log.error(fields+" : db update error");
 					callback(false);
 				} else {
-					log.info("db update done");
+					log.info(fields+" : db update done");
 					callback(true);
 				}
  			});
@@ -601,14 +603,14 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	
 	},
 	setUserSqlQuery: function(query,fields,callback) {
-//		log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
+		//log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
 					log.info(err);
 				} else {
+				//log.info("sql result : "+result[0].id);
 				callback(result);
-//				log.info("sql result : "+result[0].email);
 				}
  			});
 			con.release();
