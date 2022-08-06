@@ -464,31 +464,36 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 											ELSE False \
 									END) as planMode \
 							FROM subscription_plan WHERE id=?;",
-	whereSubscriptionStatus: "SELECT  \
+	whereSubscriptionStatus: "SELECT \
 					(CASE \
-						WHEN subP.plan_id=3 \
-						THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) THEN True ELSE False END) \
-						WHEN subP.plan_id=4 \
-						THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) THEN True ELSE False END) \
-						WHEN subP.plan_id=5 \
-						THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) THEN True ELSE False END) \
-					END) AS planPeriod \
+						WHEN subP.plan_id IS NULL \
+							THEN False \
+							ELSE \
+								CASE \
+									WHEN subP.plan_id=3 \
+										THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) THEN True ELSE False END) \
+									WHEN subP.plan_id=4 \
+										THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) THEN True ELSE False END) \
+									WHEN subP.plan_id=5 \
+										THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) THEN True ELSE False END) \
+								END \
+					END) AS planStatus \
 					FROM student_subscription_grade as subP \
-					WHERE subP.plan_id =? AND subP.grade_id = ? AND subP.user_id = ?",
-	whereUserPlan: "SELECT  \
+					WHERE subP.plan_id =? OR subP.grade_id = ? AND subP.user_id = ?;",
+	whereUserPlan: "SELECT \
 					(CASE \
-						WHEN user.plan_id = 1 \
+						WHEN plan_id = 1 \
 						THEN 1000 \
-						WHEN user.plan_id=2 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.trail)+" DAY) THEN 5 ELSE 0 END) \
-						WHEN user.plan_id=3 \
+						WHEN plan_id=2 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN 5 ELSE 0 END) \
+						WHEN plan_id=3 \
 						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) THEN 1000 ELSE 0 END) \
-						WHEN user.plan_id=4 \
+						WHEN plan_id=4 \
 						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) THEN 1000 ELSE 0 END) \
-						WHEN user.plan_id=5 \
+						WHEN plan_id=5 \
 						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) THEN 1000 ELSE 0 END) \
 					END) AS planLimit \
-					FROM user  WHERE user.id = ?",
+					FROM user WHERE id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
 	whereProfileData:"SELECT * FROM user_profile WHERE user_id=?",
 	whereUserProfile: "SELECT * \
@@ -630,6 +635,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
+					//throw err;
 					log.info(err);
 				} else {
 				//log.info("sql result : "+result[0].id);

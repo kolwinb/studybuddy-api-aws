@@ -170,11 +170,13 @@ router.post('/getLessonList',function(req,res,next) {
 		      			//var contents = fs.readFileSync("/home/data/opt/nodejs/studybuddy/json/"+grade+".json");
 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
+ 							//console.log("getLessonList :"+studentId);
  							dbQuery.setUserSqlQuery(dbQuery.whereUserPlan,[studentId],function(callbackRole){
+ 								console.log(callbackRole[0]);
  								if (!callbackRole[0]){
  									res.send(JSON.parse(status.server()));
  								} else {
- 									//console.log('planId : '+callbackRole[0].plan_id+' plan started : '+callbackRole[0].plan_started+" , lessonLimit :"+callbackRole[0].planLimit);
+ 									console.log('planId : '+callbackRole[0].plan_id+' plan started : '+callbackRole[0].plan_started+" , lessonLimit :"+callbackRole[0].planLimit);
  									const planLimit=callbackRole[0].planLimit;
  									//const planStarted=callbackRole[0].plan_started;
  									//switch(planLimit){

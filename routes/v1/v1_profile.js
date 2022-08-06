@@ -710,18 +710,18 @@ router.post('/setSubscription',function(req,res,next) {
 							const studentId=callback.userId
 							//console.log(studentId);
 							dbQuery.setUserSqlQuery(dbQuery.whereSubscriptionPlan,[planId],function(callbackUser){
-								console.log(callbackUser[0]);
+								console.log("where subscription plan :"+callbackUser[0].planMode);
 								if (!callbackUser[0].planMode) {
 									res.send(JSON.parse(status.invalidPlanId()));
 								} else {
 									dbQuery.setUserSqlQuery(dbQuery.whereSubscriptionStatus,[planId,gradeId,studentId],function(callbackPeriod){
-										if (!callbackPeriod){
+										if (!callbackPeriod[0]){
 											var dateTime=new Date();
 											dbQuery.setUserInsert(dbQuery.insertSubscription,["NULL",studentId,planId,gradeId,dateTime],function(callbackSubscription){
 												if (!callbackSubscription){
 													res.send(JSON.parse(status.server()));
 												} else {	
-													content=JSON.stringify({"test":"test"});
+													content=JSON.stringify({"description":"User subscribed"});
 													res.send(JSON.parse(status.stateSuccess(content)));
 												}
 											});
