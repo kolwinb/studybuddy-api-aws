@@ -1,3 +1,4 @@
+var fs = require('fs');
 //mysql model
 var pool = require('../../models/usermysql.js');
 
@@ -159,13 +160,13 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHEN user.plan_id = 1 \
 						THEN '' \
 						WHEN user.plan_id=2 \
-						THEN DATE_ADD(user.plan_started,INTERVAL 7 DAY) \
+						THEN DATE_ADD(user.plan_started,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) \
 						WHEN user.plan_id=3 \
-						THEN DATE_ADD(user.plan_started,INTERVAL 1 MONTH) \
+						THEN DATE_ADD(user.plan_started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) \
 						WHEN user.plan_id=4 \
-						THEN DATE_ADD(user.plan_started,INTERVAL 3 MONTH) \
+						THEN DATE_ADD(user.plan_started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
 						WHEN user.plan_id=5 \
-						THEN DATE_ADD(user.plan_started,INTERVAL 12 MONTH) \
+						THEN DATE_ADD(user.plan_started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
 					END AS subscriptionExpIn, \
 					school.school_name as school, \
 					district.district_english as district, \
@@ -382,8 +383,15 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					INNER JOIN student_answer as sa ON sa.user_id=up.user_id \
 					INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
 					WHERE up.user_id=? AND mo.state=1; \
-					SELECT * FROM student_language; \
-					SELECT * FROM subscription_plan;",
+				SELECT subscription_plan.name as planName, \
+					grade.grade_english as grade, \
+					DATE_FORMAT(student_subscription_grade.started,'%Y-%m-%d %H:%m:%s') as startedAt \
+					FROM grade \
+					INNER JOIN student_subscription_grade ON student_subscription_grade.grade_id=grade.id \
+					INNER JOIN subscription_plan ON subscription_plan.id = student_subscription_grade.plan_id \
+					WHERE student_subscription_grade.user_id=?; \
+				SELECT * FROM student_language; \
+				SELECT * FROM subscription_plan WHERE id > 2;",
 	whereLeaderBoard:"SELECT  SUM(CASE \
 							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 0 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 15 \
 								THEN 100 \
@@ -450,22 +458,37 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								WHERE mcq_option.id = ?",
 	whereUser: "SELECT * FROM ??  WHERE id = ?",
 	whereUserPassword: "SELECT id FROM user WHERE id = ? AND password = ?",
-	whereSubscriptionPlan: "SELECT plan_id \
-							FROM user WHERE id=? AND plan_id >=3;",
+	whereSubscriptionPlan: "SELECT (CASE \
+										WHEN id >=3 and id <=5 \
+											THEN True \
+											ELSE False \
+									END) as planMode \
+							FROM subscription_plan WHERE id=?;",
+	whereSubscriptionStatus: "SELECT  \
+					(CASE \
+						WHEN subP.plan_id=3 \
+						THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) THEN True ELSE False END) \
+						WHEN subP.plan_id=4 \
+						THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) THEN True ELSE False END) \
+						WHEN subP.plan_id=5 \
+						THEN (CASE WHEN now() <= DATE_ADD(subP.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) THEN True ELSE False END) \
+					END) AS planPeriod \
+					FROM student_subscription_grade as subP \
+					WHERE subP.plan_id =? AND subP.grade_id = ? AND subP.user_id = ?",
 	whereUserPlan: "SELECT  \
 					(CASE \
-						WHEN plan_id = 1 \
+						WHEN user.plan_id = 1 \
 						THEN 1000 \
-						WHEN plan_id=2 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL 7 DAY) THEN 5 ELSE 0 END) \
-						WHEN plan_id=3 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL 1 MONTH) THEN 1000 ELSE 0 END) \
-						WHEN plan_id=4 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL 3 MONTH) THEN 1000 ELSE 0 END) \
-						WHEN plan_id=5 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL 12 MONTH) THEN 1000 ELSE 0 END) \
+						WHEN user.plan_id=2 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.trail)+" DAY) THEN 5 ELSE 0 END) \
+						WHEN user.plan_id=3 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) THEN 1000 ELSE 0 END) \
+						WHEN user.plan_id=4 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) THEN 1000 ELSE 0 END) \
+						WHEN user.plan_id=5 \
+						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) THEN 1000 ELSE 0 END) \
 					END) AS planLimit \
-					FROM user  WHERE id = ?",
+					FROM user  WHERE user.id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
 	whereProfileData:"SELECT * FROM user_profile WHERE user_id=?",
 	whereUserProfile: "SELECT * \
@@ -544,7 +567,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	whereOtpNo:"SELECT * FROM ?? WHERE mobile = ?",
 	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
 
-	insertPlan:"INSERT INTO student_subscription_grade(id,user_id,grade_id,started) VALUES(?,?,?,?)",
+	insertSubscription:"INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES(?,?,?,?,?)",
 	insertAffiliate:"INSERT INTO user_affiliate(id,referrer_id,referee_id,created) VALUES(?,?,?,?)",
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
 	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started,ended) VALUES (?,?,?,?,?,?)",	
@@ -689,6 +712,27 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  					//console.log("mcqOption :"+option[0].id);
 					var jsonVideo = video.map((mysqlObj, index) => {
 							//console.log(jsonVideo);
+							smallList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_240p.m3u').toString().split("\n");
+							mediumList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_360p.m3u').toString().split("\n");;
+							largeList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_480p.m3u').toString().split("\n");;
+							
+							mysqlObj.playlists=[
+										{
+											"name":"small",
+											"quality":"240p",
+											"videoList":smallList.slice(0,-1)
+										},
+										{
+											"name":"medium",
+											"quality":"360p",
+											"videoList":mediumList.slice(0,-1)
+										},
+										{
+											"name":"large",
+											"quality":"480p",
+											"videoList":largeList.slice(0,-1)
+										}];
+/*										
 							mysqlObj.videoUrls=[{
 										"name":"small",
 										"quality":"240p",
@@ -706,6 +750,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 										"videoUrl":properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_480p.m3u'
 										}
 										]
+*/
 							//append mcq
 							varOptionData=JSON.stringify(option);
 							//console.log(varOptionData);
@@ -770,7 +815,11 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
- 					const [activityData,personalData,chartOfSubject,chartOfDay,walletData,languageData,subscriptionPlan] = result;
+ 					const [activityData,personalData,chartOfSubject,chartOfDay,walletData,subscriptionData,languageData,subscriptionPlan] = result;
+
+					const subscriptionDetails = subscriptionData.map((mysqlObj, index) => {
+    						return Object.assign({}, mysqlObj);
+    					});
  					
 					const chartSubject = chartOfSubject.map((mysqlObj, index) => {
     						return Object.assign({}, mysqlObj);
@@ -791,7 +840,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  						chartOfSubject:chartSubject,
  						chartOfDay:chartDay,
  						languageList:langList,
- 						subscriptionTypeList:subscriptionPlan
+ 						subscriptionTypeList:subscriptionPlan,
+ 						subscriptionDetails:subscriptionDetails
  						
  					}
 					var jsonResults = result.map((mysqlObj, index) => {

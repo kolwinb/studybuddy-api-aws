@@ -223,9 +223,6 @@ router.post('/getLessonList',function(req,res,next) {
   	}
  });
  
- 
- 
-
 //get list of video
 router.post('/getLesson',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];

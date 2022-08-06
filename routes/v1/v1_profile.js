@@ -75,8 +75,7 @@ router.post('/setAccountDetail',function(req,res,next) {
 										res.send(JSON.parse(status.profileError()));
 									} else {
 										resJson=JSON.stringify({"description":"Account details are updated"});
-                                		res.send(JSON.parse(status.stateSuccess(resJson)));
-                                
+   			                            res.send(JSON.parse(status.stateSuccess(resJson)));
 									}
 								});									
 							}
@@ -200,7 +199,7 @@ router.post('/getInfo',function(req,res,next) {
 								if (!callbackUser[0]){
 									res.send(JSON.parse(status.profileError()));
 								} else {							
-									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
 										userJsonProfile=JSON.stringify(callbackUserProfile);
 										userProfile=JSON.parse(userJsonProfile);
 										if (!userProfile) {
@@ -710,13 +709,26 @@ router.post('/setSubscription',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.setUserSqlQuery(dbQuery.whereSubscriptionPlan,[studentId,planId],function(callbackUser){
+							dbQuery.setUserSqlQuery(dbQuery.whereSubscriptionPlan,[planId],function(callbackUser){
 								console.log(callbackUser[0]);
-								if (!callbackUser[0]) {
-									res.send(JSON.parse(status.planNotFound()));
+								if (!callbackUser[0].planMode) {
+									res.send(JSON.parse(status.invalidPlanId()));
 								} else {
-									content=JSON.stringify({"test":"test"});
-									res.send(JSON.parse(status.stateSuccess(content)));
+									dbQuery.setUserSqlQuery(dbQuery.whereSubscriptionStatus,[planId,gradeId,studentId],function(callbackPeriod){
+										if (!callbackPeriod){
+											var dateTime=new Date();
+											dbQuery.setUserInsert(dbQuery.insertSubscription,["NULL",studentId,planId,gradeId,dateTime],function(callbackSubscription){
+												if (!callbackSubscription){
+													res.send(JSON.parse(status.server()));
+												} else {	
+													content=JSON.stringify({"test":"test"});
+													res.send(JSON.parse(status.stateSuccess(content)));
+												}
+											});
+										} else {
+											res.send(JSON.parse(status.subscriptionFound()));
+										}
+									});
 								}
 							});
 						});

@@ -37,11 +37,13 @@ var config={
 	apiUrl:'https://api.learntv.lk/studybuddy/v1',
 	vodUrl:'http://edutv.lk/video',
 	thumbUrl:'http://edutv.lk/img',
+	fileBasePath:'/home/data/video',
 	mcqExpInSec:10,
 	optionExpInSec:60,
 	optionCount:4,
 	trialLessonLimit:5,
 	lessonUnlimit:100000,
+	subscriptionPeriod:{"trial":7,"basic":1,"standard":3,"premium":6},
 	reward:{
 			address: 20,
 			favoriteSubject: 20,
