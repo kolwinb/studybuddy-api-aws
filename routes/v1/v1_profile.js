@@ -199,7 +199,7 @@ router.post('/getInfo',function(req,res,next) {
 								if (!callbackUser[0]){
 									res.send(JSON.parse(status.profileError()));
 								} else {							
-									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
 										userJsonProfile=JSON.stringify(callbackUserProfile);
 										userProfile=JSON.parse(userJsonProfile);
 										if (!userProfile) {
@@ -720,9 +720,15 @@ router.post('/setSubscription',function(req,res,next) {
 											dbQuery.setUserInsert(dbQuery.insertSubscription,["NULL",studentId,planId,gradeId,dateTime],function(callbackSubscription){
 												if (!callbackSubscription){
 													res.send(JSON.parse(status.server()));
-												} else {	
-													content=JSON.stringify({"description":"User subscribed"});
-													res.send(JSON.parse(status.stateSuccess(content)));
+												} else {
+													dbQuery.setSqlUpdate(dbQuery.updateUserRole,[3,studentId],function(callbackUserRole){
+														if (!callbackUserRole){
+															res.send(JSON.parse(status.server()));
+														} else {
+															content=JSON.stringify({"description":"User has been subscribed."});
+															res.send(JSON.parse(status.stateSuccess(content)));														}
+													});	
+
 												}
 											});
 										} else {

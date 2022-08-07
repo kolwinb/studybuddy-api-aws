@@ -154,7 +154,6 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					user_profile.teacher_name as teacherName, \
 					user_profile.teacher_contact as teacherContact, \
 					user_profile.teacher_email as teacherEmail, \
-					user_role.name as userRole, \
 					school.school_name as school, \
 					district.district_english as district, \
 					province.province_english as province, \
@@ -164,7 +163,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				INNER JOIN district	ON school.district_id = district.id \
 				INNER JOIN province ON province.id = district.province_id \
 				INNER JOIN user ON user.id = user_profile.user_id \
-				INNER JOIN user_role ON user_role.id = user.role_id \
+				INNER JOIN subscription_plan ON subscription_plan.id = user.plan_id \
 				INNER JOIN student_language ON student_language.id=user_profile.language_id \
 				WHERE user_profile.user_id =?; \
 				SELECT count(video.id) as totalQuestions, \
@@ -372,12 +371,12 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					WHERE up.user_id=? AND mo.state=1; \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
+					grade.grade_english as grade, \
 					grade.id as gradeId, \
-					grade.grade_english as nameE, \
-					grade.grade_sinhala as nameS, \
-					@thumbUrl := CONCAT('http://edutv.lk/img/',grade.grade_english,'.jpg') as thumb, \
 					DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s') as startedAt, \
 					(CASE \
+						WHEN NOW() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) \
+							THEN DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) \
 						WHEN ssg.plan_id = 3 \
 							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'), INTERVAL 1 MONTH) \
 						WHEN ssg.plan_id = 4 \
@@ -583,13 +582,12 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
 	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started,ended) VALUES (?,?,?,?,?,?)",	
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
-	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,role_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
+	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,plan_id,referral_code,device_id,plan_started) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",	
 	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
 	insertOauth:"INSERT INTO ??(id,token,created,updated,user_id) VALUES(?,?,?,?,?)",
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
-	updateUserRole:"UPDATE user SET role_id = ? WHERE id = ?",
 	updateNewPassword:"UPDATE user SET password = ? WHERE id = ?",
 	updateUserPassword:"UPDATE ?? SET password=? WHERE phone = ?",
 	updateRecoveryCode:"UPDATE ?? SET code=?, created=?, is_verify=? WHERE mobile=?",
