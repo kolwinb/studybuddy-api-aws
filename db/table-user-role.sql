@@ -9,4 +9,4 @@ CREATE TABLE `user_role` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-INSERT INTO user_role(id,name) VALUES(1,'teacher'),(2,'guest'),(3,'subscriber'),(4,'parent');
+INSERT INTO user_role(id,name) VALUES(1,'teacher'),(2,'parent'),(3,'guest'),(4,'subscriber');

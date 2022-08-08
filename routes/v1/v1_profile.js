@@ -721,7 +721,7 @@ router.post('/setSubscription',function(req,res,next) {
 												if (!callbackSubscription){
 													res.send(JSON.parse(status.server()));
 												} else {
-													dbQuery.setSqlUpdate(dbQuery.updateUserRole,[3,studentId],function(callbackUserRole){
+													dbQuery.setSqlUpdate(dbQuery.updateUserRole,[4,studentId],function(callbackUserRole){
 														if (!callbackUserRole){
 															res.send(JSON.parse(status.server()));
 														} else {

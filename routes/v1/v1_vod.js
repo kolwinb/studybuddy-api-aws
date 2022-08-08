@@ -171,12 +171,12 @@ router.post('/getLessonList',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
  							//console.log("getLessonList :"+studentId);
- 							dbQuery.setUserSqlQuery(dbQuery.whereUserPlan,[studentId],function(callbackRole){
- 								console.log(callbackRole[0]);
+ 							dbQuery.setUserSqlQuery(dbQuery.whereUserRole,[studentId,gradeId],function(callbackRole){
+ 								console.log("whereUserRole :"+callbackRole[0]);
  								if (!callbackRole[0]){
  									res.send(JSON.parse(status.server()));
  								} else {
- 									console.log('planId : '+callbackRole[0].plan_id+' plan started : '+callbackRole[0].plan_started+" , lessonLimit :"+callbackRole[0].planLimit);
+ 									//console.log('roleId : '+callbackRole[0].role_id+', lessonLimit :"+callbackRole[0].planLimit);
  									const planLimit=callbackRole[0].planLimit;
  									//const planStarted=callbackRole[0].plan_started;
  									//switch(planLimit){
@@ -246,14 +246,22 @@ router.post('/getLesson',function(req,res,next) {
  								if (!callbackUser[0]){
  					  				res.send(JSON.parse(status.misbehaviour()));
  								} else {
-									dbQuery.getSqlLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
-										varLesson=JSON.parse(callbackLesson)
-										//console.log("callbackUser "+callbackUser);
-										//console.log(callbackLesson);
-	       								res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
-
-									});																				
-
+ 									dbQuery.setUserSqlQuery(dbQuery.whereUserRoleLesson,[studentId,videoId],function(callbackRole){
+ 										console.log("wherePlanStatus :"+callbackRole[0].planStatus);
+ 										if (!callbackRole[0]){
+ 											res.send(JSON.parse(status.server()));
+ 										} else if (!callbackRole[0].planStatus) {
+											res.send(JSON.parse(status.planExpired()));
+ 										} else {
+											dbQuery.getSqlLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
+												varLesson=JSON.parse(callbackLesson)
+												//console.log("callbackUser "+callbackUser);
+												//console.log(callbackLesson);
+	       										res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
+		
+											});	
+										}
+									});
        							}
  							});
  						});

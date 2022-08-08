@@ -56,7 +56,7 @@ router.post('/',function(req,res){
 					} else	if (callbackVerify[0].is_verify == 1){
 						const referralCode=referralGenerator.alphaNumeric('uppercase',4,1);
 						log.info("referral code generated : "+referralCode);
-						dbQuery.setUserInsert(dbQuery.insertUser,["user","",password,"",mobileNo,signdate,signdate,valrand,1,'NULL',2,referralCode,deviceId],function(callbackAdd){
+						dbQuery.setUserInsert(dbQuery.insertUser,["user","",password,"",mobileNo,signdate,signdate,valrand,1,'NULL',3,referralCode,deviceId],function(callbackAdd){
 							if (!callbackAdd){
 								log.info("user insert error ");
 								res.send(JSON.parse(status.server()));

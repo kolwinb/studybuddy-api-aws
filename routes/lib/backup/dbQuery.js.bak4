@@ -486,65 +486,37 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					END) AS planStatus \
 					FROM student_subscription_grade as subP \
 					WHERE subP.plan_id =? OR subP.grade_id = ? AND subP.user_id = ?;",
-		whereUserRoleLesson: "SELECT \
-					(CASE \
-						WHEN user.role_id = 1 \
-							THEN True \
-						WHEN user.role_id=2 \
-							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN False END) \
-						WHEN user.role_id=3 \
-							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN False END) \
-						WHEN user.role_id=4 \
-							THEN (CASE WHEN COUNT(ssg.plan_id) = 0 OR (ssg.plan_id < 3) OR (ssg.plan_id > 5) \
-									THEN False \
-									ELSE (CASE \
-											WHEN ssg.plan_id = 3 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) \
-												THEN True \
-											WHEN ssg.plan_id = 4 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
-												THEN True \
-											WHEN ssg.plan_id = 5 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
-												THEN True \
-											WHEN (ssg.plan_id = 3 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH)) \
-												OR \
-												(ssg.plan_id = 4 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH)) \
-												OR \
-												(ssg.plan_id = 5 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH)) \
-												THEN False \
-										END) \
-								END) \
-					END) AS planStatus \
-					FROM user \
-					LEFT JOIN student_subscription_grade as ssg ON ssg.user_id=user.id \
-					WHERE user.id = ? AND ssg.grade_id = (SELECT grade FROM video WHERE id=?);",
 	whereUserRole: "SELECT \
 					(CASE \
 						WHEN user.role_id = 1 \
-							THEN 1000 \
+						THEN 1000 \
 						WHEN user.role_id=2 \
-							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN 5 ELSE 0 END) \
+						THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN 5 ELSE 0 END) \
 						WHEN user.role_id=3 \
-							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN 5 ELSE 0 END) \
+						THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" MONTH) THEN 5 ELSE 0 END) \
 						WHEN user.role_id=4 \
-							THEN (CASE WHEN COUNT(ssg.plan_id) = 0 OR (ssg.plan_id < 3) OR (ssg.plan_id > 5) \
-									THEN 0 \
-									ELSE (CASE \
-											WHEN ssg.plan_id = 3 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) \
-												THEN 1000 \
-											WHEN ssg.plan_id = 4 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
-												THEN 1000 \
-											WHEN ssg.plan_id = 5 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
-												THEN 1000 \
-											WHEN (ssg.plan_id = 3 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH)) \
-												OR \
-												(ssg.plan_id = 4 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH)) \
-												OR \
-												(ssg.plan_id = 5 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH)) \
-												THEN 0 \
-										END) \
-								END) \
+						THEN (CASE WHEN COUNT(ssg.plan_id) = 0 \
+								THEN 0 \
+								ELSE \
+									CASE \
+										WHEN ssg.plan_id = 3 AND NOW() <= DATE_ADD(ssg.started, INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) \
+											THEN 1000 \
+											ELSE \
+												CASE \
+													WHEN ssg.plan_id = 4 AND NOW() <= DATE_ADD(ssg.started, INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
+														THEN 1000 \
+														ELSE \
+															CASE \
+																WHEN ssg.plan_id = 5 AND NOW() <= DATE_ADD(ssg.started, INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
+																	THEN 1000 \
+																	ELSE 0 \
+															END \
+												END \
+									END \	
+							END) \
 					END) AS planLimit \
 					FROM user \
-					LEFT JOIN student_subscription_grade as ssg ON ssg.user_id=user.id \
+					INNER JOIN student_subscription_grade as ssg ON ssg.user_id=user.id \
 					WHERE user.id = ? AND ssg.grade_id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
 	whereProfileData:"SELECT * FROM user_profile WHERE user_id=?",
