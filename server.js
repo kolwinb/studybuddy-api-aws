@@ -1,12 +1,13 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var morgan = require('/media/data/opt/nodejs/lib/node_modules/morgan');
-var config = require('./config.js');
+const express = require('/media/data/opt/nodejs/lib/node_modules/express');
+const morgan = require('/media/data/opt/nodejs/lib/node_modules/morgan');
+const config = require('./config.js');
 //var cors = require('/media/data/opt/nodejs/lib/node_modules/cors'); //import cross-origin-resource-sharing
-
 //url mapping
 var url = require('url');
 //for routes
-var app = express();
+const app = express();
+const http =require('http').createServer(app)
+const io = require("/media/data/opt/nodejs/lib/node_modules/socket.io")(http);
 
 // get url parameters
 app.use(express.urlencoded({extended: true}));
@@ -67,12 +68,11 @@ app.use('/studybuddy/v1/ad',require('./routes/v1/v1_preroll')); //advertisment w
 //url mapping
 //var ourl = req.headers.host+'/'+req.url
 //console.log(ourl)
- var server = app.listen(8084, function () {
+var server = app.listen(8084, function () {
 
   var host = server.address().address
   var port = server.address().port
 
   console.log("StudyBuddy app is Listening at http://%s:%s", host, port)
-
-
 })
+

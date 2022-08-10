@@ -106,7 +106,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHERE student_answer.user_id=?) \
 						GROUP BY student_like.video_id \
 						ORDER BY likes DESC;',
-	profileInfo:"SELECT ( \
+	profileInfo:" /* actvities */ \
+				SELECT ( \
 							SELECT count(student_answer.user_id) as correctAnswers \
 							FROM student_answer \
 							INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
@@ -134,6 +135,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						) as totalQuestions \
 				FROM user \
 				WHERE user.id=?; \
+				/* personal information */ \
 				SELECT user_profile.name as studentName, \
 					user.referral_code as referralCode, \
 					user_profile.avatar_id as avatarId, \
@@ -167,6 +169,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				INNER JOIN user_role ON user_role.id = user.role_id \
 				INNER JOIN student_language ON student_language.id=user_profile.language_id \
 				WHERE user_profile.user_id =?; \
+				/* chart of Total Question by subject */ \
 				SELECT count(video.id) as totalQuestions, \
 					subject.subject_english as subject\
 					FROM student_answer \
@@ -176,15 +179,19 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					INNER JOIN subject ON subject.id=video.subject_id \
 					WHERE student_answer.user_id=? AND video.subject_id IN \
 					( SELECT id FROM subject) group by subject.id; \
+				/* chart of total lesson by last 7 day */ \
 				SELECT COUNT(DISTINCT(video.id)) AS totalLessons, \
 					DATE_FORMAT(started,'%a') AS dayName \
 					FROM student_answer \
 					INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
 					INNER JOIN video ON video.id=mcq_question.video_id \
-					WHERE user_id=? \
+					WHERE user_id=? /* AND NOW() <= DATE_ADD(student_answer.started,INTERVAL 7 DAY)*/ \
 					GROUP BY DATE_FORMAT(started,'%a'); \
+				/* Wallet */ \
 					SELECT \
+						/* total rewards */ \
 						(SUM(DISTINCT( \
+						/* profile attribute coins */ \
 							CASE \
 								WHEN up.address IS NULL \
 									THEN 0 \
@@ -266,26 +273,32 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
   									ELSE "+escape(properties.reward.teacherEmail)+" \
   							END \
   						))  + \
-						SUM(CASE \
-							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
-								THEN 100 \
-								ELSE 0 \
-							END + \
-							CASE \
-							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 15 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 30 \
-								THEN 75 \
-								ELSE 0 \
-							END + \
-							CASE \
-							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 30 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 45 \
-								THEN 50 \
-								ELSE 0 \
-							END + \
-							CASE \
-							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 45 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 60 \
-								THEN 25 \
-								ELSE 0 \
-							END)) AS totalRewards, \
+						/* student answer coins*/ \
+						(CASE WHEN COUNT(sa.id) = 0 \
+							THEN 0 \
+							ELSE \
+								SUM(CASE \
+									WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
+										THEN 100 \
+										ELSE 0 \
+									END + \
+									CASE \
+									WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 15 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 30 \
+										THEN 75 \
+										ELSE 0 \
+									END + \
+									CASE \
+									WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 30 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 45 \
+										THEN 50 \
+										ELSE 0 \
+									END + \
+									CASE \
+									WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 45 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 60 \
+										THEN 25 \
+										ELSE 0 \
+									END) \
+								END) \
+							) AS totalRewards, \
   						(CASE \
   							WHEN up.address IS NULL \
 		  						THEN 0 \
@@ -367,9 +380,10 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								ELSE "+escape(properties.reward.teacherEmail)+" \
 						END) AS teacherEmail \
 					FROM user_profile as up \
-					INNER JOIN student_answer as sa ON sa.user_id=up.user_id \
-					INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
-					WHERE up.user_id=? AND mo.state=1; \
+					LEFT JOIN student_answer as sa ON sa.user_id=up.user_id \
+					LEFT JOIN mcq_option as mo ON mo.id=sa.option_id \
+					WHERE up.user_id=? /* AND mo.state=1 */ ; \
+				/* Subscribed Details */ \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
 					grade.id as gradeId, \
@@ -379,24 +393,27 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s') as startedAt, \
 					(CASE \
 						WHEN ssg.plan_id = 3 \
-							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'), INTERVAL 1 MONTH) \
+							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.trial)+" MONTH) \
 						WHEN ssg.plan_id = 4 \
-							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'), INTERVAL 3 MONTH) \
+							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
 						WHEN ssg.plan_id = 5 \
-							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'), INTERVAL 12 MONTH) \
+							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
 					END) as expAt \
 					FROM grade \
 					INNER JOIN student_subscription_grade as ssg ON ssg.grade_id=grade.id \
 					INNER JOIN subscription_plan ON subscription_plan.id = ssg.plan_id \
 					INNER JOIN user ON user.id=ssg.user_id \
 					WHERE ssg.user_id=?; \
+				/* Trial status */ \
 				SELECT \
 					DATE_FORMAT(user.date_joined,'%Y-%m-%d %H:%m:%s') as startedAt, \
 					DATE_FORMAT(DATE_ADD(user.date_joined, INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY),'%Y-%m-%d %H:%m:%s') as expAt, \
 					@planName := 'trial' as planName \
 				FROM user \
 				WHERE user.id = 1 AND NOW() <= DATE_ADD(user.date_joined, INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY); \
+				/* Language List */ \
 				SELECT * FROM student_language; \
+				/* Subscription plan list */ \
 				SELECT * FROM subscription_plan WHERE id > 2;",
 	whereLeaderBoard:"SELECT  SUM(CASE \
 							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 0 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 15 \
@@ -438,6 +455,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						) as totalLessons, \
 					count(student_answer.id) as correctAnswers, \
 					user_profile.name as studentName, \
+					user_profile.avatar_id as avatarId, \
 					school.school_name as schoolName,\
 					district.district_english as district,\
 					province.province_english as province \
@@ -491,9 +509,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHEN user.role_id = 1 \
 							THEN True \
 						WHEN user.role_id=2 \
-							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN False END) \
+							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN True ELSE False END) \
 						WHEN user.role_id=3 \
-							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN False END) \
+							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN True ELSE False END) \
 						WHEN user.role_id=4 \
 							THEN (CASE WHEN COUNT(ssg.plan_id) = 0 OR (ssg.plan_id < 3) OR (ssg.plan_id > 5) \
 									THEN False \

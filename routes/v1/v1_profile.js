@@ -299,6 +299,7 @@ router.post('/setSignup',function(req,res,next) {
 	const gradeId=req.body.grade_id;
 	const avatarId=req.body.avatar_id;
 	
+	//console.log("avatarId :"+avatarId);
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {

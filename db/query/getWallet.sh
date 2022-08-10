@@ -175,15 +175,19 @@ echo "SELECT \
 					THEN 0 \
 					ELSE 40 \
 				END) AS teacherEmail, \
-			SUM(CASE \
-					WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) >= 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
-						THEN 100 \
-						ELSE 0 \
-					END) AS totalMcqRewards \
+			(CASE WHEN COUNT(sa.id) = 0 \
+				THEN 1 \
+				ELSE \
+					SUM(CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) >= 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
+								THEN 100 \
+								ELSE 0 \
+							END) \
+			END) as totalMcqRewards\
 		FROM user_profile as up \
-		INNER JOIN student_answer as sa ON sa.user_id=up.user_id \
-		INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
-		WHERE up.user_id=28 AND mo.state=1 GROUP BY up.user_id;" | $msql
+		LEFT JOIN student_answer as sa ON sa.user_id=up.user_id \
+		LEFT JOIN mcq_option as mo ON mo.id=sa.option_id \
+		WHERE up.user_id=11 /* AND mo.state=1 GROUP BY up.user_id */;" | $msql
 
 
 #			else 

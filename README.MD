@@ -11,6 +11,7 @@ npm install jsonwebtoken
 npm install xmlhttprequest
 npm install xml2js
 npm install axios
+npm install socketio
 
 google people api
 npm install googleapi

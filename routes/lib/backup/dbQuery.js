@@ -154,20 +154,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					user_profile.teacher_name as teacherName, \
 					user_profile.teacher_contact as teacherContact, \
 					user_profile.teacher_email as teacherEmail, \
-					subscription_plan.name as subscriptionType, \
-					DATE_FORMAT(user.plan_started,'%Y-%m-%d %H:%m:%s') as subscriptionStartedAt, \
-					CASE \
-						WHEN user.plan_id = 1 \
-						THEN '' \
-						WHEN user.plan_id=2 \
-						THEN DATE_ADD(user.plan_started,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) \
-						WHEN user.plan_id=3 \
-						THEN DATE_ADD(user.plan_started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) \
-						WHEN user.plan_id=4 \
-						THEN DATE_ADD(user.plan_started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
-						WHEN user.plan_id=5 \
-						THEN DATE_ADD(user.plan_started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
-					END AS subscriptionExpIn, \
+					user_role.name as userRole, \
 					school.school_name as school, \
 					district.district_english as district, \
 					province.province_english as province, \
@@ -177,7 +164,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				INNER JOIN district	ON school.district_id = district.id \
 				INNER JOIN province ON province.id = district.province_id \
 				INNER JOIN user ON user.id = user_profile.user_id \
-				INNER JOIN subscription_plan ON subscription_plan.id = user.plan_id \
+				INNER JOIN user_role ON user_role.id = user.role_id \
 				INNER JOIN student_language ON student_language.id=user_profile.language_id \
 				WHERE user_profile.user_id =?; \
 				SELECT count(video.id) as totalQuestions, \
@@ -384,8 +371,11 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
 					WHERE up.user_id=? AND mo.state=1; \
 				SELECT subscription_plan.name as planName, \
-					grade.grade_english as grade, \
+					subscription_plan.id as planId, \
 					grade.id as gradeId, \
+					grade.grade_english as nameE, \
+					grade.grade_sinhala as nameS, \
+					@thumbUrl := CONCAT('http://edutv.lk/img/',grade.grade_english,'.jpg') as thumb, \
 					DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s') as startedAt, \
 					(CASE \
 						WHEN ssg.plan_id = 3 \
@@ -394,16 +384,18 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'), INTERVAL 3 MONTH) \
 						WHEN ssg.plan_id = 5 \
 							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'), INTERVAL 12 MONTH) \
-					END) as endedAt \
+					END) as expAt \
 					FROM grade \
 					INNER JOIN student_subscription_grade as ssg ON ssg.grade_id=grade.id \
 					INNER JOIN subscription_plan ON subscription_plan.id = ssg.plan_id \
+					INNER JOIN user ON user.id=ssg.user_id \
 					WHERE ssg.user_id=?; \
-				SELECT @startedAt := DATE_FORMAT((SELECT date_joined FROM user WHERE user.id=?),'%Y-%m-%d %H:%m:%s') as startedAt,\
-					DATE_ADD(@startedAt,INTERVAL 7 DAY) as endedAt, \
-					@planName := 'trial' as planName, \
-					grade.grade_english as grade \
-					FROM grade; \
+				SELECT \
+					DATE_FORMAT(user.date_joined,'%Y-%m-%d %H:%m:%s') as startedAt, \
+					DATE_FORMAT(DATE_ADD(user.date_joined, INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY),'%Y-%m-%d %H:%m:%s') as expAt, \
+					@planName := 'trial' as planName \
+				FROM user \
+				WHERE user.id = 1 AND NOW() <= DATE_ADD(user.date_joined, INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY); \
 				SELECT * FROM student_language; \
 				SELECT * FROM subscription_plan WHERE id > 2;",
 	whereLeaderBoard:"SELECT  SUM(CASE \
@@ -446,6 +438,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						) as totalLessons, \
 					count(student_answer.id) as correctAnswers, \
 					user_profile.name as studentName, \
+					user_profile.avatar_id as avatarId, \
 					school.school_name as schoolName,\
 					district.district_english as district,\
 					province.province_english as province \
@@ -494,20 +487,66 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					END) AS planStatus \
 					FROM student_subscription_grade as subP \
 					WHERE subP.plan_id =? OR subP.grade_id = ? AND subP.user_id = ?;",
-	whereUserPlan: "SELECT \
+		whereUserRoleLesson: "SELECT \
 					(CASE \
-						WHEN plan_id = 1 \
-						THEN 1000 \
-						WHEN plan_id=2 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN 5 ELSE 0 END) \
-						WHEN plan_id=3 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) THEN 1000 ELSE 0 END) \
-						WHEN plan_id=4 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) THEN 1000 ELSE 0 END) \
-						WHEN plan_id=5 \
-						THEN (CASE WHEN now() <= DATE_ADD(plan_started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) THEN 1000 ELSE 0 END) \
+						WHEN user.role_id = 1 \
+							THEN True \
+						WHEN user.role_id=2 \
+							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN True ELSE False END) \
+						WHEN user.role_id=3 \
+							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN True ELSE False END) \
+						WHEN user.role_id=4 \
+							THEN (CASE WHEN COUNT(ssg.plan_id) = 0 OR (ssg.plan_id < 3) OR (ssg.plan_id > 5) \
+									THEN False \
+									ELSE (CASE \
+											WHEN ssg.plan_id = 3 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) \
+												THEN True \
+											WHEN ssg.plan_id = 4 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
+												THEN True \
+											WHEN ssg.plan_id = 5 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
+												THEN True \
+											WHEN (ssg.plan_id = 3 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH)) \
+												OR \
+												(ssg.plan_id = 4 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH)) \
+												OR \
+												(ssg.plan_id = 5 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH)) \
+												THEN False \
+										END) \
+								END) \
+					END) AS planStatus \
+					FROM user \
+					LEFT JOIN student_subscription_grade as ssg ON ssg.user_id=user.id \
+					WHERE user.id = ? AND ssg.grade_id = (SELECT grade FROM video WHERE id=?);",
+	whereUserRole: "SELECT \
+					(CASE \
+						WHEN user.role_id = 1 \
+							THEN 1000 \
+						WHEN user.role_id=2 \
+							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN 5 ELSE 0 END) \
+						WHEN user.role_id=3 \
+							THEN (CASE WHEN now() <= DATE_ADD(user.date_joined,INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY) THEN 5 ELSE 0 END) \
+						WHEN user.role_id=4 \
+							THEN (CASE WHEN COUNT(ssg.plan_id) = 0 OR (ssg.plan_id < 3) OR (ssg.plan_id > 5) \
+									THEN 0 \
+									ELSE (CASE \
+											WHEN ssg.plan_id = 3 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) \
+												THEN 1000 \
+											WHEN ssg.plan_id = 4 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
+												THEN 1000 \
+											WHEN ssg.plan_id = 5 AND NOW() <= DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
+												THEN 1000 \
+											WHEN (ssg.plan_id = 3 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH)) \
+												OR \
+												(ssg.plan_id = 4 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH)) \
+												OR \
+												(ssg.plan_id = 5 AND NOW() > DATE_ADD(ssg.started,INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH)) \
+												THEN 0 \
+										END) \
+								END) \
 					END) AS planLimit \
-					FROM user WHERE id = ?",
+					FROM user \
+					LEFT JOIN student_subscription_grade as ssg ON ssg.user_id=user.id \
+					WHERE user.id = ? AND ssg.grade_id = ?",
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
 	whereProfileData:"SELECT * FROM user_profile WHERE user_id=?",
 	whereUserProfile: "SELECT * \
@@ -591,12 +630,13 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
 	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started,ended) VALUES (?,?,?,?,?,?)",	
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
-	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,plan_id,referral_code,device_id,plan_started) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",	
+	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,role_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
 	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
 	insertOauth:"INSERT INTO ??(id,token,created,updated,user_id) VALUES(?,?,?,?,?)",
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
+	updateUserRole:"UPDATE user SET role_id = ? WHERE id = ?",
 	updateNewPassword:"UPDATE user SET password = ? WHERE id = ?",
 	updateUserPassword:"UPDATE ?? SET password=? WHERE phone = ?",
 	updateRecoveryCode:"UPDATE ?? SET code=?, created=?, is_verify=? WHERE mobile=?",
@@ -835,17 +875,24 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
- 					const [activityData,personalData,chartOfSubject,chartOfDay,walletData,subscriptionData,planTrail,languageData,subscriptionPlan] = result;
-					var subscriptionInfo='';
-					const planTrialData = planTrail.map((mysqlObj, index) => {
+ 					const [activityData,personalData,chartOfSubject,chartOfDay,walletData,subscriptionData,planTrial,languageData,subscriptionPlan] = result;
+					//var subscriptionInfo='';
+					/*
+					const planTrialData = planTrial.map((mysqlObj, index) => {
     						return Object.assign({}, mysqlObj);
     					});
+    				*/
 
+					/*
 					const subscriptionDetails = subscriptionData.map((mysqlObj, index) => {
+							//Object.assign(mysqlObj,planTrialData);
     						return Object.assign({}, mysqlObj);
     					});
+    				const lengthObj = Object.keys(subscriptionDetails).length;
+    				*/
     				
     				
+    				/*			
     				if (Object.keys(subscriptionDetails).length === 0) {
     					console.log("subscription data not found");
     					subscriptionInfo=planTrialData;
@@ -853,6 +900,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
     					console.log("subscription data found");
     					subscriptionInfo=subscriptionDetails;
     				}
+    				*/
     				//console.log("planTrail :"+JSON.stringify(planTrialData)+", subscrioptionDetails :"+JSON.stringify(subscriptionDetails));
  					
 					const chartSubject = chartOfSubject.map((mysqlObj, index) => {
@@ -875,7 +923,11 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  						chartOfDay:chartDay,
  						languageList:langList,
  						subscriptionTypeList:subscriptionPlan,
- 						subscribedDetails:subscriptionInfo
+ 						trialStatus:planTrial,
+ 						subscribedDetails:subscriptionData
+// 						subscribedDetails:subscriptionDetails
+// 						subscribedDetails:Object.assign(subscriptionDetails,planTrialData)
+// 						subscribedDetails:subscriptionDetails[1]['']=planTrialData
  						
  					}
 					var jsonResults = result.map((mysqlObj, index) => {
