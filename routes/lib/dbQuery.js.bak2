@@ -21,7 +21,7 @@ var getConnection = function(callback) {
   	});                 
   };
 
-/* individual property of profile attribute coins */
+/* individual profile attribute coins */
 function getProfileAttRewards(tableName) {
 return " \
   	(CASE \
@@ -226,12 +226,6 @@ return " \
 var dbStatements = {
 	//properties
 
-/* bulk answer coin calculation */
-whereBulkAnswerRewards:"SELECT \
-							("+getOptionRewards('student_answer')+") AS coins \
-						FROM student_answer \
-						INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
-						WHERE student_answer.id IN (?) AND mcq_option.state=1;",
 /* MCQMining */
 whereMcqMining:"SELECT \
 					mcq_question.id, \
@@ -410,8 +404,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				INNER JOIN user_role ON user_role.id = user.role_id \
 				INNER JOIN student_language ON student_language.id=user_profile.language_id \
 				WHERE user_profile.user_id =?; \
-				/* chart of Total Lessons by subject */ \
-				SELECT count(video.id) as totalLessonss, \
+				/* chart of Total Question by subject */ \
+				SELECT count(video.id) as totalQuestions, \
 					subject.subject_english as subject\
 					FROM student_answer \
 					INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
@@ -432,23 +426,17 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					SELECT \
 						( \
 							/* get profile attribute rewards */ \
-							/* "+getProfileRewards('up')+" \
-							+ */ \
+							"+getProfileRewards('up')+" \
+							+ \
 							/* get students answers coins */ \
 							"+getOptionRewards('sa')+" \
 						) AS totalRewards, \
 							/* get individual profile attribute reward */ \
 						"+getProfileAttRewards('up')+" \
-					FROM student_answer as sa \
-					INNER JOIN  mcq_option as mo ON mo.id=sa.option_id \
-					INNER JOIN user_profile as up ON up.user_id=sa.user_id \
-					WHERE sa.user_id=? AND mo.state=1; \
-					/* \
 					FROM user_profile as up \
 					LEFT JOIN student_answer as sa ON sa.user_id=up.user_id \
-					INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
-					WHERE up.user_id=? AND mo.state=1 GROUP BY up.user_id ; \
-					*/ \
+					LEFT JOIN mcq_option as mo ON mo.id=sa.option_id \
+					WHERE up.user_id=? AND mo.state=1 ; \
 				/* Subscribed Details */ \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
@@ -458,8 +446,6 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					@thumbUrl := CONCAT('http://edutv.lk/img/',grade.grade_english,'.jpg') as thumb, \
 					DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s') as startedAt, \
 					(CASE \
-						WHEN ssg.plan_id =1 \
-							THEN '' \
 						WHEN ssg.plan_id = 3 \
 							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.trial)+" MONTH) \
 						WHEN ssg.plan_id = 4 \
@@ -484,12 +470,107 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				/* Subscription plan list */ \
 				SELECT * FROM subscription_plan WHERE id > 2;",
 	whereLeaderBoard:"SELECT  \
-						( \
-							/* get profile attribute rewards */ \
-							"+getProfileRewards('user_profile')+" \
-							+ \
-							/* get students answers coins */ \
-							"+getOptionRewards('student_answer')+" \
+						SUM( \
+						CASE \
+							WHEN user_profile.address IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.address)+" \
+						END + \
+						CASE \
+							WHEN user_profile.favorite_subject IS NULL \
+								THEN 0 \
+								ELSE "+escape(properties.reward.favoriteSubject)+" \
+						END + \
+						CASE \
+								WHEN user_profile.ambition IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.ambition)+" \
+						END + \
+							CASE \
+								WHEN user_profile.dateofbirth IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.birthday)+" \
+							END + \
+							CASE \
+								WHEN user_profile.nic IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.nic)+" \
+							END + \
+							CASE \
+								WHEN user_profile.sociallink IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.socialLink)+" \
+							END + \
+							CASE \
+								WHEN user_profile.email IS NULL \
+									THEN 0 \
+									ELSE "+escape(properties.reward.email)+" \
+							END + \
+   							CASE \
+   								WHEN user_profile.parent_name IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.parentName)+" \
+   							END + \
+   							CASE \
+   								WHEN user_profile.parent_contact IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.parentContact)+" \
+   							END + \
+   							CASE \
+   								WHEN user_profile.parent_email IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.parentEmail)+" \
+   							END + \
+   							CASE \
+   								WHEN user_profile.school_address IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.schoolAddress)+" \
+   							END + \
+   							CASE \
+   								WHEN user_profile.school_contact IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.schoolContact)+" \
+   							END + \
+   							CASE \
+   								WHEN user_profile.school_email IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.schoolEmail)+" \
+   							END + \
+   							CASE \
+   								WHEN user_profile.teacher_name IS NULL \
+   									THEN 0 \
+   									ELSE "+escape(properties.reward.teacherName)+" \
+   							END + \
+  							CASE \
+  								WHEN user_profile.teacher_contact IS NULL \
+  									THEN 0 \
+  									ELSE "+escape(properties.reward.teacherContact)+" \
+  							END + \
+  							CASE \
+  								WHEN user_profile.teacher_email IS NULL \
+  									THEN 0 \
+  									ELSE "+escape(properties.reward.teacherEmail)+" \
+  							END + \
+						CASE \
+							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 0 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 15 \
+								THEN 100 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 15 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 30 \
+								THEN 75 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 30 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 45 \
+								THEN 50 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 45 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 60 \
+								THEN 25 \
+								ELSE 0 \
+							END \
 						) AS coins, \
 						( \
 							SELECT COUNT(mcq_option.id) \
@@ -705,10 +786,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertSubscription:"INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES(?,?,?,?,?)",
 	insertAffiliate:"INSERT INTO user_affiliate(id,referrer_id,referee_id,created) VALUES(?,?,?,?)",
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
-	insertStudentAnswer:"INSERT INTO  student_answer(id,user_id,question_id,option_id,started,ended) \
-							VALUES (?,?,?,?,?,?); \
-							SELECT LAST_INSERT_ID(); \
-							",
+	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started,ended) VALUES (?,?,?,?,?,?)",	
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,role_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
 	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
@@ -788,7 +866,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					log.error("mysql error : "+err);
 					callback(false);
 				} else {
-					//log.info(fields[0]+" : data inserted");
+					log.info(fields[0]+" : data inserted");
 					callback(true);
 				}
 //				callback(err);

@@ -23,8 +23,15 @@ var SCOPES = {
 	learningApi:{
 		apiKey:'202a3b589d98404fdd00f1583959e1abb62653ce2d45b1e3',
 		apiSecret:'dgXsZwxbb6j6r3wH6jLwfc0WwsMFId1d8sy8pJjgJcvuHvGl5EenFS3NehCbeB2+wh8mmS4QZPHcHDRz/px9ZQ7j'
+	},
+	miningApi:{
+		apiKey:'5ceb0c127ef886643cd47d3f4e26cee556370b06779de4ab',
+		apiSecret:'zVS3/78HdVXOfwbKJdlzQOTjDQk89td5Gz8EvGpDvFerxXYOYcV8Ws8wWbQag571FWthyZkdNeSWmYGPPI/9NmB2'
+	},
+	gamingApi:{
+		apiKey:'c57063f17204af74e05a3be78f416a96f9d149a30bfff00f',
+		apiSecret:'hh2fWXkKHunrTEFG2zatnO4Ls5jxxDGQbEeTmdWaMnJCwgvtQ/2C4nJdkxvxrM5eraYV6XIEd+xMgZLvt8XVekoz'
 	}
-                                                        
 }
 
 module.exports=SCOPES

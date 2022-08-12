@@ -179,23 +179,63 @@ echo "SELECT \
 				THEN 1 \
 				ELSE \
 					SUM(CASE \
-							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) >= 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
 								THEN 100 \
 								ELSE 0 \
-							END) \
-			END) as totalMcqRewards\
-		FROM user_profile as up \
-		LEFT JOIN student_answer as sa ON sa.user_id=up.user_id \
-		LEFT JOIN mcq_option as mo ON mo.id=sa.option_id \
-		WHERE up.user_id=11 /* AND mo.state=1 GROUP BY up.user_id */;" | $msql
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 15 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 30 \
+								THEN 75 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 30 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 45 \
+								THEN 50 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 45 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 60 \
+								THEN 25 \
+								ELSE 0 \
+							END  \
+							) \
+			END) as totalMcqRewards \
+		FROM student_answer as sa \
+		INNER JOIN mcq_option ON mcq_option.id=sa.option_id \
+		WHERE sa.user_id=1 AND	mo.state=1;" | $msql
+	
+		#FROM user_profile as up \
+		#LEFT JOIN student_answer as sa ON sa.user_id=up.user_id \
+		#LEFT JOIN mcq_option as mo ON mo.id=sa.option_id \
+		#WHERE up.user_id=1 AND mo.state=1" | $msql
 
 
-#			else 
-#			case when user.plan_id = 2 \
-#			then DATE_ADD(user.date_joined,INTERVAL 7 DAY) \
-#		end as expIn \
-
-#		case when mcq_option.state=1 \
-#			then 'True' \
-#			else 'False' \
-#		end as isCorrect \
+echo "SELECT \
+			(CASE WHEN COUNT(sa.id) = 0 \
+				THEN 1 \
+				ELSE \
+					SUM(CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
+								THEN 100 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 15 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 30 \
+								THEN 75 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 30 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 45 \
+								THEN 50 \
+								ELSE 0 \
+							END + \
+							CASE \
+							WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 45 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 60 \
+								THEN 25 \
+								ELSE 0 \
+							END  \
+							) \
+			END) as totalMcqRewards \
+		FROM student_answer as sa \
+		INNER JOIN mcq_option as mo ON mo.id=sa.option_id \
+		WHERE sa.user_id=1 AND	mo.state=1;" | $msql

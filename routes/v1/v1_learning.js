@@ -59,7 +59,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
     const bodyJson=JSON.parse(JSON.stringify(req.body));
 	
 	var respJson={};
-	console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
+	//console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
 	
 	if (!authToken){
 		console.log("Authorization header missing");
@@ -81,7 +81,9 @@ router.post('/setBulkAnswer',function(req,res,next) {
 							const studentId=callback.userId
 							//console.log(studentId);
 							let arrJson= {};
-							//var listMcq=[];
+							var totalMcqCoins=0;
+							var arrLastId=[];
+							/* json iteration start here */
 							Object.keys(bodyJson).forEach(function(key){
 								mcqArr=bodyJson[key].mcq;
 								const videoId=bodyJson[key].videoId;
@@ -92,9 +94,9 @@ router.post('/setBulkAnswer',function(req,res,next) {
 									const optionId=mcqArr[keyA].optionId;
 									const started=mcqArr[keyA].startedAt;
 									const ended=mcqArr[keyA].endedAt;
+									/* find option has been answered by student */
 									dbQuery.setUserSqlQuery(dbQuery.whereStudentAnswer,["student_answer",studentId,questionId],function(callbackSO){
 										if (callbackSO[0]){
-													//res.send(JSON.parse(status.answerProhibited()));
 													Object.assign(arrJson,{
 																"status":status.answerProhibited(),
 																"questinId":questionId
@@ -102,11 +104,6 @@ router.post('/setBulkAnswer',function(req,res,next) {
 													var questionData={
 														"questionId":questionId
 													}
-													//arrJson.push(questionData);
-													
-													//arrMcq=JSON.parse(status.answerProhibited());
-													//console.log("arrJson :"+JSON.stringify(arrJson));
-													//console.log("videoId :"+videoId+" qid "+questionId+" oid "+optionId);
 													if (bodyJson.length-1 == key){
 														if (mcqArr.length-1 == keyA){
 															res.send(JSON.parse(status.answerProhibited()));
@@ -115,6 +112,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 														}
 													}
 										} else {
+											/* given optionId, questionId, videoId  are validated */
 											dbQuery.setUserSqlQuery(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
 												if (!callbackOQV[0]) {
 													res.send(JSON.parse(status.server()));
@@ -122,49 +120,44 @@ router.post('/setBulkAnswer',function(req,res,next) {
 													oId=callbackOQV[0].optionId;
 													qId=callbackOQV[0].questionId;
 													vId=callbackOQV[0].videoId;
-													//const dateNow = new Date();
-													console.log("userId: "+studentId+" : StudentAnswer:QueryData Found -> oId: "+oId+" qId: "+qId+" vId : "+vId)
+													/* validation success or fail */
 													if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
-														dbQuery.setUserInsert(dbQuery.insertStudentAnswer,["student_answer","NULL",studentId,questionId,optionId,started,ended],function(callbackSAnswer){
-   															if(!callbackSAnswer){
+														/* insert to student answer and get the last insert id*/
+														dbQuery.setUserSqlQuery(dbQuery.insertStudentAnswer,["NULL",studentId,questionId,optionId,started,ended],function(callbackSAnswer){
+   															if(!callbackSAnswer[0]){
 																res.send(JSON.parse(status.server()));
 															} else {
-																dbQuery.setUserSqlQuery(dbQuery.whereOptionState,[optionId],function(callbackOState){
-																	var resAnswer=JSON.stringify({
-																		option_id:oId,
-																		question_id:qId,
-																		video_id:vId
-																		});
-																	if (!callbackOState[0].state){
-																		Object.assign(resAnswer,{"earning":""});
-																		Object.assign(resAnswer,{"isCorrect":"False"});
-																		
-       																	resStatus=status.stateSuccess(JSON.stringify(resAnswer)); 
-       																	//res.send(JSON.parse(resStatus));
-																	} else {
-																		resAnswer["earning"]=properties.coin;
-																		resAnswer["isCorrect"]="True";
-       																	resStatus=status.stateSuccess(JSON.stringify(resAnswer));
-       																	//res.send(JSON.parse(resStatus));						
-       																}
+																/* assign lastinsert id to array */
+																const promiseArray = new Promise(function(resolve, reject) {
+																	arrLastId.push(callbackSAnswer[0].insertId);
+																	 resolve(arrLastId);
+																});
+																/* insert success, get coin according time base */
+																promiseArray.then(function(arrayList) {
 																	if (bodyJson.length-1 == key){
 																		if (mcqArr.length-1 == keyA){
-																			resStatus=status.stateSuccess(JSON.stringify({"description":"questions are updated"}));
-       																		res.send(JSON.parse(resStatus));
+																			console.log("arrLastId Length:"+arrayList.length);
+																			dbQuery.setUserSqlQuery(dbQuery.whereBulkAnswerRewards,[arrayList],function(callbackOState){
+																				if (!callbackOState[0]) {
+																					res.send(JSON.parse(status.server()));
+																				} else {
+																					resStatus=status.stateSuccess(JSON.stringify({
+																							"description":"questions are updated",
+																							"coins":callbackOState[0].coins
+																							}));
+       																				res.send(JSON.parse(resStatus));
+       																			}
+       																		});
 																		}
-																	}    
-																	
-       																//arrMcq=resAnswer;
-																	//console.log("arrOption :"+resAnswer);				
-																	//console.log("questionId :"+questionId +"success");
-																});													
+																	}
+																});    
 															}
 														});
        												} else {
        												
        													//console.log("questionId :"+questionId +"error"+"student answers again videoId :"+videoId);
        													//responseJson[key].mcq[keyA].status=studentAnswerWarning();
-														//res.send(JSON.parse(status.studentAnswerWarning()));
+														res.send(JSON.parse(status.studentAnswerWarning()));
        												}
   												}
 											});
@@ -174,7 +167,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 								//arrJson.data={"videoId":key,"mcq":arrMcq};
 								});
 							});
-//							console.log(respJson);
+							/* json iteration ends here */
 //							res.send(JSON.parse(JSON.stringify(arrJson)));
 //	res.send(JSON.parse(status.studentAnswerWarning()));
        					});

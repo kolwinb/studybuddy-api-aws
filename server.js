@@ -20,6 +20,12 @@ app.use(morgan('dev'));
 
 //calling to request handler (route)
 
+//mcq mining and iq mining
+app.use('/studybuddy/v1/student/mining', require('./routes/v1/v1_mining'));
+
+//buddyGame
+app.use('/studybuddy/v1/student/gaming', require('./routes/v1/v1_gaming'));
+
 //student answers
 app.use('/studybuddy/v1/student/learning', require('./routes/v1/v1_learning'));
 
