@@ -55,6 +55,7 @@ router.post('/getMcqMining',function(req,res,next) {
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
   	const gradeId=req.body.grade_id;
+  	const subjectId=req.body.subject_id;
  	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -67,7 +68,8 @@ router.post('/getMcqMining',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getSelectAll(dbQuery.whereMcqMining,[gradeId],function(callback){
+							dbQuery.getMcqMining(dbQuery.whereMcqMining,[gradeId,subjectId],function(callback){
+								console.log("mcqmining :"+callback[0]);
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});

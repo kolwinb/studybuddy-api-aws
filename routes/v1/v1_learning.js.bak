@@ -24,7 +24,6 @@ router.post('/getLeaderboard',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
   	const apiSecret=req.body.api_secret;
-  	const gradeId=req.body.grade_id;
 //  	const videoId=req.body.video_id;
  	
 	if ((!apiKey || !apiSecret)){
@@ -38,7 +37,7 @@ router.post('/getLeaderboard',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getSelectAll(dbQuery.whereLeaderBoard,[gradeId],function(callback){
+							dbQuery.getSelectAll(dbQuery.whereLeaderBoard,[],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});
@@ -132,27 +131,31 @@ router.post('/setBulkAnswer',function(req,res,next) {
 																const promiseArray = new Promise(function(resolve, reject) {
 																	//console.log("insert id :"+callbackInsertId);
 																	var arrLength=arrLastId.push(callbackInsertId);
-																	/* total video lesson * total questions = total answers*/
 																	if (arrLength == (parseInt(bodyJson.length) * parseInt(mcqArr.length))) {
-																		console.log("inserId Total : "+arrLength);
+																	console.log("inserId Total : "+arrLength);
 																		resolve(arrLastId);
 																	}
 																});
 																/* insert success, get coin according time base */
 																promiseArray.then(function(arrLastId) {
-																	console.log("json length :"+bodyJson.length+", mcq length :"+mcqArr.length+", arrLastId Length:"+arrLastId.length);
-																	console.log("arrLastId list:"+arrLastId.length);
-																	dbQuery.setUserSqlQuery(dbQuery.whereBulkAnswerRewards,[arrLastId],function(callbackOState){
-																		if (!callbackOState[0]) {
-																			res.send(JSON.parse(status.server()));
-																		} else {
-																			resStatus=status.stateSuccess(JSON.stringify({
-																					"description":"questions are updated",
-																					"coins":callbackOState[0].coins
-																					}));
-       																		res.send(JSON.parse(resStatus));
-       																	}
-       																});
+																	if (bodyJson.length-1 == key){
+																		if (mcqArr.length-1 == keyA){
+																			
+																			console.log("json length :"+bodyJson.length+", mcq length :"+mcqArr.length+", arrLastId Length:"+arrLastId.length);
+																			console.log("arrLastId list:"+arrLastId.length);
+																			dbQuery.setUserSqlQuery(dbQuery.whereBulkAnswerRewards,[arrLastId],function(callbackOState){
+																				if (!callbackOState[0]) {
+																					res.send(JSON.parse(status.server()));
+																				} else {
+																					resStatus=status.stateSuccess(JSON.stringify({
+																							"description":"questions are updated",
+																							"coins":callbackOState[0].coins
+																							}));
+       																				res.send(JSON.parse(resStatus));
+       																			}
+       																		});
+																		}
+																	}
 																});    
 															}
 														});

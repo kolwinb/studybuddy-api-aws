@@ -20,11 +20,218 @@ var getConnection = function(callback) {
   		}
   	});                 
   };
-                                                          
+
+/* individual property of profile attribute coins */
+function getProfileAttRewards(tableName) {
+return " \
+  	(CASE \
+  		WHEN "+tableName+".address IS NULL \
+		  	THEN 0 \
+  			ELSE "+escape(properties.reward.address)+" \
+  	END) AS address, \
+  	(CASE \
+  		WHEN "+tableName+".favorite_subject IS NULL \
+		  	THEN 0 \
+			ELSE "+escape(properties.reward.favoriteSubject)+" \
+	END) AS favoriteSubject, \
+ 	(CASE \
+ 		WHEN "+tableName+".ambition IS NULL \
+ 			THEN 0 \
+ 			ELSE "+escape(properties.reward.ambition)+" \
+ 	END) AS ambition, \
+ 	(CASE \
+ 		WHEN "+tableName+".dateofbirth IS NULL \
+ 			THEN 0 \
+ 			ELSE "+escape(properties.reward.birthday)+" \
+ 	END) AS birthday, \
+	(CASE \
+		WHEN "+tableName+".nic IS NULL \
+ 			THEN 0 \
+ 			ELSE "+escape(properties.reward.nic)+" \
+ 	END) AS nic, \
+	(CASE \
+ 		WHEN "+tableName+".sociallink IS NULL \
+ 			THEN 0 \
+ 			ELSE "+escape(properties.reward.socialLink)+" \
+ 	END) socialLink, \
+	(CASE \
+ 		WHEN "+tableName+".email IS NULL \
+ 			THEN 0 \
+ 			ELSE "+escape(properties.reward.email)+" \
+ 	END) AS email, \
+	(CASE \
+ 		WHEN "+tableName+".parent_name IS NULL \
+ 			THEN 0 \
+ 			ELSE "+escape(properties.reward.parentName)+" \
+ 	END) AS parentName, \
+	(CASE \
+ 		WHEN "+tableName+".parent_contact IS NULL \
+ 			THEN 0 \
+ 			ELSE "+escape(properties.reward.parentContact)+" \
+ 	END) AS parentContact, \
+	(CASE \
+ 		WHEN "+tableName+".parent_email IS NULL \
+ 			THEN 0 \
+ 			ELSE "+escape(properties.reward.parentEmail)+" \
+ 	END) AS parentEmail, \
+	(CASE \
+		WHEN "+tableName+".school_address IS NULL \
+			THEN 0 \
+			ELSE "+escape(properties.reward.schoolAddress)+" \
+	END) AS schoolAddress, \
+	(CASE \
+		WHEN "+tableName+".school_contact IS NULL \
+			THEN 0 \
+			ELSE "+escape(properties.reward.schoolContact)+" \
+	END) AS schoolContact, \
+	(CASE \
+		WHEN "+tableName+".school_email IS NULL \
+			THEN 0 \
+			ELSE "+escape(properties.reward.schoolEmail)+" \
+	END) AS schoolEmail, \
+	(CASE \
+		WHEN "+tableName+".teacher_name IS NULL \
+			THEN 0 \
+			ELSE "+escape(properties.reward.teacherName)+" \
+	END) AS teacherName, \
+	(CASE \
+		WHEN "+tableName+".teacher_contact IS NULL \
+			THEN 0 \
+			ELSE "+escape(properties.reward.teacherContact)+" \
+	END) AS teacherContact, \
+	(CASE \
+		WHEN "+tableName+".teacher_email IS NULL \
+			THEN 0 \
+			ELSE "+escape(properties.reward.teacherEmail)+" \
+	END) AS teacherEmail \
+	";
+}
+
+/* calculate profile attribute rewards */
+function getProfileRewards(tableName) {
+return 	"(SUM( \
+		CASE \
+			WHEN "+tableName+".address IS NULL \
+				THEN 0 \
+				ELSE "+escape(properties.reward.address)+" \
+		END + \
+		CASE \
+		WHEN "+tableName+".favorite_subject IS NULL \
+			THEN 0 \
+			ELSE "+escape(properties.reward.favoriteSubject)+" \
+		END + \
+		CASE \
+			WHEN "+tableName+".ambition IS NULL \
+				THEN 0 \
+				ELSE "+escape(properties.reward.ambition)+" \
+		END + \
+		CASE \
+			WHEN "+tableName+".dateofbirth IS NULL \
+				THEN 0 \
+				ELSE "+escape(properties.reward.birthday)+" \
+		END + \
+		CASE \
+			WHEN "+tableName+".nic IS NULL \
+				THEN 0 \
+				ELSE "+escape(properties.reward.nic)+" \
+		END + \
+		CASE \
+			WHEN "+tableName+".sociallink IS NULL \
+				THEN 0 \
+				ELSE "+escape(properties.reward.socialLink)+" \
+		END + \
+		CASE \
+			WHEN "+tableName+".email IS NULL \
+				THEN 0 \
+				ELSE "+escape(properties.reward.email)+" \
+		END + \
+   		CASE \
+   			WHEN "+tableName+".parent_name IS NULL \
+   				THEN 0 \
+   				ELSE "+escape(properties.reward.parentName)+" \
+   		END + \
+   		CASE \
+   			WHEN "+tableName+".parent_contact IS NULL \
+   				THEN 0 \
+   				ELSE "+escape(properties.reward.parentContact)+" \
+   		END + \
+   		CASE \
+   			WHEN "+tableName+".parent_email IS NULL \
+   				THEN 0 \
+   				ELSE "+escape(properties.reward.parentEmail)+" \
+   		END + \
+   		CASE \
+   			WHEN "+tableName+".school_address IS NULL \
+   				THEN 0 \
+   				ELSE "+escape(properties.reward.schoolAddress)+" \
+   		END + \
+   		CASE \
+   			WHEN "+tableName+".school_contact IS NULL \
+   				THEN 0 \
+   				ELSE "+escape(properties.reward.schoolContact)+" \
+   		END + \
+   		CASE \
+   			WHEN "+tableName+".school_email IS NULL \
+   				THEN 0 \
+   				ELSE "+escape(properties.reward.schoolEmail)+" \
+   		END + \
+   		CASE \
+   			WHEN "+tableName+".teacher_name IS NULL \
+   				THEN 0 \
+   				ELSE "+escape(properties.reward.teacherName)+" \
+   		END + \
+  		CASE \
+  			WHEN "+tableName+".teacher_contact IS NULL \
+  				THEN 0 \
+  				ELSE "+escape(properties.reward.teacherContact)+" \
+  		END + \
+  		CASE \
+  			WHEN "+tableName+".teacher_email IS NULL \
+  				THEN 0 \
+  				ELSE "+escape(properties.reward.teacherEmail)+" \
+  		END \
+	))";
+}                                                          
+
+/* query string for getting student answer option rewards base on time condition */
+
+function getOptionRewards(tableName){
+return " \
+	(CASE WHEN COUNT("+tableName+".id) = 0 \
+		THEN 0 \
+		ELSE \
+			SUM(CASE \
+				WHEN TIMESTAMPDIFF(SECOND,"+tableName+".started,"+tableName+".ended) > 0 AND TIMESTAMPDIFF(SECOND,"+tableName+".started,"+tableName+".ended) <= 15 \
+					THEN 100 \
+					ELSE 0 \
+				END + \
+				CASE \
+				WHEN TIMESTAMPDIFF(SECOND,"+tableName+".started,"+tableName+".ended) > 15 AND TIMESTAMPDIFF(SECOND,"+tableName+".started,"+tableName+".ended) <= 30 \
+					THEN 75 \
+					ELSE 0 \
+				END + \
+				CASE \
+				WHEN TIMESTAMPDIFF(SECOND,"+tableName+".started,"+tableName+".ended) > 30 AND TIMESTAMPDIFF(SECOND,"+tableName+".started,"+tableName+".ended) <= 45 \
+					THEN 50 \
+					ELSE 0 \
+				END + \
+				CASE \
+				WHEN TIMESTAMPDIFF(SECOND,"+tableName+".started,"+tableName+".ended) > 45 AND TIMESTAMPDIFF(SECOND,"+tableName+".started,"+tableName+".ended) <= 60 \
+					THEN 25 \
+					ELSE 0 \
+				END) \
+		END)";
+}
 
 var dbStatements = {
 	//properties
 
+/* bulk answer coin calculation */
+whereBulkAnswerRewards:"SELECT \
+							("+getOptionRewards('student_answer')+") AS coins \
+						FROM student_answer \
+						INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
+						WHERE student_answer.id IN (?) AND mcq_option.state=1;",
 /* MCQMining */
 whereMcqMining:"SELECT \
 					mcq_question.id, \
@@ -203,8 +410,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				INNER JOIN user_role ON user_role.id = user.role_id \
 				INNER JOIN student_language ON student_language.id=user_profile.language_id \
 				WHERE user_profile.user_id =?; \
-				/* chart of Total Question by subject */ \
-				SELECT count(video.id) as totalQuestions, \
+				/* chart of Total Lessons by subject */ \
+				SELECT count(video.id) as totalLessonss, \
 					subject.subject_english as subject\
 					FROM student_answer \
 					INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
@@ -223,200 +430,39 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					GROUP BY DATE_FORMAT(started,'%a'); \
 				/* Wallet */ \
 					SELECT \
-						/* total rewards */ \
-						(SUM( \
-						/* profile attribute coins */ \
-							CASE \
-								WHEN up.address IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.address)+" \
-							END + \
-							CASE \
-							WHEN up.favorite_subject IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.favoriteSubject)+" \
-							END + \
-							CASE \
-								WHEN up.ambition IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.ambition)+" \
-							END + \
-							CASE \
-								WHEN up.dateofbirth IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.birthday)+" \
-							END + \
-							CASE \
-								WHEN up.nic IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.nic)+" \
-							END + \
-							CASE \
-								WHEN up.sociallink IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.socialLink)+" \
-							END + \
-							CASE \
-								WHEN up.email IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.email)+" \
-							END + \
-   							CASE \
-   								WHEN up.parent_name IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.parentName)+" \
-   							END + \
-   							CASE \
-   								WHEN up.parent_contact IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.parentContact)+" \
-   							END + \
-   							CASE \
-   								WHEN up.parent_email IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.parentEmail)+" \
-   							END + \
-   							CASE \
-   								WHEN up.school_address IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.schoolAddress)+" \
-   							END + \
-   							CASE \
-   								WHEN up.school_contact IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.schoolContact)+" \
-   							END + \
-   							CASE \
-   								WHEN up.school_email IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.schoolEmail)+" \
-   							END + \
-   							CASE \
-   								WHEN up.teacher_name IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.teacherName)+" \
-   							END + \
-  							CASE \
-  								WHEN up.teacher_contact IS NULL \
-  									THEN 0 \
-  									ELSE "+escape(properties.reward.teacherContact)+" \
-  							END + \
-  							CASE \
-  								WHEN up.teacher_email IS NULL \
-  									THEN 0 \
-  									ELSE "+escape(properties.reward.teacherEmail)+" \
-  							END \
-  						)  + \
-						/* student answer coins*/ \
-						(CASE WHEN COUNT(sa.id) = 0 \
-							THEN 0 \
-							ELSE \
-								SUM(CASE \
-									WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 0 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 15 \
-										THEN 100 \
-										ELSE 0 \
-									END + \
-									CASE \
-									WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 15 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 30 \
-										THEN 75 \
-										ELSE 0 \
-									END + \
-									CASE \
-									WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 30 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 45 \
-										THEN 50 \
-										ELSE 0 \
-									END + \
-									CASE \
-									WHEN TIMESTAMPDIFF(SECOND,sa.started,sa.ended) > 45 AND TIMESTAMPDIFF(SECOND,sa.started,sa.ended) <= 60 \
-										THEN 25 \
-										ELSE 0 \
-									END) \
-								END) \
-							) AS totalRewards, \
-  						(CASE \
-  							WHEN up.address IS NULL \
-		  						THEN 0 \
-  								ELSE "+escape(properties.reward.address)+" \
-  						END) AS address, \
-  						(CASE \
-  							WHEN up.favorite_subject IS NULL \
-		  						THEN 0 \
-			  					ELSE "+escape(properties.reward.favoriteSubject)+" \
-	  					END) AS favoriteSubject, \
- 						(CASE \
- 							WHEN up.ambition IS NULL \
- 								THEN 0 \
- 								ELSE "+escape(properties.reward.ambition)+" \
- 						END) AS ambition, \
- 						(CASE \
- 							WHEN up.dateofbirth IS NULL \
- 								THEN 0 \
- 								ELSE "+escape(properties.reward.birthday)+" \
- 						END) AS birthday, \
-	 					(CASE \
-		 					WHEN up.nic IS NULL \
- 								THEN 0 \
- 								ELSE "+escape(properties.reward.nic)+" \
- 						END) AS nic, \
-	 					(CASE \
- 							WHEN up.sociallink IS NULL \
- 								THEN 0 \
- 								ELSE "+escape(properties.reward.socialLink)+" \
- 						END) socialLink, \
-	 					(CASE \
- 							WHEN up.email IS NULL \
- 								THEN 0 \
- 								ELSE "+escape(properties.reward.email)+" \
- 						END) AS email, \
-	 					(CASE \
- 							WHEN up.parent_name IS NULL \
- 								THEN 0 \
- 								ELSE "+escape(properties.reward.parentName)+" \
- 						END) AS parentName, \
-	 					(CASE \
- 							WHEN up.parent_contact IS NULL \
- 								THEN 0 \
- 								ELSE "+escape(properties.reward.parentContact)+" \
- 						END) AS parentContact, \
-		 				(CASE \
- 							WHEN up.parent_email IS NULL \
- 								THEN 0 \
- 								ELSE "+escape(properties.reward.parentEmail)+" \
- 						END) AS parentEmail, \
-						(CASE \
-							WHEN up.school_address IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.schoolAddress)+" \
-						END) AS schoolAddress, \
-						(CASE \
-							WHEN up.school_contact IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.schoolContact)+" \
-						END) AS schoolContact, \
-						(CASE \
-							WHEN up.school_email IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.schoolEmail)+" \
-						END) AS schoolEmail, \
-						(CASE \
-							WHEN up.teacher_name IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.teacherName)+" \
-						END) AS teacherName, \
-						(CASE \
-							WHEN up.teacher_contact IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.teacherContact)+" \
-						END) AS teacherContact, \
-						(CASE \
-							WHEN up.teacher_email IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.teacherEmail)+" \
-						END) AS teacherEmail \
-					FROM user_profile as up \
-					LEFT JOIN student_answer as sa ON sa.user_id=up.user_id \
-					LEFT JOIN mcq_option as mo ON mo.id=sa.option_id \
-					WHERE up.user_id=? AND mo.state=1 ; \
+						/* \
+						( \
+							 "+getProfileRewards('up')+" \
+							+  \
+							"+getOptionRewards('sa')+" \
+						) AS totalRewards, \
+						"+getProfileAttRewards('up')+" \
+						*/ \
+						SUM( \
+							( \
+								SELECT ("+getOptionRewards('sa')+") as reward \
+								FROM student_answer AS sa \
+								INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
+								WHERE sa.user_id=? AND mo.state=1 \
+							) + \
+							( \
+								SELECT ("+getProfileRewards('up')+") as profileRewards \
+								FROM user_profile as up \
+								WHERE up.user_id=? \
+							) \
+						) as totalRewards, \
+						( \
+						SELECT "+getProfileRewards('user_profile')+" \
+							FROM user_profile \
+							WHERE user_profile.user_id=? \
+						) as totalProfileRewards, \
+						( \
+							SELECT ("+getOptionRewards('sa')+") as reward \
+							FROM student_answer AS sa \
+							INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
+							WHERE sa.user_id=? AND mo.state=1 \
+						) as totalMcqRewards \
+						; \
 				/* Subscribed Details */ \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
@@ -426,6 +472,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					@thumbUrl := CONCAT('http://edutv.lk/img/',grade.grade_english,'.jpg') as thumb, \
 					DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s') as startedAt, \
 					(CASE \
+						WHEN ssg.plan_id =1 \
+							THEN '' \
 						WHEN ssg.plan_id = 3 \
 							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.trial)+" MONTH) \
 						WHEN ssg.plan_id = 4 \
@@ -450,107 +498,12 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				/* Subscription plan list */ \
 				SELECT * FROM subscription_plan WHERE id > 2;",
 	whereLeaderBoard:"SELECT  \
-						SUM( \
-						CASE \
-							WHEN user_profile.address IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.address)+" \
-						END + \
-						CASE \
-							WHEN user_profile.favorite_subject IS NULL \
-								THEN 0 \
-								ELSE "+escape(properties.reward.favoriteSubject)+" \
-						END + \
-						CASE \
-								WHEN user_profile.ambition IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.ambition)+" \
-						END + \
-							CASE \
-								WHEN user_profile.dateofbirth IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.birthday)+" \
-							END + \
-							CASE \
-								WHEN user_profile.nic IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.nic)+" \
-							END + \
-							CASE \
-								WHEN user_profile.sociallink IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.socialLink)+" \
-							END + \
-							CASE \
-								WHEN user_profile.email IS NULL \
-									THEN 0 \
-									ELSE "+escape(properties.reward.email)+" \
-							END + \
-   							CASE \
-   								WHEN user_profile.parent_name IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.parentName)+" \
-   							END + \
-   							CASE \
-   								WHEN user_profile.parent_contact IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.parentContact)+" \
-   							END + \
-   							CASE \
-   								WHEN user_profile.parent_email IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.parentEmail)+" \
-   							END + \
-   							CASE \
-   								WHEN user_profile.school_address IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.schoolAddress)+" \
-   							END + \
-   							CASE \
-   								WHEN user_profile.school_contact IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.schoolContact)+" \
-   							END + \
-   							CASE \
-   								WHEN user_profile.school_email IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.schoolEmail)+" \
-   							END + \
-   							CASE \
-   								WHEN user_profile.teacher_name IS NULL \
-   									THEN 0 \
-   									ELSE "+escape(properties.reward.teacherName)+" \
-   							END + \
-  							CASE \
-  								WHEN user_profile.teacher_contact IS NULL \
-  									THEN 0 \
-  									ELSE "+escape(properties.reward.teacherContact)+" \
-  							END + \
-  							CASE \
-  								WHEN user_profile.teacher_email IS NULL \
-  									THEN 0 \
-  									ELSE "+escape(properties.reward.teacherEmail)+" \
-  							END + \
-						CASE \
-							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 0 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 15 \
-								THEN 100 \
-								ELSE 0 \
-							END + \
-							CASE \
-							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 15 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 30 \
-								THEN 75 \
-								ELSE 0 \
-							END + \
-							CASE \
-							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 30 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 45 \
-								THEN 50 \
-								ELSE 0 \
-							END + \
-							CASE \
-							WHEN TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) > 45 AND TIMESTAMPDIFF(SECOND,student_answer.started,student_answer.ended) <= 60 \
-								THEN 25 \
-								ELSE 0 \
-							END \
+						( \
+							/* get profile attribute rewards */ \
+							"+getProfileRewards('user_profile')+" \
+							+ \
+							/* get students answers coins */ \
+							"+getOptionRewards('student_answer')+" \
 						) AS coins, \
 						( \
 							SELECT COUNT(mcq_option.id) \
@@ -766,7 +719,10 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertSubscription:"INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES(?,?,?,?,?)",
 	insertAffiliate:"INSERT INTO user_affiliate(id,referrer_id,referee_id,created) VALUES(?,?,?,?)",
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
-	insertStudentAnswer:"INSERT INTO  ??(id,user_id,question_id,option_id,started,ended) VALUES (?,?,?,?,?,?)",	
+	insertStudentAnswer:"INSERT INTO  student_answer(id,user_id,question_id,option_id,started,ended) \
+							VALUES (?,?,?,?,?,?); \
+							/* SELECT LAST_INSERT_ID(); */ \
+							",
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,role_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
 	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
@@ -812,7 +768,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				if (err) {
 					throw err;
 					log.error(fields+" : db update error");
-					callback(false);
+ 					callback(false);
 				} else {
 					log.info(fields+" : db update done");
 					callback(true);
@@ -837,6 +793,21 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			con.release();
  		});
  	},
+getAnswerInsertId: function(query,fields,callback) {
+		//log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+				if (err) {
+					throw err;
+					//log.info(err);
+				} else {
+				//log.info("sql result : "+JSON.parse(JSON.stringify(result[0])));
+				callback(result[0].insertId);
+				}
+ 			});
+			con.release();
+ 		});
+ 	}, 	
  	
  	setUserInsert: function(query,fields,callback) {
 //		log.info("Sql Insert data -> Fields : "+fields+" : query : "+query);
@@ -846,7 +817,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					log.error("mysql error : "+err);
 					callback(false);
 				} else {
-					log.info(fields[0]+" : data inserted");
+					//log.info(fields[0]+" : data inserted");
 					callback(true);
 				}
 //				callback(err);

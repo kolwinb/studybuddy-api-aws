@@ -30,7 +30,10 @@ router.post('/setAccountDetail',function(req,res,next) {
 	const apiSecret = req.header('x-api-secret');
 	var bodyJson=JSON.parse(JSON.stringify(req.body));
 	
-	
+	const name=bodyJson.name;
+	const gradeId=bodyJson.gradeId;
+	const avatarId=bodyJson.avatarId;
+	const schoolId=bodyJson.schoolId;
 	const address=bodyJson.address;
 	const favoriteSubject=bodyJson.favoriteSubject;
 	const ambition=bodyJson.ambition;
@@ -70,7 +73,7 @@ router.post('/setAccountDetail',function(req,res,next) {
 							if (!callbackUser[0]){
 								res.send(JSON.parse(status.misbehaviour()));
 							} else {
-								dbQuery.setSqlUpdate(dbQuery.updateAccountDetail,[address,favoriteSubject,ambition,birthday,nic,socialLink,email,parentName,parentContact,parentEmail,schoolAddress,schoolContact,schoolEmail,teacherName,teacherContact,teacherEmail,studentId],function(callbackDetails){
+								dbQuery.setSqlUpdate(dbQuery.updateAccountDetail,[name,gradeId,avatarId,schoolId,address,favoriteSubject,ambition,birthday,nic,socialLink,email,parentName,parentContact,parentEmail,schoolAddress,schoolContact,schoolEmail,teacherName,teacherContact,teacherEmail,studentId],function(callbackDetails){
 									if (!callbackDetails){
 										res.send(JSON.parse(status.profileError()));
 									} else {
@@ -199,7 +202,7 @@ router.post('/getInfo',function(req,res,next) {
 								if (!callbackUser[0]){
 									res.send(JSON.parse(status.profileError()));
 								} else {							
-									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
 										userJsonProfile=JSON.stringify(callbackUserProfile);
 										userProfile=JSON.parse(userJsonProfile);
 										if (!userProfile) {
