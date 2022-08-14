@@ -58,7 +58,7 @@ router.post('/setAccountDetail',function(req,res,next) {
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
 		res.send(JSON.parse(status.unAuthApi()));
-	} else if (!bodyJson){
+	} else if ( (!bodyJson) || (!gradeId) || (!schoolId) || (!avatarId)) {
 		res.send(JSON.parse(status.paramNone()));
 	} else {
 		const arrToken = authToken.split(" ");

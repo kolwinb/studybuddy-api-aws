@@ -130,82 +130,82 @@ return " \
 function getProfileRewards(tableName) {
 return 	"(SUM( \
 		CASE \
-			WHEN "+tableName+".address IS NULL \
+			WHEN "+tableName+".address IS NULL OR "+tableName+".address ='' \
 				THEN 0 \
 				ELSE "+escape(properties.reward.address)+" \
 		END + \
 		CASE \
-		WHEN "+tableName+".favorite_subject IS NULL \
+		WHEN "+tableName+".favorite_subject IS NULL OR "+tableName+".favorite_subject='' \
 			THEN 0 \
 			ELSE "+escape(properties.reward.favoriteSubject)+" \
 		END + \
 		CASE \
-			WHEN "+tableName+".ambition IS NULL \
+			WHEN "+tableName+".ambition IS NULL OR "+tableName+".ambition=''  \
 				THEN 0 \
 				ELSE "+escape(properties.reward.ambition)+" \
 		END + \
 		CASE \
-			WHEN "+tableName+".dateofbirth IS NULL \
+			WHEN "+tableName+".dateofbirth IS NULL OR "+tableName+".dateofbirth='' \
 				THEN 0 \
 				ELSE "+escape(properties.reward.birthday)+" \
 		END + \
 		CASE \
-			WHEN "+tableName+".nic IS NULL \
+			WHEN "+tableName+".nic IS NULL OR "+tableName+".nic='' \
 				THEN 0 \
 				ELSE "+escape(properties.reward.nic)+" \
 		END + \
 		CASE \
-			WHEN "+tableName+".sociallink IS NULL \
+			WHEN "+tableName+".sociallink IS NULL OR "+tableName+".sociallink='' \
 				THEN 0 \
 				ELSE "+escape(properties.reward.socialLink)+" \
 		END + \
 		CASE \
-			WHEN "+tableName+".email IS NULL \
+			WHEN "+tableName+".email IS NULL OR "+tableName+".email='' \
 				THEN 0 \
 				ELSE "+escape(properties.reward.email)+" \
 		END + \
    		CASE \
-   			WHEN "+tableName+".parent_name IS NULL \
+   			WHEN "+tableName+".parent_name IS NULL OR "+tableName+".parent_name='' \
    				THEN 0 \
    				ELSE "+escape(properties.reward.parentName)+" \
    		END + \
    		CASE \
-   			WHEN "+tableName+".parent_contact IS NULL \
+   			WHEN "+tableName+".parent_contact IS NULL OR "+tableName+".parent_contact='' \
    				THEN 0 \
    				ELSE "+escape(properties.reward.parentContact)+" \
    		END + \
    		CASE \
-   			WHEN "+tableName+".parent_email IS NULL \
+   			WHEN "+tableName+".parent_email IS NULL OR "+tableName+".parent_email='' \
    				THEN 0 \
    				ELSE "+escape(properties.reward.parentEmail)+" \
    		END + \
    		CASE \
-   			WHEN "+tableName+".school_address IS NULL \
+   			WHEN "+tableName+".school_address IS NULL OR "+tableName+".school_address='' \
    				THEN 0 \
    				ELSE "+escape(properties.reward.schoolAddress)+" \
    		END + \
    		CASE \
-   			WHEN "+tableName+".school_contact IS NULL \
+   			WHEN "+tableName+".school_contact IS NULL OR "+tableName+".school_contact='' \
    				THEN 0 \
    				ELSE "+escape(properties.reward.schoolContact)+" \
    		END + \
    		CASE \
-   			WHEN "+tableName+".school_email IS NULL \
+   			WHEN "+tableName+".school_email IS NULL OR "+tableName+".school_email='' \
    				THEN 0 \
    				ELSE "+escape(properties.reward.schoolEmail)+" \
    		END + \
    		CASE \
-   			WHEN "+tableName+".teacher_name IS NULL \
+   			WHEN "+tableName+".teacher_name IS NULL OR "+tableName+".teacher_name='' \
    				THEN 0 \
    				ELSE "+escape(properties.reward.teacherName)+" \
    		END + \
   		CASE \
-  			WHEN "+tableName+".teacher_contact IS NULL \
+  			WHEN "+tableName+".teacher_contact IS NULL OR "+tableName+".teacher_contact='' \
   				THEN 0 \
   				ELSE "+escape(properties.reward.teacherContact)+" \
   		END + \
   		CASE \
-  			WHEN "+tableName+".teacher_email IS NULL \
+  			WHEN "+tableName+".teacher_email IS NULL OR "+tableName+".teacher_email='' \
   				THEN 0 \
   				ELSE "+escape(properties.reward.teacherEmail)+" \
   		END \
@@ -251,20 +251,50 @@ whereBulkAnswerRewards:"SELECT \
 						FROM student_answer \
 						INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
 						WHERE student_answer.id IN (?) AND mcq_option.state=1;",
-/* MCQMining */
-videoData: "SELECT \
-			mcq_question.id,\
-			mcq_question.heading,\
-			mcq_question.question, \
-			mcq_question.image \
+/* MCQMining  stage 1 to 8*/
+whereMiningMcqList:"SELECT \
+			video.id AS lessionId, \
+			mcq_question.id as questionId, \
+			mcq_question.heading as heading, \
+			mcq_question.question as question, \
+			mcq_question.image as image, \
+			mcq_option.id as optionId, \
+			mcq_option.option as answer, \
+			mcq_option.image as image, \
+			( \
+				CASE WHEN mcq_option.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
+			FROM video \
+			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
+			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
+			WHERE video.grade = ? AND video.syllabus = ? AND video.subject_id = ? \
+			LIMIT 60;",
+/* MCQMining  stage 9*/
+whereMiningMcqStage9:"SELECT \
+			mcq_question.id as questionId, \
+			mcq_question.heading as heading, \
+			mcq_question.question as question, \
+			mcq_question.image as image, \
+			mcq_option.id as optionId, \
+			mcq_option.option as answer, \
+			mcq_option.image as image, \
+			( \
+				CASE WHEN mcq_option.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
 			FROM mcq_question \
-			WHERE mcq_question.video_id=?; \
-			SELECT mcq_option.id, mcq_option.option, mcq_option.image, CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect \
-			FROM mcq_option \
-			INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
-			WHERE mcq_question.video_id=?",
-/*getMiningStage */
-whereMiningStage: "SELECT \
+			INNER JOIN video ON video.id=mcq_question.video_id \
+			INNER JOIN subject ON subject.id=video.subject_id \
+			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
+			WHERE video.grade = ? AND video.syllabus = ? \
+			LIMIT 120;",
+/* getMiningStage */
+whereMiningMcqStage: "SELECT \
 					subject.id as stageId, \
 					@level := CONCAT('Stage ',subject.id) as stageName, \
 					subject.subject_english as nameE, \
@@ -390,6 +420,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				WHERE user.id=?; \
 				/* personal information */ \
 				SELECT user_profile.name as studentName, \
+					(SELECT grade.grade_english FROM grade WHERE grade.id=user_profile.grade_id) as studentGrade, \
 					user_profile.grade_id as gradeId, \
 					user_profile.avatar_id as avatarId, \
 					user_profile.school_id as schoolId, \
@@ -1147,8 +1178,9 @@ getAnswerInsertId: function(query,fields,callback) {
 		con.release();
 	});
 	},
-	
-	getMcqMining: function(query,fields,callback) {
+
+//query any table
+	getMiningMcqStage: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
    				if (!result){
@@ -1156,26 +1188,71 @@ getAnswerInsertId: function(query,fields,callback) {
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
- 					const [question,option] = result;
-					//append mcq
-					varOptionData=JSON.stringify(option);
-					//console.log(varOptionData);
-					let countIndex=0;
-					var mcq=question.map((questionObj,questionIndex) => {
-						optA=JSON.parse(JSON.stringify(option[countIndex]));
-						optB=JSON.parse(JSON.stringify(option[countIndex+1]));
-						optC=JSON.parse(JSON.stringify(option[countIndex+2]));
-						optD=JSON.parse(JSON.stringify(option[countIndex+3]));
-						let optArr = new Array();
-						optArr=[optA,optB,optC,optD];
-						questionObj.options=optArr;
-						countIndex+=properties.optionCount; //question 5 iteration problem
-						return 	Object.assign({},questionObj);
+					const [subject,lastStage] = result;
+					var jsonResults = subject.map((mysqlObj, index) => {
+							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.png';
+    						return Object.assign({}, mysqlObj);
+    					});
+    				jsonResults.push(lastStage[0]);
+					//log.info(JSON.stringify(jsonResults));
+					callback(JSON.stringify(jsonResults)); 		
+			}
+		});
+		con.release();
+	});
+	},
+	
+	getMiningMcq: function(query,fields,callback) {
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+				if (err) { 
+					//throw err;
+					console.log("getMiningMcqStage9 database server error");
+				} else 	if (!result){
+   					callback(JSON.stringify(status.server()));
+ 				} else {
+ 					//single row
+ 					//var normalObj = Object.assign({}, results[0]);
+ 					const [lesson] = result;
+ 					var options =[];
+ 					var mcqList =[];
+ 					var rowCount = 1;
+					var jsonResults = result.map((mysqlObj, index) => {
+						//every row has option
+						var optionData={
+							"optionId":mysqlObj.optionId,
+							"option":mysqlObj.answer,
+							"image":mysqlObj.image,
+							"isCurrect":mysqlObj.isCorrect
+						}
+						//each option object put into array
+						options.push(optionData);
+						
+						if (!((index+1) % 4)){
+							//console.log("rowCount: "+rowCount);
+							//rowCount++;
+							//console.log("question Id: "+mysqlObj.questionId);
+							var question={
+								"questionId":mysqlObj.questionId,
+								"heading":mysqlObj.heading,
+								"question":mysqlObj.question,
+								"image":mysqlObj.image,
+								"options":options
+							}
+							//console.log("option id: "+mysqlObj.optionId);
+							// put option array into question object at every 4 line
+							//append question into array
+							mcqList.push(question);
+							//clear question object and option object at every 4 line
+							options=[];
+						}
+						
+						return Object.assign({}, mysqlObj);
 					});
+					
+					callback(JSON.stringify(mcqList)); 		
+
 				}
-    				return Object.assign({}, mysqlObj);
-			//log.info(JSON.stringify(jsonResults));
-			callback(JSON.stringify(mcq)); 		
 			});
 			con.release();
 		});
