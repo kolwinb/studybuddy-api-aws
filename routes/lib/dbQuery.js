@@ -242,6 +242,13 @@ return " \
 		END)";
 }
 
+function getMiningMcqCoin(stageNo){
+if (stageNo == 9){
+	return 5
+} else  {
+	return 3
+}
+}
 var dbStatements = {
 	//properties
 
@@ -251,6 +258,12 @@ whereBulkAnswerRewards:"SELECT \
 						FROM student_answer \
 						INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
 						WHERE student_answer.id IN (?) AND mcq_option.state=1;",
+/* mining mcq */ 						
+whereMiningMcqRewards:"SELECT \
+							(COUNT(mcq_mining_answer.id)*?) AS coins \
+						FROM mcq_mining_answer \
+						INNER JOIN mcq_option ON mcq_option.id=mcq_mining_answer.option_id \
+						WHERE mcq_mining_answer.id IN (?) AND mcq_option.state=1;",
 /* MCQMining  stage 1 to 8*/
 whereMiningMcqList:"SELECT \
 			video.id AS lessionId, \
@@ -258,6 +271,8 @@ whereMiningMcqList:"SELECT \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
 			mcq_question.image as image, \
+			subject.subject_english as subject, \
+			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
 			mcq_option.image as image, \
@@ -270,14 +285,19 @@ whereMiningMcqList:"SELECT \
 			FROM video \
 			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
+			INNER JOIN subject ON subject.id=video.subject_id \
+			INNER JOIN grade ON grade.id=video.grade \
 			WHERE video.grade = ? AND video.syllabus = ? AND video.subject_id = ? \
 			LIMIT 60;",
 /* MCQMining  stage 9*/
-whereMiningMcqStage9:"SELECT \
+whereMiningMcqStage9List:"SELECT \
+			video.id as lessonId, \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
 			mcq_question.image as image, \
+			subject.subject_english as subject, \
+			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
 			mcq_option.image as image, \
@@ -287,13 +307,18 @@ whereMiningMcqStage9:"SELECT \
 					ELSE 'False' \
 				END \
 			) as isCorrect \
-			FROM mcq_question \
-			INNER JOIN video ON video.id=mcq_question.video_id \
-			INNER JOIN subject ON subject.id=video.subject_id \
+			FROM ( \
+					SELECT * \
+					FROM video \
+					WHERE video.grade = ? AND video.syllabus = ? \
+					GROUP BY video.subject_id \
+				 ) AS video \
+			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
-			WHERE video.grade = ? AND video.syllabus = ? \
-			LIMIT 120;",
-/* getMiningStage */
+			INNER JOIN subject ON subject.id=video.subject_id \
+			INNER JOIN grade ON grade.id=video.grade \
+			;",
+/* whereMiningStage */
 whereMiningMcqStage: "SELECT \
 					subject.id as stageId, \
 					@level := CONCAT('Stage ',subject.id) as stageName, \
@@ -531,7 +556,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					DATE_FORMAT(DATE_ADD(user.date_joined, INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY),'%Y-%m-%d %H:%m:%s') as expAt, \
 					@planName := 'trial' as planName \
 				FROM user \
-				WHERE user.id = 1 AND NOW() <= DATE_ADD(user.date_joined, INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY); \
+				WHERE user.id = ? AND NOW() <= DATE_ADD(user.date_joined, INTERVAL "+escape(properties.subscriptionPeriod.trial)+" DAY); \
 				/* Language List */ \
 				SELECT * FROM student_language; \
 				/* Subscription plan list */ \
@@ -762,8 +787,12 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
 	insertStudentAnswer:"INSERT INTO  student_answer(id,user_id,question_id,option_id,started,ended) \
 							VALUES (?,?,?,?,?,?); \
-							/* SELECT LAST_INSERT_ID(); */ \
+							/* insertId undefine fix */ \
+							 SELECT LAST_INSERT_ID(); \
 							",
+	insertMiningMcqAnswer:"INSERT INTO  mcq_mining_answer(id,user_id,question_id,option_id,started,ended) \
+							VALUES (?,?,?,?,?,?); \
+							SELECT LAST_INSERT_ID();",
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade_id,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,role_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
 	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
@@ -843,10 +872,11 @@ getAnswerInsertId: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
-					throw err;
-					//log.info(err);
+					//throw err;
+					log.info(err);
 				} else {
-				//log.info("sql result : "+JSON.parse(JSON.stringify(result[0])));
+				//log.info("sql result : "+JSON.parse(JSON.stringify(result[0])))
+				//add LAST_INSERT_ID, undefine fixed
 				callback(result[0].insertId);
 				}
  			});
@@ -1202,7 +1232,79 @@ getAnswerInsertId: function(query,fields,callback) {
 	});
 	},
 	
-	getMiningMcq: function(query,fields,callback) {
+	getMiningMcqStage9List: function(query,fields,callback) {
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+				if (err) { 
+					//throw err;
+					console.log("getMiningMcqStage9 database server error");
+				} else 	if (!result){
+   					callback(JSON.stringify(status.server()));
+ 				} else {
+ 					//single row
+ 					//var normalObj = Object.assign({}, results[0]);
+ 					const [lesson] = result;
+ 					var options =[];
+ 					var mcqList =[];
+ 					var qCount = 0; //for every 3 question 
+					var jsonResults = result.map((mysqlObj, index) => {
+						//every row has option
+						
+						var optionData={
+							"optionId":mysqlObj.optionId,
+							"option":mysqlObj.answer,
+							"image":mysqlObj.image,
+							"isCurrect":mysqlObj.isCorrect
+						}
+						//each option object put into array
+						options.push(optionData);
+						
+						if (!((index+1) % 4)){
+							//qCount++;
+							//console.log("rowCount: "+qCount);
+							//console.log("question Id: "+mysqlObj.questionId);
+							//limit only 3 question
+							qCount++;
+							if (qCount <= 3) {
+								var question={
+									"lessonId":mysqlObj.lessonId,
+									"grade":mysqlObj.grade,
+									"subject":mysqlObj.subject,
+									"questionId":mysqlObj.questionId,
+									"heading":mysqlObj.heading,
+									"question":mysqlObj.question,
+									"image":mysqlObj.image,
+									"options":options
+								}
+								//console.log("qcount < 3 :"+qCount+" : "+question.questionId);
+								mcqList.push(question);
+								//every 5 question reset qcount to 0
+							} else if (qCount == 5) {
+								//console.log("qcount at limit :"+qCount);
+								qCount=0;
+							} 
+
+							//console.log("option id: "+mysqlObj.optionId);
+							// put option array into question object at every 4 line
+							//append question into array and avoid null occurance of every 3 question
+							//if (question) {
+							//	mcqList.push(question);
+							//}
+							//clear question object and option object at every 4 line
+							options=[];
+						}
+						
+						return Object.assign({}, mysqlObj);
+					});
+					
+					callback(JSON.stringify(mcqList)); 		
+
+				}
+			});
+			con.release();
+		});
+	},
+getMiningMcqList: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) { 
@@ -1229,10 +1331,12 @@ getAnswerInsertId: function(query,fields,callback) {
 						options.push(optionData);
 						
 						if (!((index+1) % 4)){
-							//console.log("rowCount: "+rowCount);
-							//rowCount++;
 							//console.log("question Id: "+mysqlObj.questionId);
+							//get only 3 of 5 question
 							var question={
+								"lessonId":mysqlObj.lessonId,
+								"grade":mysqlObj.grade,
+								"subject":mysqlObj.subject,
 								"questionId":mysqlObj.questionId,
 								"heading":mysqlObj.heading,
 								"question":mysqlObj.question,

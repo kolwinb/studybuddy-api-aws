@@ -1,11 +1,8 @@
---
--- Table structure for table `district`
---
 
-DROP TABLE IF EXISTS `student_answer`;
+DROP TABLE IF EXISTS `mcq_mining_answer`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `student_answer` (
+CREATE TABLE `mcq_mining_answer` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `question_id` int(11) NOT NULL,

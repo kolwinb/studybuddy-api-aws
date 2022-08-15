@@ -147,7 +147,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 																			res.send(JSON.parse(status.server()));
 																		} else {
 																			resStatus=status.stateSuccess(JSON.stringify({
-																					"description":"questions are updated",
+																					"description":"Questions have been updated",
 																					"coins":callbackOState[0].coins
 																					}));
        																		res.send(JSON.parse(resStatus));
