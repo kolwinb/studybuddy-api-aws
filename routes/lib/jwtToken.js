@@ -34,10 +34,10 @@ var jwtToken = {
 		jwt.verify(token,cert,function(err,decoded)
 			{
  			if (err){
- 				log.error("Token Expired");
+ 				log.error("jwt Token Expired");
  				callback(false);
 			}else {
-				log.info("Token Verified");
+				log.info("jwt Token Verified");
 				callback(true);
   				
   			}
@@ -52,42 +52,3 @@ var jwtToken = {
 module.exports = jwtToken
 
 
-/*
-module.exports = function(){
-//function (jtoken,email){
-//	this.jtoken = jtoken;
-//	this.email = email;
-	this.jwtAuthSign = function (email){
-		var token = jwt.sign({
-			iss:"learntv",
-			aud:"students",
-			exp: Math.floor(Date.now()/1000)+(60*60),
-			email:this.email},cert);
-		return token;
-	}
-	
-	this.jwtVerify = function (jtoken){
-//		console.log("jtoken : "+jtoken);
-		jwt.verify(jtoken,cert,{aud:'urn:studes'},function(err,decoded)
-			{
- 			if (err){
- 				log.error("Token Expired");
-//   				console.log("Token Expired");
-//   				callback("error");
-				return result="test";
-//				return test = "{success:false,signature:'invalid',errorcode:104}";
-			}else {
-				log.info("Token Issued");
-   				req.decoded = decoded;
-				console.log("signature valid");
-  				return {success:true,signature:'valid'};
-  				
-  			}
-  		});
-		
-	
-	}
-
-}
-
-*/

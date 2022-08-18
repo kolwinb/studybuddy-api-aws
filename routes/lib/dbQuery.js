@@ -709,7 +709,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						INNER JOIN district ON school.district_id = district.id \
 						INNER JOIN province ON province.id = district.province_id \
 						WHERE user_profile.user_id = ?",
-	whereMobile: "SELECT * FROM ?? WHERE phone = ?",
+	whereMobile: "SELECT * FROM ?? WHERE phone=?;",
 	whereReferrerReferee: "SELECT id as referee_id FROM user WHERE referral_code=?;SELECT id as referrer_id FROM user WHERE phone=?",
 	whereAffiliate: "SELECT id FROM user_affiliate WHERE referrer_id=? AND referee_id=?;",
 	//whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
@@ -773,6 +773,14 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
 						WHERE video.grade=? AND video.syllabus=? AND video.subject_id=? LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
+	whereOnlineUsers: "SELECT \
+						user.id as gamerId, \
+						up.avatar_id as avatarId, \
+						up.grade_id as gradeId, \
+						up.name as name \
+						FROM user_profile as up \
+						INNER JOIN user ON user.id = up.user_id \
+						WHERE up.status='online'",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
 	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
@@ -800,6 +808,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
+	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
+//	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id = (SELECT id FROM user WHERE uniqId= ?)",
 	updateUserRole:"UPDATE user SET role_id = ? WHERE id = ?",
 	updateNewPassword:"UPDATE user SET password = ? WHERE id = ?",
 	updateUserPassword:"UPDATE ?? SET password=? WHERE phone = ?",
@@ -1140,6 +1150,7 @@ getAnswerInsertId: function(query,fields,callback) {
     					});
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonResults)); 		
+					//callback(jsonResults); 		
 			}
 		});
 		con.release();

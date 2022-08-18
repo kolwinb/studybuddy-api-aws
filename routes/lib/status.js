@@ -1,139 +1,158 @@
 const crypto = require('./crypto');
 var pool = require('../../models/usermysql.js');
 
+function sendError(code,desc){
+	const jsonData = {
+		"status":"error",
+		"error":{
+			"statusCode":code,
+			"description":desc
+		}	
+	}
+	return JSON.stringify(jsonData)
+}
+
+
 var State ={
 	subscriptionFound: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1024","description":"Subscription has not been expired."}})
+		return  sendError(1024,"Subscription has not been expired.")
 	},
 	invalidPlanId: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1023","description":"Invalid plan id."}})
+		return  sendError(1023,"Invalid plan id.")
 	},
 	resetPasswordFail: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1022","description":"Password resetting failed."}})
+		return  sendError(1022,"Password resetting failed.")
 	},
 	planNotFound: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1021","description":"Subscription plan has not been found."}})
+		return  sendError(1021,"Subscription plan has not been found.")
 	},
 	planExpired: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1020","description":"Subscription plan has been expired."}})
+		return  sendError(1020,"Subscription plan has been expired.")
 	},
 	wrongReferral: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1019","description":"Wrong referral code"}})
+		return  sendError(1019,"Wrong referral code")
 	},
 	authHeader: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1018","description":"Authorization is required."}})
+		return  sendError(1018,"Authorization is required.")
 	},
 	misbehaviour: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1017","description":"request misbehaviour."}})
+		return  sendError(1017,"request misbehaviour.")
 	},
 	answerProhibited: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1016","description":"Prohibited action."}})
+		return  sendError(1016,"Prohibited action.")
 	},
 	studentAnswerWarning: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1015","description":"Given answer is not matched."}})
+		return  sendError(1015,"Given answer is not matched.")
 	},
 	recoveryCodeVerification: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1014","description":"Recovery code verification required."}})
+		return  sendError(1014,"Recovery code verification required.")
 	},
 	mobileNotMatch: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1013","description":"Mobile number not match with registered one."}})
+		return  sendError(1013,"Mobile number not match with registered one.")
 	},
 	profileAdding: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1012","description":"not allowed."}})
+		return  sendError(1012,"not allowed.")
 	},
 	profileError: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1011","description":"Unable to find profile data."}})
+		return  sendError(1011,"Unable to find profile data.")
 	},
 	regParamErr: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1010","description":"Parameters not match."}})
+		return  sendError(1010,"Parameters not match.")
 	},
 	recoveryCodeNotVerify: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1209","description":"Recovery code verification has been failed."}})
+		return  sendError(1209,"Recovery code verification has been failed.")
 	},
 	recoveryCodeExpired: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1208","description":"Recovery code timeout."}})
+		return  sendError(1208,"Recovery code timeout.")
 	},
 	smsNoRequire: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1207","description":"Mobile number is required."}})
+		return  sendError(1207,"Mobile number is required.")
 	},
 	unAuthApi: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1206","description":"Unauthorized API calling.."}})
+		return  sendError(1206,"Unauthorized API calling..")
 	},
 	otpRequired: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1205","description":"OTP verification is required."}})
+		return  sendError(1205,"OTP verification is required.")
 	},
 	otpExpired: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1204","description":"OTP has been expired."}})
+		return  sendError(1204,"OTP has been expired.")
 	},
 
 	otpNotVerify: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1203","description":"OTP has not been verified."}})
+		return  sendError(1203,"OTP has not been verified.")
 	},
 	otpDecline: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1202","description":"SMS request decline."}})
+		return  sendError(1202,"SMS request decline.")
 	},
 	otpFailure: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1201","description":"Can't send SMS OTP."}})
+		return  sendError(1201,"Can't send SMS OTP.")
 	},
 	googleTokenTimeout: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1103","description":"Token used too late."}})
+		return  sendError(1103,"Token used too late.")
 	},
 	googleNotAuth: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1102","description":"Google user is not authenticated."}})
+		return  sendError(1102,"Google user is not authenticated.")
 	},
 	googleAccessToken: function(content){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1101","description":"Google authentication session has been expired."}})
+		return  sendError(1101,"Google authentication session has been expired.")
 	},
 	stateSuccess: function(content){
 		return  JSON.stringify({"status":"success","data":JSON.parse(content)})
 	},
+	sendWsData: function(type,content){
+		const jsonData = {
+			"type":type,
+			"payload":JSON.parse(content)
+		}
+		return JSON.stringify(jsonData)
+	},
 	userReject: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1009","description":"Regitration rejected, Email/Mobile found."}})
+		return  sendError(1009,"Regitration rejected, Email/Mobile found.")
 	},
 	userNotActivated: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1008","description":"User has been registered. But activation has not been verified."}})
+		return  sendError(1008,"User has been registered. But activation has not been verified.")
 	},
 //	userRegistered: function(){
-//		return  JSON.stringify({"status":"success","description":"Activation has been verified."})
+//		return  JSON.stringify({"status":"success,"Activation has been verified."})
 //	},
 	userNotFound: function(){
-		return   JSON.stringify({"status":"error","error":{"statusCode":"1001","description":"Authentication Failed. User not found."}})
+		return   sendError(1001,"Authentication Failed. User not found.")
 	},
 	thirdPartyAuth: function(){
-		return   JSON.stringify({"status":"error","error":{"statusCode":"302","description":"Return Null"}})
+		return   sendError(302,"Return Null")
 	},
 	emptyMobile: function(){
-		return   JSON.stringify({"status":"error","error":{"statusCode":"1007","description": "Mobile number required"}})
+		return   sendError(1007, "Mobile number required")
 	},
 	paramNone: function(){
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1006","description":"Data is missing"}})
+		return  sendError(1006,"Data is missing")
 	},
 	tokenNone: function(){
-		return   JSON.stringify({"status":"error","error":{"statusCode":"1005","description":"Token not provided"}})
+		return   sendError(1005,"Token not provided")
 	},
 	tokenExpired: function(){
-		return   JSON.stringify({"status":"error","error":{"statusCode":"1004","description":"Token expired"}})
+		return   sendError(1004,"Token expired")
 	},
 	server: function() {
-		return  JSON.stringify({"status":"error","error":{"statusCode":"1000","description":"Internal server error"}})
+		return  sendError(1000,"Internal server error")
 		},
 	content: function() {
-		return {"status":"error","error":{"statusCode":"101","description":"Content type mismatch"}}
+		return sendError(101,"Content type mismatch")
 		},
 	redeem: function() {
-		return {"status":"error","error":{"statusCode":"102","description":"Invalid redeem code"}}
+		return sendError(102,"Invalid redeem code")
 		},
 	subscribe: function() {
-		return {"status":"error","error":{"statusCode":"103","description":"Not subscribed"}}
+		return sendError(103,"Not subscribed")
 		},
 	subActivate: function() {
-		return {"status":"error","error":{"statusCode":"104","description":"Subscription has not been activated"}}
+		return sendError(104,"Subscription has not been activated")
 		},
 	header: function() {
-		return {"status":"error","error":{"statusCode":"105","description":"Header mismatch"}}
+		return sendError(105,"Header mismatch")
 		},
 	operator: function() {
-		return {"status":"error","error":{"statusCode":"106","description":"Operator cnnection error"}}
+		return sendError(106,"Operator cnnection error")
 		},
 	customError:  function(res,callback){
     	if (res.statusCode.charAt(0) == "E"){

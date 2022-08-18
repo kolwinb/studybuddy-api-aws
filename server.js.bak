@@ -5,13 +5,12 @@ const config = require('./config.js');
 //url mapping
 var url = require('url');
 //for routes
-//const websocket = require('/media/data/opt/nodejs/lib/node_modules/ws');
+const websocket = require('/media/data/opt/nodejs/lib/node_modules/ws');
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
-//const wss = new websocket.Server({ server });
+const wss = new websocket.Server({ server });
 
-//custom handler
 const wsHandler = require("./routes/lib/websocket");
 //const options = { /*....*/ };
 //const io = require("/media/data/opt/nodejs/lib/node_modules/socket.io")(server,options);
@@ -92,7 +91,49 @@ app.use('/studybuddy/v1/session',require('./routes/v1/v1_session'));
 app.use('/studybuddy/v1/vod',require('./routes/v1/v1_vod'));
 app.use('/studybuddy/v1/ad',require('./routes/v1/v1_preroll')); //advertisment without authentication
 
-wsHandler.runWebsocket(server);
+
+
+function heartbeat(){
+	this.isAlive = true;
+}
+
+wss.on('connection', (socket,req) => {
+	socket.isAlive = true;
+	socket.on('pong',heartbeat);
+	//const ip = req.socket.remoteAddress;
+	/* enginx forwarded */
+	const ip = req.headers['x-forwarded-for'].split(',')[0].trim();;
+	
+	console.log('a user connected '+", ip :"+ip);
+	socket.on('message', function(data){
+		console.log('a user '+ data +' connected');
+		//users[socket.id]=1;
+	});
+
+	/*	
+	const interval = setInterval(function ping() {
+		wss.clients.forEach(function each(socket) {
+			if (socket.isAlive === false) return socket.terminate();
+			socket.isAlive = false;
+			socket.ping();
+		}, 30000);
+	});
+	*/
+	
+	socket.send('studybuddy online chat');
+	
+	socket.on('open',function open() {
+		socket.send('success');
+	});
+	
+	socket.on('close', (close) => {
+		console.log('user  disconnected');
+		//clearInterval(interval);
+		//delete users[socket.id];
+	});
+
+});
+
 
 //url mapping
 //var ourl = req.headers.host+'/'+req.url

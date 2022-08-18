@@ -28,7 +28,9 @@ const apiSecret = scope.userReg.apiSecret;
 
 
 router.post('/',function(req,res){
-	const valrand=uniqid(); //uniq id
+	const valrand=Math.floor(Date.now()/1000) + uniqid();
+	console.log('timestamp '+valrand);
+	//const valrand=uniqid(); //uniq id
     const signdate = new Date();
 	const mobileNo=req.body.mobileNo;
 	const password=req.body.password;
@@ -66,7 +68,7 @@ router.post('/',function(req,res){
 									if (!callbackReferrer){
 										res.send(JSON.parse(status.server()));
 									} else {
-										const jsonRef=JSON.parse(callbackReferrer);
+										const jsonRef=JSON.parse(JSON.stringify(callbackReferrer));
 										//make relation with referrer and referred
 										//const referrer_id=callbackReferrer[0].id;
 										log.info("referred referrer :"+callbackReferrer);

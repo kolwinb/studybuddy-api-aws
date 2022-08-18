@@ -12,6 +12,7 @@ npm install xmlhttprequest
 npm install xml2js
 npm install axios
 npm install socketio
+npm install socket.io
 
 google people api
 npm install googleapi
