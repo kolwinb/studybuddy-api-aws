@@ -131,7 +131,7 @@ router.post('/setMcqAnswer',function(req,res,next) {
     const bodyJson=JSON.parse(JSON.stringify(req.body));
 	
 	var respJson={};
-	//console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
+	console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
 	
 	if (!authToken){
 		console.log("Authorization header missing");

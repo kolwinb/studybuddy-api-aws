@@ -68,7 +68,7 @@ router.post('/',function(req,res){
 									if (!callbackReferrer){
 										res.send(JSON.parse(status.server()));
 									} else {
-										const jsonRef=JSON.parse(JSON.stringify(callbackReferrer));
+										const jsonRef=JSON.parse(callbackReferrer);
 										//make relation with referrer and referred
 										//const referrer_id=callbackReferrer[0].id;
 										log.info("referred referrer :"+callbackReferrer);

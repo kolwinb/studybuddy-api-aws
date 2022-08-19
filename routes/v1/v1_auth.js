@@ -42,7 +42,7 @@ router.post('/mobile',function(req,res){
 	api_key=req.body.api_key;
 	api_secret=req.body.api_secret;
 	
-	log.info("password "+passwd);
+	log.info("api_key :"+api_key+", api_secret :"+api_secret+", mobile :"+mobile+", password "+passwd);
 	
 	if ((apiKey != api_key) || (apiSecret != api_secret)){
 		res.send(JSON.parse(status.unAuthApi()));
