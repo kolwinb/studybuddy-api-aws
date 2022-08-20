@@ -36,7 +36,7 @@ router.post('/getMcqStage',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getMiningMcqStage(dbQuery.whereMiningMcqStage,[gradeId,gradeId],function(callback){
+							dbQuery.getMiningMcqStage(dbQuery.whereMiningMcqStage,[studentId,gradeId,studentId,gradeId],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});
@@ -70,13 +70,15 @@ router.post('/getMcqList',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							if (stageId==9) {
-								dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId,syllabusId],function(callbackMiningMcq){
+								//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId,syllabusId],function(callbackMiningMcq){
+								dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMiningMcq){
 									//console.log("mcqmining :"+callbackMiningMcq);
 									res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
 								});		
 							} else {
 								//stageId using indeed of subjectId
-								dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,syllabusId,stageId],function(callbackMiningMcq){
+								//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,syllabusId,stageId],function(callbackMiningMcq){
+								dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,stageId],function(callbackMiningMcq){
 									//console.log("mcqmining :"+callbackMiningMcq);
 									res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
 								});		
@@ -131,7 +133,7 @@ router.post('/setMcqAnswer',function(req,res,next) {
     const bodyJson=JSON.parse(JSON.stringify(req.body));
 	
 	var respJson={};
-	console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
+	//console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
 	
 	if (!authToken){
 		console.log("Authorization header missing");
@@ -174,67 +176,81 @@ router.post('/setMcqAnswer',function(req,res,next) {
 									const started=mcqArr[keyA].startedAt;
 									const ended=mcqArr[keyA].endedAt;
 									/* find option has been answered by student */
-										dbQuery.setUserSqlQuery(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
-											if (!callbackOQV[0]) {
-												res.send(JSON.parse(status.server()));
-											} else {
-												oId=callbackOQV[0].optionId;
-												qId=callbackOQV[0].questionId;
-												vId=callbackOQV[0].videoId;
-												/* validation success or fail */
-												if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
-													//console.log("each of option: "+optionId+" ,question: "+questionId+", lessons: "+videoId+" has been validated");
-													/* insert to student answer and get the last insert id*/
-													
-													dbQuery.getAnswerInsertId(dbQuery.insertMiningMcqAnswer,["NULL",studentId,questionId,optionId,started,ended],function(callbackInsertId){
-   														if(!callbackInsertId){
-															res.send(JSON.parse(status.server()));
-														} else {
-															//console.log("lastInsertId: "+callbackInsertId);
-															/* assign lastinsert id to array */
-															const promiseArray = new Promise(function(resolve, reject) {
-																//console.log("insert id :"+callbackInsertId);
-																var arrLength=arrLastId.push(callbackInsertId);
-																/* total video lesson * total questions = total answers*/
-																if (arrLength == (parseInt(bodyJson.length) * parseInt(mcqArr.length))) {
-																	console.log("inserId Total : "+arrLength);
-																	resolve(arrLastId);
-																}
-															});
-															/* insert success, get coin according time base */
-															promiseArray.then(function(arrLastId) {
-																console.log("json length :"+bodyJson.length+", mcq length :"+mcqArr.length+", arrLastId Length:"+arrLastId.length);
-																console.log("arrLastId list:"+arrLastId.length);
-																dbQuery.setUserSqlQuery(dbQuery.whereMiningMcqRewards,[stageCoin,arrLastId],function(callbackOState){
-																	if (!callbackOState[0]) {
-																		res.send(JSON.parse(status.server()));
-																	} else {
-																		resStatus=status.stateSuccess(JSON.stringify({
-																				"description":"Questions have been updated",
-																				"coins":callbackOState[0].coins
-																				}));
-       																	res.send(JSON.parse(resStatus));
-       																}
-       															});
-															});															
-														}
-													})
-													
-       											} else {
-       											
-       												//console.log("questionId :"+questionId +"error"+"student answers again videoId :"+videoId);
-       												//responseJson[key].mcq[keyA].status=studentAnswerWarning();
-													res.send(JSON.parse(status.studentAnswerWarning()));
-       											}
-  											}
-										});
-//Object.assign(respJson,arrJson);
+									dbQuery.setUserSqlQuery(dbQuery.whereMiningAnswer,["mcq_mining_answer",studentId,questionId,stageId],function(callbackMining){ //verification data
+										if (callbackMining[0]){
+											if (bodyJson.length-1 == key){
+												if (mcqArr.length-1 == keyA){
+													res.send(JSON.parse(status.answerProhibited()));
+													//console.log(arrJson);
+													console.log("length : "+bodyJson.length+" key : "+key+" Prohibited user action");
+												}
+											}   
+										} else {
+											dbQuery.setUserSqlQuery(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
+												if (!callbackOQV[0]) {
+													//console.log("mining answer database error");
+													res.send(JSON.parse(status.server()));
+												} else {
+													oId=callbackOQV[0].optionId;
+													qId=callbackOQV[0].questionId;
+													vId=callbackOQV[0].videoId;
+													/* validation success or fail */
+													if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
+														//console.log("each of option: "+optionId+" ,question: "+questionId+", lessons: "+videoId+" has been validated");
+														/* insert to student answer and get the last insert id*/
+														
+														dbQuery.getAnswerInsertId(dbQuery.insertMiningMcqAnswer,["NULL",studentId,stageId,questionId,optionId,started,ended],function(callbackInsertId){
+   															if(!callbackInsertId){
+																res.send(JSON.parse(status.server()));
+															} else {
+																//console.log("lastInsertId: "+callbackInsertId);
+																/* assign lastinsert id to array */
+																const promiseArray = new Promise(function(resolve, reject) {
+																	//console.log("insert id :"+callbackInsertId);
+																	var arrLength=arrLastId.push(callbackInsertId);
+																	/* total video lesson * total questions = total answers*/
+																	if (arrLength == (parseInt(bodyJson.length) * parseInt(mcqArr.length))) {
+																		console.log("inserId Total : "+arrLength);
+																		resolve(arrLastId);
+																	}
+																});
+																/* insert success, get coin according time base */
+																promiseArray.then(function(arrLastId) {
+																	console.log("json length :"+bodyJson.length+", mcq length :"+mcqArr.length+", arrLastId Length:"+arrLastId.length);
+																	console.log("arrLastId list:"+arrLastId.length);
+																	dbQuery.setUserSqlQuery(dbQuery.whereMiningMcqRewards,[stageCoin,arrLastId],function(callbackOState){
+																		if (!callbackOState[0]) {
+																			res.send(JSON.parse(status.server()));
+																		} else {
+																			resStatus=status.stateSuccess(JSON.stringify({
+																					"description":"Questions have been updated",
+																					"coins":callbackOState[0].coins
+																					}));
+       																		res.send(JSON.parse(resStatus));
+       																	}
+       																});
+																});															
+															}
+														})
+														
+       												} else {
+       													//res.status(200);
+       													res.status(404).json();
+       													//console.log("questionId :"+questionId +"error"+"student answers again videoId :"+videoId);
+       													//responseJson[key].mcq[keyA].status=studentAnswerWarning();
+														//res.send(JSON.parse(status.studentAnswerWarning()));
+       												}
+  												}
+											});
+										}
+									});
+								//Object.assign(respJson,arrJson);
 								//arrJson.data={"videoId":key,"mcq":arrMcq};
 								});
 							});
 							/* json iteration ends here */
-//							res.send(JSON.parse(JSON.stringify(arrJson)));
-//	res.send(JSON.parse(status.studentAnswerWarning()));
+							//res.send(JSON.parse(JSON.stringify(arrJson)));
+							//res.send(JSON.parse(status.studentAnswerWarning()));
        					});
 
 					} else {

@@ -266,7 +266,7 @@ whereMiningMcqRewards:"SELECT \
 						WHERE mcq_mining_answer.id IN (?) AND mcq_option.state=1;",
 /* MCQMining  stage 1 to 8*/
 whereMiningMcqList:"SELECT \
-			video.id AS lessionId, \
+			video.id as lessonId, \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
@@ -282,13 +282,18 @@ whereMiningMcqList:"SELECT \
 					ELSE 'False' \
 				END \
 			) as isCorrect \
-			FROM video \
+			FROM ( \
+					SELECT * \
+					FROM video \
+					WHERE video.grade = ?  AND video.subject_id =? /* AND video.syllabus = ? */ \
+					/* GROUP BY video.subject_id */ \
+				 ) AS video \
 			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
-			WHERE video.grade = ? AND video.syllabus = ? AND video.subject_id = ? \
-			LIMIT 60;",
+			LIMIT 20 \
+			;",			
 /* MCQMining  stage 9*/
 whereMiningMcqStage9List:"SELECT \
 			video.id as lessonId, \
@@ -310,7 +315,7 @@ whereMiningMcqStage9List:"SELECT \
 			FROM ( \
 					SELECT * \
 					FROM video \
-					WHERE video.grade = ? AND video.syllabus = ? \
+					WHERE video.grade = ? /*  AND video.syllabus = ? */ \
 					GROUP BY video.subject_id \
 				 ) AS video \
 			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
@@ -323,13 +328,30 @@ whereMiningMcqStage: "SELECT \
 					subject.id as stageId, \
 					@level := CONCAT('Stage ',subject.id) as stageName, \
 					subject.subject_english as nameE, \
-					subject.subject_sinhala as nameS \
+					subject.subject_sinhala as nameS, \
+					(CASE WHEN subject.id = \
+					 ( \
+									SELECT stage_id \
+									FROM mcq_mining_answer \
+									WHERE stage_id = subject.id AND user_id =? \
+									GROUP BY stage_id) \
+							THEN 'True' \
+							ELSE 'False' \
+					END) as isCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
 					WHERE grade_subject.grade_id=?; \
 				SELECT @lastStage := COUNT(subject.id)+1 as stageId, \
 					@level := CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
-					@nameE := 'All subjects' as nameE \
+					@nameE := 'All subjects' as nameE, \
+					(CASE WHEN 9 = \
+					 ( \
+									SELECT DISTINCT stage_id \
+									FROM mcq_mining_answer \
+									WHERE stage_id = 9 AND user_id =?) \
+							THEN 'True' \
+							ELSE 'False' \
+					END) as isCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
 					WHERE grade_subject.grade_id=?;",
@@ -414,7 +436,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHERE student_answer.user_id=?) \
 						GROUP BY student_like.video_id \
 						ORDER BY likes DESC;',
-	profileInfo:" /* actvities */ \
+	profileInfo:" \
+				/* actvities */ \
 				SELECT ( \
 							SELECT count(student_answer.user_id) as correctAnswers \
 							FROM student_answer \
@@ -479,7 +502,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				INNER JOIN user ON user.id = user_profile.user_id \
 				INNER JOIN user_role ON user_role.id = user.role_id \
 				INNER JOIN student_language ON student_language.id=user_profile.language_id \
-				WHERE user_profile.user_id =?; \
+				WHERE user_profile.user_id = ?; \
 				/* chart of Total Lessons by subject */ \
 				SELECT count(DISTINCT(video.id)) as totalLessons, \
 					subject.subject_english as subject \
@@ -507,26 +530,26 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								SELECT ("+getOptionRewards('sa')+") as reward \
 								FROM student_answer AS sa \
 								INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-								WHERE sa.user_id=? AND mo.state=1 \
+								WHERE sa.user_id=user.id AND mo.state=1 \
 							) + \
 							( \
 								SELECT ("+getProfileRewards('up')+") as profileRewards \
 								FROM user_profile as up \
-								WHERE up.user_id=? \
+								WHERE up.user_id=user.id \
 							) \
 						) as totalRewards, \
 						( \
 						SELECT "+getProfileRewards('user_profile')+" \
 							FROM user_profile \
-							WHERE user_profile.user_id=? \
+							WHERE user_profile.user_id=user.id \
 						) as totalProfileRewards, \
 						( \
 							SELECT ("+getOptionRewards('sa')+") as reward \
 							FROM student_answer AS sa \
 							INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-							WHERE sa.user_id=? AND mo.state=1 \
+							WHERE sa.user_id=user.id AND mo.state=1 \
 						) as totalMcqRewards \
-						; \
+						FROM user WHERE user.id = ?; \
 				/* Subscribed Details */ \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
@@ -608,6 +631,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						LIMIT 20;",
 	whereStudentLikeFavorite: "SELECT * FROM ?? WHERE user_id = ? and video_id = ?",
 	whereStudentAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ?",
+	whereMiningAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ? AND stage_id=?",
 	whereQuestionId: "SELECT question_id FROM ?? WHERE id = ?",
 	whereOptionState: "SELECT state FROM mcq_option WHERE id = ?",
 	whereOptionQuestionVideo: "SELECT mcq_option.id as optionId,\
@@ -771,7 +795,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						FROM video \
 						INNER JOIN subject ON subject.id=video.subject_id \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
-						WHERE video.grade=? AND video.syllabus=? AND video.subject_id=? LIMIT ?; \
+						WHERE video.grade=? /* AND video.syllabus=? */ AND video.subject_id=? LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
 	whereOnlineUsers: "SELECT \
 						user.id as gamerId, \
@@ -804,8 +828,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 							/* insertId undefine fix */ \
 							 SELECT LAST_INSERT_ID(); \
 							",
-	insertMiningMcqAnswer:"INSERT INTO  mcq_mining_answer(id,user_id,question_id,option_id,started,ended) \
-							VALUES (?,?,?,?,?,?); \
+	insertMiningMcqAnswer:"INSERT INTO  mcq_mining_answer(id,user_id,stage_id,question_id,option_id,started,ended) \
+							VALUES (?,?,?,?,?,?,?); \
 							SELECT LAST_INSERT_ID();",
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade_id,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,role_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
@@ -1256,7 +1280,7 @@ getAnswerInsertId: function(query,fields,callback) {
 			con.query(query,fields, function (err,result){
 				if (err) { 
 					//throw err;
-					console.log("getMiningMcqStage9 database server error");
+					console.log("getminingmcqstage9List database server error");
 				} else 	if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
@@ -1328,7 +1352,7 @@ getMiningMcqList: function(query,fields,callback) {
 			con.query(query,fields, function (err,result){
 				if (err) { 
 					//throw err;
-					console.log("getMiningMcqStage9 database server error");
+					console.log("getMiningMcq database server error");
 				} else 	if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {

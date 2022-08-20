@@ -15,7 +15,8 @@ else
 	sed -i 's/"/“/g' $dirName/all.csv
 	#mysql error
 	sed -i "s/'/''/g" $dirName/all.csv
-	
+	sed -i 's/~ /~/g' $dirName/all.csv
+
 	#defult setting
 #	sed -i "s/'/''/g" $dirName/video.csv
 #	sed -i "s/'/''/g" $dirName/mcq_question.csv

@@ -167,6 +167,8 @@ const websocketServer = {
 	}
 }
 
+
+
 const getOnlineUsers = (client) => {
 	dbQuery.getSelectAll(dbQuery.whereOnlineUsers,[1],function(callbackOnline){
 		//console.log("callbackOnline :"+callbackOnline);
@@ -201,50 +203,52 @@ const gameReq = (authToken,data) => {
 	user1id=data.payload.from;
 	user2id=data.payload.to;
 	//const userId = data.payload.to;
-	dbQuery.setUserSqlQuery(dbQuery.whereGameReq,[user1id,user2id,'waiting'],function(callbackWaiting){
-		if (!callbackWaiting[0]) {
-			dbQuery.getAnswerInsertId(dbQuery.insertGameReq,['',user1id,user2id,'waiting',dateTime],function(callbackInsertId) {
-				if (!callbackInsertId){
-					console.log("insertGameReq database error");
+			dbQuery.setUserSqlQuery(dbQuery.whereGameReq,[user1id,user2id,'waiting'],function(callbackWaiting){
+				if (!callbackWaiting[0]) {
+					dbQuery.getAnswerInsertId(dbQuery.insertGameReq,['',user1id,user2id,'waiting',dateTime],function(callbackInsertId) {
+						if (!callbackInsertId){
+							console.log("insertGameReq database error");
+						} else {
+							const respJ = {
+								type : "GAME-REQ",
+								payload : {
+								from : user1id,
+								to : user2id,
+								battleId : callbackInsertId
+								}
+							}
+							lookup[user2id].send(JSON.stringify(respJ));
+						}
+					});
 				} else {
 					const respJ = {
 						type : "GAME-REQ",
 						payload : {
 						from : user1id,
 						to : user2id,
-						battleId : callbackInsertId
+						battleId : callbackWaiting[0].id
 						}
-					}
+					}		
 					lookup[user2id].send(JSON.stringify(respJ));
 				}
 			});
-		} else {
-			const respJ = {
-				type : "GAME-REQ",
-				payload : {
-				from : user1id,
-				to : user2id,
-				battleId : callbackWaiting[0].id
-				}
-			}		
-			lookup[user2id].send(JSON.stringify(respJ));
-		}
-	});
 }
 
 const gameAccept = (authToken,data) => {
-	log.info("broadcast massege to all clients");
+	log.info("gameAccept :"+data);
 	const dateTime = new Date();
 	user1id=data.payload.to;
 	user2id=data.payload.from;
 	battleId=data.payload.battleId;
+	gradeId=data.payload.gradeId;
 	//const userId = data.payload.to;
 	dbQuery.setUserSqlQuery(dbQuery.whereGameReq,[user1id,user2id,'waiting'],function(callbackWaiting){
 		if (callbackWaiting[0]) {
-			dbQuery.setSqlUpdate(dbQuery.updateGameReq,['accept',dateTime,user1id,user2id],function(callbackUpdate) {
+			dbQuery.setSqlUpdate(dbQuery.updateGameReq,['running',dateTime,user1id,user2id],function(callbackUpdate) {
 				if (!callbackUpdate){
 					console.log("insertGameReq database error");
 				} else {
+					/* send response */
 					const respJ = {
 						type : "GAME-RESP",
 						payload : {
@@ -255,6 +259,21 @@ const gameAccept = (authToken,data) => {
 						}
 					}
 					lookup[user1id].send(JSON.stringify(respJ));
+					
+					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMcq){
+						if (callbackMcq){
+							//console.log("stage9 mcqs :"+JSON.stringify(callbackMcq));
+							const respMcq = {
+								type : "GAME-BEGIN",
+								payload : {
+									battleId:battleId,
+									mcq:JSON.parse(callbackMcq)
+									}
+								}
+							lookup[user1id].send(JSON.stringify(respMcq));
+							lookup[user2id].send(JSON.stringify(respMcq));
+						}
+					});
 				}
 			});
 		} else {

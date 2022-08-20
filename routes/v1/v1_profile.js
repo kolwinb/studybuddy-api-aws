@@ -203,7 +203,7 @@ router.post('/getInfo',function(req,res,next) {
 								if (!callbackUser[0]){
 									res.send(JSON.parse(status.profileError()));
 								} else {							
-									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
+									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
 										userJsonProfile=JSON.stringify(callbackUserProfile);
 										userProfile=JSON.parse(userJsonProfile);
 										if (!userProfile) {
