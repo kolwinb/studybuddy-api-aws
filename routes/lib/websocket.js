@@ -108,12 +108,30 @@ const websocketServer = {
 					const type = jsonData.type;
 					//const payload = jsonData.payload;
 					
-					try {
-						handleCommand[type](authToken,jsonData,socket,wss);
-					} catch (e) {
-						sendError(socket,"Command not found");
-					}
-
+					jwtModule.jwtVerify(authToken,function(callback){
+						if (callback) {
+							jwtModule.jwtGetUserId(authToken,function(callback) {
+								var userId=callback.userId;
+								var uniqId=callback.uniqId;			
+								console.log("jwt uniqId :"+uniqId)
+								try {
+									handleCommand[type](uniqId,jsonData,socket);
+								} catch (e) {
+									sendError(socket,"Command not found");
+								}
+							});
+						} else {
+							const tokenError={
+								"type":"TOKEN-ERROR",
+								payload:{
+									description:"token verification failed"
+								}
+							}
+							
+							socket.send(JSON.stringify(tokenError));
+							console.log('token verification failed');
+						}								
+					});
 					console.log('socketId :'+socket.id+', message : '+ jsonData);
 					//users[socket.id]=1;
 					//toUserWebSocket = lookup[22];
@@ -133,7 +151,7 @@ const websocketServer = {
 						if (client == socket && client.readyState === websocket.OPEN) {
 							getOnlineUsers(client);
 							
-							client.send("test sending");
+							//client.send("test sending");
 						}
 					});				
 				},10000);									
@@ -182,7 +200,7 @@ const getOnlineUsers = (client) => {
 	});
 }
 
-const setAlert = (authToken,data,socket,wss) => {
+const setAlert = (uniqId,data,socket,wss) => {
 	log.info("setAlert : "+JSON.stringify(data));
 	const userId = data["payload"]["gamerId"];
 	lookup[userId].send("alert from "+ userId);
@@ -195,16 +213,81 @@ const setAlert = (authToken,data,socket,wss) => {
 	*/
 }				
 
+const setAnswer = (uniqId,data) => {
+	const userId=uniqId;
+	const battleId = data.payload.battleId;
+	const questionId = data.payload.questionId;
+	const optionId = data.payload.optionId;
+	const startedAt = data.payload.startedAt;
+	const endedAt = data.payload.endedAt;
+	
+	console.log("setAnswer : uniqid :"+uniqId+" : "+data);
+	
+	dbQuery.setUserSqlQuery(dbQuery.whereBattleAnswer,[userId,questionId,battleId],function(callbackBattle){
+		if  (callbackBattle[0].status) {
+			dbQuery.getAnswerInsertId(dbQuery.insertBattleAnswer,['',userId,battleId,questionId,optionId,startedAt,endedAt],function(callbackInsertId){
+				if(callbackInsertId){
+					const respJ = {
+							"type":"ANS-RESULT",
+							payload: {
+								status:"success",
+								battleId:battleId,
+								questionId:questionId
+							}
+						}
+					lookup[userId].send(JSON.stringify(respJ));
+				}
+			});
+		} else {
+			const respJ = {
+					"type":"ANS-RESULT",
+					payload:{
+						status:"error",
+						description:"prohibited action occured",
+						battleId:battleId,
+						questionId:questionId
+					}
+				}				
+			lookup[userId].send(JSON.stringify(respJ));
+		}
+	});
+}				
 
-const gameReq = (authToken,data) => {
+
+const gameReq = (uniqId,data) => {
 	log.info("setChallenge : "+data);
 	log.info("challenge requestion from "+data.payload.from+" to "+data.payload.to);
 	const dateTime = new Date();
-	user1id=data.payload.from;
+	//user1id=data.payload.from;
+	user1id=uniqId;
 	user2id=data.payload.to;
 	//const userId = data.payload.to;
-			dbQuery.setUserSqlQuery(dbQuery.whereGameReq,[user1id,user2id,'waiting'],function(callbackWaiting){
-				if (!callbackWaiting[0]) {
+			dbQuery.setUserSqlQuery(dbQuery.whereGameReq,[user1id,user2id],function(callbackStatus){
+			
+			/*
+				if (callbackStatus[0].user1Balance < 50) {
+					const resp1J = {
+						type : "GAME-RES",
+						payload : {
+							status:"error",
+							description:"You have insufficient fund"
+						}
+					}
+					lookup[user1id].send(JSON.stringify(resp1J));
+					
+				} else if (callbackStatus[0].user2Balance < 50) {
+					const resp2J = {
+						type : "GAME-RES",
+						payload : {
+							status:"error",
+							description:"Insufficient fund in request user"
+						}
+					}
+					lookup[user1id].send(JSON.stringify(resp2J));
+					
+				}
+			*/	
+				 if ((!callbackStatus[0]) || (callbackStatus[0].status=='cancel' || callbackStatus[0].status=='finish'))  {
 					dbQuery.getAnswerInsertId(dbQuery.insertGameReq,['',user1id,user2id,'waiting',dateTime],function(callbackInsertId) {
 						if (!callbackInsertId){
 							console.log("insertGameReq database error");
@@ -213,37 +296,46 @@ const gameReq = (authToken,data) => {
 								type : "GAME-REQ",
 								payload : {
 								from : user1id,
-								to : user2id,
+								//to : user2id,
+								name : data.payload.name,
+								avatarId : data.payload.avatarId,
 								battleId : callbackInsertId
 								}
 							}
 							lookup[user2id].send(JSON.stringify(respJ));
 						}
 					});
-				} else {
+				} else if (callbackStatus[0].status=='waiting') {
 					const respJ = {
 						type : "GAME-REQ",
 						payload : {
 						from : user1id,
-						to : user2id,
-						battleId : callbackWaiting[0].id
+						//to : user2id,
+						name : data.payload.name,
+						avatarId : data.payload.avatarId,						
+						battleId : callbackStatus[0].id
 						}
 					}		
-					lookup[user2id].send(JSON.stringify(respJ));
+					try {
+						lookup[user2id].send(JSON.stringify(respJ));
+					} catch(e) {
+						console.log("GAME-REQ websocket error");
+					}
 				}
 			});
 }
 
-const gameAccept = (authToken,data) => {
+const gameAccept = (uniqId,data) => {
 	log.info("gameAccept :"+data);
 	const dateTime = new Date();
 	user1id=data.payload.to;
-	user2id=data.payload.from;
+	//user2id=data.payload.from;
+	user2id=uniqId;;
 	battleId=data.payload.battleId;
 	gradeId=data.payload.gradeId;
 	//const userId = data.payload.to;
-	dbQuery.setUserSqlQuery(dbQuery.whereGameReq,[user1id,user2id,'waiting'],function(callbackWaiting){
-		if (callbackWaiting[0]) {
+	dbQuery.setUserSqlQuery(dbQuery.whereGameReq,[user1id,user2id,battleId],function(callbackWaiting){
+		if (callbackWaiting[0].status=='waiting') {
 			dbQuery.setSqlUpdate(dbQuery.updateGameReq,['running',dateTime,user1id,user2id],function(callbackUpdate) {
 				if (!callbackUpdate){
 					console.log("insertGameReq database error");
@@ -252,8 +344,10 @@ const gameAccept = (authToken,data) => {
 					const respJ = {
 						type : "GAME-RESP",
 						payload : {
-						from : user1id,
-						to : user2id,
+						from : user2id,
+						//to : user1id,
+						name : data.payload.name,
+						avatarId : data.payload.avatarId,
 						status : "accept",
 						battleId : battleId
 						}
@@ -288,11 +382,12 @@ const gameAccept = (authToken,data) => {
 	});	
 }
 
-const gameCancel = (authToken,data) => {
+const gameCancel = (uniqId,data) => {
 	log.info("broadcast massege to all clients");
 	const dateTime = new Date();
 	user1id=data.payload.to;
-	user2id=data.payload.from;
+	user2id=uniqId;
+	//user2id=data.payload.from;
 	battleId=data.payload.battleId;
 	//const userId = data.payload.to;
 	dbQuery.setUserSqlQuery(dbQuery.whereGameReq,[user1id,user2id,'waiting'],function(callbackWaiting){
@@ -304,8 +399,10 @@ const gameCancel = (authToken,data) => {
 					const respJ = {
 						type : "GAME-RESP",
 						payload : {
-						from : user1id,
-						to : user2id,
+						from : user2id,
+						//to : user1id,
+						name : data.payload.name,
+						avatarId : data.payload.avatarId,
 						status : "cancel",
 						battleId : battleId
 						}
@@ -325,36 +422,18 @@ const gameCancel = (authToken,data) => {
 	});	
 }
 
-const gameResp = (authToken,data) => {
+const gameResp = (uniqId,data) => {
 	log.info("broadcast massege to all clients");
 }
 
 
 
-const initOnline = (authToken,data,socket) => {
-	//const rtoken=data.payload.token;
-	log.info('set online status : '+authToken);
-	jwtModule.jwtVerify(authToken,function(callback){
-		if (callback) {
-			jwtModule.jwtGetUserId(authToken,function(callback) {
-				const userId=callback.userId;
-				const uniqId=callback.uniqid;
-				socket.id=userId;
+const initOnline = (uniqId,data,socket) => {
+				socket.id=uniqId;
 				lookup[socket.id]=socket;
-				lookup[socket.id].send('studybuddy websocket api');
-				console.log('socketId :'+socket.id+' token userId :'+userId);
-
-				//console.log("userid "+socket.id+" updated");
-
-				console.log("socket.socket._handle.fd :"+socket._socket._handle.fd);
-				updateOnlineStatus(1,socket.id);
-
-			});
-		} else {
-			console.log('token not verified');
-		}
-	});
-	
+				lookup[socket.id].send('studybuddy websocket server V1');
+				//update online status
+				updateOnlineStatus('online',socket.id);
 }
 
 const handleCommand = {
@@ -363,6 +442,7 @@ const handleCommand = {
 	'GAME-ACCEPT' : gameAccept,
 	'GAME-CANCEL' : gameCancel,
 	'GAME-RESP' : gameResp,
+	'SET-ANS': setAnswer,
 	'SET-ALERT': setAlert
 }				
 

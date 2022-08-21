@@ -41,6 +41,8 @@ var config={
 	mcqExpInSec:10,
 	optionExpInSec:60,
 	optionCount:4,
+	mcqMine9_Coin:5,
+	mcqMine1_8Coin:3,
 	trialLessonLimit:5,
 	lessonUnlimit:100000,
 	subscriptionPeriod:{"trial":7,"basic":1,"standard":3,"premium":6},

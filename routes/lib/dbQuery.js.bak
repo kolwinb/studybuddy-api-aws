@@ -242,6 +242,18 @@ return " \
 		END)";
 }
 
+function getMcqMiningRewards(){
+return " \
+	SELECT ( \
+			CASE WHEN mma.stage_id = 9 \
+				THEN COUNT(mma.id)* "+properties.mcqMine9_Coin+" \
+				ELSE COUNT(mma.id)* "+properties.mcqMine1_8Coin+" \
+			END) \
+	FROM mcq_mining_answer as mma \
+	INNER JOIN mcq_option ON mcq_option.id=mma.option_id \
+	WHERE mma.user_id=user.id AND mcq_option.state=1"
+}
+
 function getMiningMcqCoin(stageNo){
 if (stageNo == 9){
 	return 5
@@ -266,7 +278,7 @@ whereMiningMcqRewards:"SELECT \
 						WHERE mcq_mining_answer.id IN (?) AND mcq_option.state=1;",
 /* MCQMining  stage 1 to 8*/
 whereMiningMcqList:"SELECT \
-			video.id AS lessionId, \
+			video.id as lessonId, \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
@@ -282,13 +294,18 @@ whereMiningMcqList:"SELECT \
 					ELSE 'False' \
 				END \
 			) as isCorrect \
-			FROM video \
+			FROM ( \
+					SELECT * \
+					FROM video \
+					WHERE video.grade = ?  AND video.subject_id =? /* AND video.syllabus = ? */ \
+					/* GROUP BY video.subject_id */ \
+				 ) AS video \
 			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
-			WHERE video.grade = ? AND video.syllabus = ? AND video.subject_id = ? \
-			LIMIT 60;",
+			LIMIT 20 \
+			;",			
 /* MCQMining  stage 9*/
 whereMiningMcqStage9List:"SELECT \
 			video.id as lessonId, \
@@ -310,7 +327,7 @@ whereMiningMcqStage9List:"SELECT \
 			FROM ( \
 					SELECT * \
 					FROM video \
-					WHERE video.grade = ? AND video.syllabus = ? \
+					WHERE video.grade = ? /*  AND video.syllabus = ? */ \
 					GROUP BY video.subject_id \
 				 ) AS video \
 			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
@@ -323,13 +340,30 @@ whereMiningMcqStage: "SELECT \
 					subject.id as stageId, \
 					@level := CONCAT('Stage ',subject.id) as stageName, \
 					subject.subject_english as nameE, \
-					subject.subject_sinhala as nameS \
+					subject.subject_sinhala as nameS, \
+					(CASE WHEN subject.id = \
+					 ( \
+									SELECT stage_id \
+									FROM mcq_mining_answer \
+									WHERE stage_id = subject.id AND user_id =? \
+									GROUP BY stage_id) \
+							THEN 'True' \
+							ELSE 'False' \
+					END) as isCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
 					WHERE grade_subject.grade_id=?; \
 				SELECT @lastStage := COUNT(subject.id)+1 as stageId, \
 					@level := CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
-					@nameE := 'All subjects' as nameE \
+					@nameE := 'All subjects' as nameE, \
+					(CASE WHEN 9 = \
+					 ( \
+									SELECT DISTINCT stage_id \
+									FROM mcq_mining_answer \
+									WHERE stage_id = 9 AND user_id =?) \
+							THEN 'True' \
+							ELSE 'False' \
+					END) as isCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
 					WHERE grade_subject.grade_id=?;",
@@ -414,7 +448,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHERE student_answer.user_id=?) \
 						GROUP BY student_like.video_id \
 						ORDER BY likes DESC;',
-	profileInfo:" /* actvities */ \
+	profileInfo:" \
+				/* actvities */ \
 				SELECT ( \
 							SELECT count(student_answer.user_id) as correctAnswers \
 							FROM student_answer \
@@ -479,7 +514,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				INNER JOIN user ON user.id = user_profile.user_id \
 				INNER JOIN user_role ON user_role.id = user.role_id \
 				INNER JOIN student_language ON student_language.id=user_profile.language_id \
-				WHERE user_profile.user_id =?; \
+				WHERE user_profile.user_id = ?; \
 				/* chart of Total Lessons by subject */ \
 				SELECT count(DISTINCT(video.id)) as totalLessons, \
 					subject.subject_english as subject \
@@ -507,26 +542,32 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								SELECT ("+getOptionRewards('sa')+") as reward \
 								FROM student_answer AS sa \
 								INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-								WHERE sa.user_id=? AND mo.state=1 \
+								WHERE sa.user_id=user.id AND mo.state=1 \
 							) + \
 							( \
 								SELECT ("+getProfileRewards('up')+") as profileRewards \
 								FROM user_profile as up \
-								WHERE up.user_id=? \
+								WHERE up.user_id=user.id \
+							) + \
+							( \
+								"+getMcqMiningRewards()+" \
 							) \
 						) as totalRewards, \
 						( \
+							"+getMcqMiningRewards()+" \
+						) as mcqMiningRewards, \
+						( \
 						SELECT "+getProfileRewards('user_profile')+" \
 							FROM user_profile \
-							WHERE user_profile.user_id=? \
-						) as totalProfileRewards, \
+							WHERE user_profile.user_id=user.id \
+						) as profileRewards, \
 						( \
 							SELECT ("+getOptionRewards('sa')+") as reward \
 							FROM student_answer AS sa \
 							INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-							WHERE sa.user_id=? AND mo.state=1 \
-						) as totalMcqRewards \
-						; \
+							WHERE sa.user_id=user.id AND mo.state=1 \
+						) as lessonRewards \
+						FROM user WHERE user.id = ?; \
 				/* Subscribed Details */ \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
@@ -608,6 +649,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						LIMIT 20;",
 	whereStudentLikeFavorite: "SELECT * FROM ?? WHERE user_id = ? and video_id = ?",
 	whereStudentAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ?",
+	whereMiningAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ? AND stage_id=?",
 	whereQuestionId: "SELECT question_id FROM ?? WHERE id = ?",
 	whereOptionState: "SELECT state FROM mcq_option WHERE id = ?",
 	whereOptionQuestionVideo: "SELECT mcq_option.id as optionId,\
@@ -771,10 +813,10 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						FROM video \
 						INNER JOIN subject ON subject.id=video.subject_id \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
-						WHERE video.grade=? AND video.syllabus=? AND video.subject_id=? LIMIT ?; \
+						WHERE video.grade=? /* AND video.syllabus=? */ AND video.subject_id=? LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
 	whereOnlineUsers: "SELECT \
-						user.id as gamerId, \
+						user.uniqid as gamerId, \
 						up.avatar_id as avatarId, \
 						up.grade_id as gradeId, \
 						up.name as name \
@@ -790,9 +832,20 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	whereOtpNo:"SELECT * FROM ?? WHERE mobile = ?",
 	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
 
-	/* find gamer request exist */
-	whereGameReq:"SELECT id FROM battle_pool WHERE user1id = ? AND user2id = ? AND status = 1;",
-
+	/* find game5r request exist */
+	whereGameReq:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ?;",
+	whereGameAccept:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ? AND id = ?;",
+	whereBattleId:"SELECT id,status FROM battle_pool WHERE id=?;",
+	whereBattleAnswer:"SELECT \
+			(CASE WHEN bp.status = 'running' \
+				THEN (CASE WHEN bp.id = (SELECT ba.battle_id FROM battle_answer as ba WHERE ba.battle_id=bp.id AND ba.user_id=? AND ba.question_id=?) \
+							THEN False \
+							ELSE True \
+						END) \
+				ELSE False \
+			END) as status \
+			FROM battle_pool as bp \
+			WHERE bp.id = ?;",
 	insertBattleAnswer:"INSERT INTO battle_answer(id,user_id,battle_id,question_id,option_id,started,ended) VALUES(?,?,?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	insertGameReq:"INSERT INTO battle_pool(id,user1id,user2id,status,datetime) VALUES(?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	
@@ -804,8 +857,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 							/* insertId undefine fix */ \
 							 SELECT LAST_INSERT_ID(); \
 							",
-	insertMiningMcqAnswer:"INSERT INTO  mcq_mining_answer(id,user_id,question_id,option_id,started,ended) \
-							VALUES (?,?,?,?,?,?); \
+	insertMiningMcqAnswer:"INSERT INTO  mcq_mining_answer(id,user_id,stage_id,question_id,option_id,started,ended) \
+							VALUES (?,?,?,?,?,?,?); \
 							SELECT LAST_INSERT_ID();",
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade_id,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,role_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
@@ -816,8 +869,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ?;",
 	updateOnlineDefault:"UPDATE user_profile SET status = ?",
-	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
-//	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id = (SELECT id FROM user WHERE uniqId= ?)",
+	//updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
+	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id = (SELECT id FROM user WHERE uniqId= ?)",
 	updateUserRole:"UPDATE user SET role_id = ? WHERE id = ?",
 	updateNewPassword:"UPDATE user SET password = ? WHERE id = ?",
 	updateUserPassword:"UPDATE ?? SET password=? WHERE phone = ?",
@@ -1256,7 +1309,7 @@ getAnswerInsertId: function(query,fields,callback) {
 			con.query(query,fields, function (err,result){
 				if (err) { 
 					//throw err;
-					console.log("getMiningMcqStage9 database server error");
+					console.log("getminingmcqstage9List database server error");
 				} else 	if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
@@ -1328,7 +1381,7 @@ getMiningMcqList: function(query,fields,callback) {
 			con.query(query,fields, function (err,result){
 				if (err) { 
 					//throw err;
-					console.log("getMiningMcqStage9 database server error");
+					console.log("getMiningMcq database server error");
 				} else 	if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {

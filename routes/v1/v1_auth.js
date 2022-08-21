@@ -58,7 +58,7 @@ router.post('/mobile',function(req,res){
 				//(email,expSeconds,response)
 				jwtPayload={ 
 					userId:callback[0].id,
-					uniqid:callback[0].uniqid
+					uniqId:callback[0].uniqid
 					};
 				
 				jwtToken.jwtAuth(jwtPayload,3600,function(callback){

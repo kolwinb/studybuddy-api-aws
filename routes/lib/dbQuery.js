@@ -21,23 +21,44 @@ var getConnection = function(callback) {
   	});                 
   };
 
-/* getTotalRewards */
-function getTotalRewards(userId){
+function getRewards(){
 return " \
-	SUM( \
 		( \
 			SELECT ("+getOptionRewards('sa')+") as reward \
 			FROM student_answer AS sa \
 			INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-			WHERE sa.user_id="+userId+" AND mo.state=1 \
+			WHERE sa.user_id=user.id AND mo.state=1 \
 		) + \
 		( \
 			SELECT ("+getProfileRewards('up')+") as profileRewards \
 			FROM user_profile as up \
-			WHERE up.user_id="+userId+" \
-		) \
-	) as totalRewards \
-";
+			WHERE up.user_id=user.id \
+		) + \
+		( \
+			"+getMcqMiningRewards()+" \
+		) "
+}
+
+/* getTotalRewards */
+function getTotalRewards(){
+return " \
+	SUM( \
+		"+getRewards()+" \
+	) as totalRewards, \
+	( \
+		"+getMcqMiningRewards()+" \
+	) as mcqMiningRewards, \
+	( \
+	SELECT "+getProfileRewards('user_profile')+" \
+		FROM user_profile \
+		WHERE user_profile.user_id=user.id \
+	) as profileRewards, \
+	( \
+		SELECT ("+getOptionRewards('sa')+") as reward \
+		FROM student_answer AS sa \
+		INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
+		WHERE sa.user_id=user.id AND mo.state=1 \
+	) as lessonRewards "
 }
 
 /* individual property of profile attribute coins */
@@ -240,6 +261,18 @@ return " \
 					ELSE 0 \
 				END) \
 		END)";
+}
+
+function getMcqMiningRewards(){
+return " \
+	SELECT ( \
+			CASE WHEN mma.stage_id = 9 \
+				THEN COUNT(mma.id)* "+properties.mcqMine9_Coin+" \
+				ELSE COUNT(mma.id)* "+properties.mcqMine1_8Coin+" \
+			END) \
+	FROM mcq_mining_answer as mma \
+	INNER JOIN mcq_option ON mcq_option.id=mma.option_id \
+	WHERE mma.user_id=user.id AND mcq_option.state=1"
 }
 
 function getMiningMcqCoin(stageNo){
@@ -524,32 +557,12 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					WHERE user_id=? /* AND NOW() <= DATE_ADD(student_answer.started,INTERVAL 7 DAY)*/ \
 					GROUP BY DATE_FORMAT(started,'%a'); \
 				/* Wallet */ \
+				( \
 					SELECT \
-						SUM( \
-							( \
-								SELECT ("+getOptionRewards('sa')+") as reward \
-								FROM student_answer AS sa \
-								INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-								WHERE sa.user_id=user.id AND mo.state=1 \
-							) + \
-							( \
-								SELECT ("+getProfileRewards('up')+") as profileRewards \
-								FROM user_profile as up \
-								WHERE up.user_id=user.id \
-							) \
-						) as totalRewards, \
-						( \
-						SELECT "+getProfileRewards('user_profile')+" \
-							FROM user_profile \
-							WHERE user_profile.user_id=user.id \
-						) as totalProfileRewards, \
-						( \
-							SELECT ("+getOptionRewards('sa')+") as reward \
-							FROM student_answer AS sa \
-							INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-							WHERE sa.user_id=user.id AND mo.state=1 \
-						) as totalMcqRewards \
-						FROM user WHERE user.id = ?; \
+					"+getTotalRewards()+" \
+					FROM user \
+					WHERE user.id =? \
+				); \
 				/* Subscribed Details */ \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
@@ -798,12 +811,13 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHERE video.grade=? /* AND video.syllabus=? */ AND video.subject_id=? LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
 	whereOnlineUsers: "SELECT \
-						user.id as gamerId, \
+						(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
+						u.uniqid as gamerId, \
 						up.avatar_id as avatarId, \
 						up.grade_id as gradeId, \
 						up.name as name \
 						FROM user_profile as up \
-						INNER JOIN user ON user.id = up.user_id \
+						INNER JOIN user as u ON u.id = up.user_id \
 						WHERE up.status='online'",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
@@ -814,9 +828,21 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	whereOtpNo:"SELECT * FROM ?? WHERE mobile = ?",
 	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
 
-	/* find gamer request exist */
-	whereGameReq:"SELECT id FROM battle_pool WHERE user1id = ? AND user2id = ? AND status = 1;",
+	/* find game5r request exist */
+	whereGameReq:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ?;",
 
+	whereGameAccept:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ? AND id = ?;",
+	whereBattleId:"SELECT id,status FROM battle_pool WHERE id=?;",
+	whereBattleAnswer:"SELECT \
+			(CASE WHEN bp.status = 'running' \
+				THEN (CASE WHEN bp.id = (SELECT ba.battle_id FROM battle_answer as ba WHERE ba.battle_id=bp.id AND ba.user_id=? AND ba.question_id=?) \
+							THEN False \
+							ELSE True \
+						END) \
+				ELSE False \
+			END) as status \
+			FROM battle_pool as bp \
+			WHERE bp.id = ?;",
 	insertBattleAnswer:"INSERT INTO battle_answer(id,user_id,battle_id,question_id,option_id,started,ended) VALUES(?,?,?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	insertGameReq:"INSERT INTO battle_pool(id,user1id,user2id,status,datetime) VALUES(?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	
@@ -840,8 +866,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ?;",
 	updateOnlineDefault:"UPDATE user_profile SET status = ?",
-	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
-//	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id = (SELECT id FROM user WHERE uniqId= ?)",
+	//updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
+	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id = (SELECT id FROM user WHERE uniqId= ?)",
 	updateUserRole:"UPDATE user SET role_id = ? WHERE id = ?",
 	updateNewPassword:"UPDATE user SET password = ? WHERE id = ?",
 	updateUserPassword:"UPDATE ?? SET password=? WHERE phone = ?",
