@@ -12,8 +12,55 @@ function sendError(code,desc){
 	return JSON.stringify(jsonData)
 }
 
+function wsSendError(code,msg){
+return JSON.stringify(
+		{
+			"code" : code,
+			"description":msg
+		}
+	)
+}
 
 var State ={
+	wsBattleNotFinish: function(){
+		return  wsSendError(912,"Battle has not been finished yet")
+	},
+	wsBattleCoin: function(){
+		return  wsSendError(911,"Prohibited action of coin pool")
+	},
+	wsBattleNotFound: function(){
+		return  wsSendError(910,"Battle session not found.")
+	},
+	wsReqLessFund: function(){
+		return  wsSendError(909,"Insufficient funds in requested user's wallet.")
+	},
+	wsReqUserNotFound: function(){
+		return  wsSendError(908,"Requested user not found.")
+	},
+	wsAuth: function(){
+		return  wsSendError(900,"API authorization required.")
+	},
+	wsUauth: function(){
+		return  wsSendError(901,"Uauthorization API calling.")
+	},
+	wsToken: function(){
+		return  wsSendError(902,"Token not provided.")
+	},
+	wsTokenVerification: function(){
+		return  wsSendError(903,"Token verification failed.")
+	},
+	wsFormat: function(){
+		return  wsSendError(904,"Wrong format.")
+	},
+	wsEvent: function(){
+		return  wsSendError(905,"Event not found.")
+	},
+	wsUserNotFound: function(){
+		return  wsSendError(906,"User not found.")
+	},
+	wsLessFund: function(){
+		return  wsSendError(907,"Insufficient funds in your wallet.")
+	},
 	subscriptionFound: function(){
 		return  sendError(1024,"Subscription has not been expired.")
 	},

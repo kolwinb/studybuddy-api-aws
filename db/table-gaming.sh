@@ -3,7 +3,8 @@ CREATE TABLE `coin_pool` (
   `id` int(15) NOT NULL AUTO_INCREMENT,
   `user_id` varChar(100) NOT NULL,
   `battle_id` int(15) NOT NULL,
-  `coin`	int(15) NOT NULL,
+  `type` ENUM('credit','debit') NOT NULL,
+  `coin` int(15) NOT NULL,
   `datetime` datetime DEFAULT  NULL,
    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;

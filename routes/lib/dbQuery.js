@@ -830,9 +830,43 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	/* find game5r request exist */
 	whereGameReq:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ?;",
-
+	whereBattleStatus:"SELECT status FROM battle_pool WHERE id=? AND status='running';",
+	
+	whereBattleEnd:" \
+					SELECT \
+					ba.user_id, \
+					up.name, \
+					up.avatar_id, \
+					(CASE WHEN COUNT(ba.id) = "+properties.battleQuestionThreshold+" \
+						THEN True \
+						ELSE False \
+					END) as hasCompleted, \
+					COUNT(ba.id) as totalQuestions, \
+					(SELECT \
+						COUNT(ban.id) \
+						FROM battle_answer as ban \
+						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
+						WHERE mop.state = 1 AND ban.user_id=ba.user_id \
+					) AS correctAnswers, \
+					(SELECT \
+						COUNT(ban.id) \
+						FROM battle_answer as ban \
+						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
+						WHERE mop.state = 0 AND ban.user_id=ba.user_id \
+					) AS wrongAnswers, \
+					MIN(ba.started) AS startedAt, \
+					MAX(ba.ended) AS endedAt, \
+					TIMEDIFF(MAX(ba.ended),MIN(ba.started)) AS duration \
+					FROM battle_answer AS ba \
+					INNER JOIN user ON user.uniqid = ba.user_id \
+					INNER JOIN user_profile AS up ON up.user_id = user.id \
+					WHERE ba.battle_id=? \
+					GROUP BY ba.user_id \
+					;",
 	whereGameAccept:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ? AND id = ?;",
 	whereBattleId:"SELECT id,status FROM battle_pool WHERE id=?;",
+	whereBattleCoin:"SELECT id FROM coin_pool WHERE user_id=? AND battle_id=? AND type=?;",
+	whereLessCoin:"SELECT ("+getRewards()+") as balance FROM user WHERE user.uniqid=?;",
 	whereBattleAnswer:"SELECT \
 			(CASE WHEN bp.status = 'running' \
 				THEN (CASE WHEN bp.id = (SELECT ba.battle_id FROM battle_answer as ba WHERE ba.battle_id=bp.id AND ba.user_id=? AND ba.question_id=?) \
@@ -843,6 +877,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			END) as status \
 			FROM battle_pool as bp \
 			WHERE bp.id = ?;",
+	
+	insertBattleCoin:"INSERT INTO coin_pool(id,user_id,battle_id,type,coin,datetime) VALUES(?,?,?,?,?,?);",
 	insertBattleAnswer:"INSERT INTO battle_answer(id,user_id,battle_id,question_id,option_id,started,ended) VALUES(?,?,?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	insertGameReq:"INSERT INTO battle_pool(id,user1id,user2id,status,datetime) VALUES(?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	
@@ -864,6 +900,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
+	updateGameStatus:"UPDATE battle_pool SET status=? WHERE id=?;",
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ?;",
 	updateOnlineDefault:"UPDATE user_profile SET status = ?",
 	//updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
@@ -1204,7 +1241,7 @@ getAnswerInsertId: function(query,fields,callback) {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
 					var jsonResults = result.map((mysqlObj, index) => {
-    						return Object.assign({}, mysqlObj);
+     						return Object.assign({}, mysqlObj);
     					});
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonResults)); 		
