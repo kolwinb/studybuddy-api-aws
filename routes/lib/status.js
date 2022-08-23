@@ -22,6 +22,9 @@ return JSON.stringify(
 }
 
 var State ={
+	wsSystemError: function(){
+		return  wsSendError(913,"Sysetem error")
+	},
 	wsBattleNotFinish: function(){
 		return  wsSendError(912,"Battle has not been finished yet")
 	},

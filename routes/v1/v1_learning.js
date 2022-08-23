@@ -38,7 +38,7 @@ router.post('/getLeaderboard',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getSelectAll(dbQuery.whereLeaderBoard,[gradeId],function(callback){
+							dbQuery.getSelectJson(dbQuery.whereLeaderBoard,[gradeId],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});
@@ -96,7 +96,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 									const started=mcqArr[keyA].startedAt;
 									const ended=mcqArr[keyA].endedAt;
 									/* find option has been answered by student */
-									dbQuery.setUserSqlQuery(dbQuery.whereStudentAnswer,["student_answer",studentId,questionId],function(callbackSO){
+									dbQuery.getSelect(dbQuery.whereStudentAnswer,["student_answer",studentId,questionId],function(callbackSO){
 										if (callbackSO[0]){
 													Object.assign(arrJson,{
 																"status":status.answerProhibited(),
@@ -114,7 +114,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 													}
 										} else {
 											/* given optionId, questionId, videoId  are validated */
-											dbQuery.setUserSqlQuery(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
+											dbQuery.getSelect(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
 												if (!callbackOQV[0]) {
 													res.send(JSON.parse(status.server()));
 												} else {
@@ -142,7 +142,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 																promiseArray.then(function(arrLastId) {
 																	console.log("json length :"+bodyJson.length+", mcq length :"+mcqArr.length+", arrLastId Length:"+arrLastId.length);
 																	console.log("arrLastId list:"+arrLastId.length);
-																	dbQuery.setUserSqlQuery(dbQuery.whereBulkAnswerRewards,[arrLastId],function(callbackOState){
+																	dbQuery.getSelect(dbQuery.whereBulkAnswerRewards,[arrLastId],function(callbackOState){
 																		if (!callbackOState[0]) {
 																			res.send(JSON.parse(status.server()));
 																		} else {
@@ -210,14 +210,14 @@ router.post('/setAnswer',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.setUserSqlQuery(dbQuery.whereStudentAnswer,["student_answer",studentId,questionId],function(callbackSO){
+							dbQuery.getSelect(dbQuery.whereStudentAnswer,["student_answer",studentId,questionId],function(callbackSO){
 								if (callbackSO[0]){
-								//	dbQuery.setUserSqlQuery(dbQuery.whereQuestionId,["mcq_option",optionId],function(callbackQid){
+								//	dbQuery.getSelect(dbQuery.whereQuestionId,["mcq_option",optionId],function(callbackQid){
 										//console.log("optionId : "+callbackQid[0].question_id);
 								//		if (callbackQid[0].question_id == questionId) {
 											res.send(JSON.parse(status.answerProhibited()));
 								} else {
-									dbQuery.setUserSqlQuery(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
+									dbQuery.getSelect(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
 										if (!callbackOQV[0]) {
 											res.send(JSON.parse(status.server()));
 									
@@ -228,12 +228,12 @@ router.post('/setAnswer',function(req,res,next) {
 											const dateNow = new Date();
 											//console.log("userId: "+studentId+" : StudentAnswer:QueryData Found -> oId: "+oId+" qId: "+qId+" vId : "+vId)
 											if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
-												dbQuery.setUserInsert(dbQuery.insertStudentAnswer,["student_answer","NULL",studentId,questionId,optionId,started,ended],function(callbackSAnswer){
+												dbQuery.setInsert(dbQuery.insertStudentAnswer,["student_answer","NULL",studentId,questionId,optionId,started,ended],function(callbackSAnswer){
    													if(!callbackSAnswer){
    														console.log("answer insert error");
 														res.send(JSON.parse(status.server()));
 													} else {
-														dbQuery.setUserSqlQuery(dbQuery.whereOptionState,[optionId],function(callbackOState){
+														dbQuery.getSelect(dbQuery.whereOptionState,[optionId],function(callbackOState){
 															var resAnswer={
 																option_id:oId,
 																question_id:qId,
@@ -374,16 +374,16 @@ router.post('/like',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+							dbQuery.getSelect(dbQuery.whereUser,["user",studentId],function(callbackUser){
 								if (!callbackUser[0]){
 									res.send(JSON.parse(status.misbehaviour()));
 								} else {
 									resData={
 										video_id:videoId
 									};
-									dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_like",studentId,videoId],function(callbackLike){
+									dbQuery.getSelect(dbQuery.whereStudentLikeFavorite,["student_like",studentId,videoId],function(callbackLike){
 										if (!callbackLike[0]){
-											dbQuery.setUserInsert(dbQuery.insertStudentLikeFavorite,["student_like","NULL",studentId,videoId,1],function(callbackIlike){
+											dbQuery.setInsert(dbQuery.insertStudentLikeFavorite,["student_like","NULL",studentId,videoId,1],function(callbackIlike){
 												if (callbackIlike){
 													resData.like="True";
 													resData.description="like";
@@ -393,7 +393,7 @@ router.post('/like',function(req,res,next) {
 												}
 											});	
 										} else if (callbackLike[0].status == 0) {
-											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_like",1,studentId,videoId],function(callbackUlike){
+											dbQuery.setUpdate(dbQuery.updateStudentLikeFavorite,["student_like",1,studentId,videoId],function(callbackUlike){
 												if (callbackUlike){
 													resData.like="True";
 													resData.description="like";
@@ -403,7 +403,7 @@ router.post('/like',function(req,res,next) {
 												}
 											});	
 										} else if (callbackLike[0].status == 1) {
-											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_like",0,studentId,videoId],function(callbackUdislike){
+											dbQuery.setUpdate(dbQuery.updateStudentLikeFavorite,["student_like",0,studentId,videoId],function(callbackUdislike){
 												if (callbackUdislike){
 													resData.like="False";
  													resData.description="dislike";
@@ -445,16 +445,16 @@ router.post('/setFavorite',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+							dbQuery.getSelect(dbQuery.whereUser,["user",studentId],function(callbackUser){
 								if (!callbackUser[0]){
 									res.send(JSON.parse(status.misbehaviour()));
 								} else {
 									resData={
 										video_id:videoId
 									};
-									dbQuery.setUserSqlQuery(dbQuery.whereStudentLikeFavorite,["student_favorite",studentId,videoId],function(callbackFav){
+									dbQuery.getSelect(dbQuery.whereStudentLikeFavorite,["student_favorite",studentId,videoId],function(callbackFav){
 										if (!callbackFav[0]){
-											dbQuery.setUserInsert(dbQuery.insertStudentLikeFavorite,["student_favorite","NULL",studentId,videoId,1],function(callbackIfav){
+											dbQuery.setInsert(dbQuery.insertStudentLikeFavorite,["student_favorite","NULL",studentId,videoId,1],function(callbackIfav){
 												if (callbackIfav){
 													resData.favorite="True";
 													resData.description="favorite";
@@ -464,7 +464,7 @@ router.post('/setFavorite',function(req,res,next) {
 												}
 											});	
 										} else if (callbackFav[0].status == 0) {
-											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_favorite",1,studentId,videoId],function(callbackUfav){
+											dbQuery.setUpdate(dbQuery.updateStudentLikeFavorite,["student_favorite",1,studentId,videoId],function(callbackUfav){
 												if (callbackUfav){
 													resData.favorite="True";
 													resData.description="favorite";
@@ -474,7 +474,7 @@ router.post('/setFavorite',function(req,res,next) {
 												}
 											});	
 										} else if (callbackFav[0].status == 1) {
-											dbQuery.setSqlUpdate(dbQuery.updateStudentLikeFavorite,["student_favorite",0,studentId,videoId],function(callbackUunfav){
+											dbQuery.setUpdate(dbQuery.updateStudentLikeFavorite,["student_favorite",0,studentId,videoId],function(callbackUunfav){
 												if (callbackUunfav){
 													resData.favorite="False";
 													resData.description="unfavorite";

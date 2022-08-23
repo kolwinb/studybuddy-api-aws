@@ -171,7 +171,7 @@ router.post('/getLessonList',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
  							//console.log("getLessonList :"+studentId);
- 							dbQuery.setUserSqlQuery(dbQuery.whereUserRole,[studentId,gradeId],function(callbackRole){
+ 							dbQuery.getSelect(dbQuery.whereUserRole,[studentId,gradeId],function(callbackRole){
  								console.log("whereUserRole :"+callbackRole[0]);
  								if (!callbackRole[0]){
  									res.send(JSON.parse(status.server()));
@@ -242,18 +242,18 @@ router.post('/getLesson',function(req,res,next) {
 					if (callback){
  						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
- 							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+ 							dbQuery.getSelect(dbQuery.whereUser,["user",studentId],function(callbackUser){
  								if (!callbackUser[0]){
  					  				res.send(JSON.parse(status.misbehaviour()));
  								} else {
- 									dbQuery.setUserSqlQuery(dbQuery.whereUserRoleLesson,[studentId,videoId],function(callbackRole){
+ 									dbQuery.getSelect(dbQuery.whereUserRoleLesson,[studentId,videoId],function(callbackRole){
  										console.log("wherePlanStatus :"+callbackRole[0].planStatus);
  										if (!callbackRole[0]){
  											res.send(JSON.parse(status.server()));
  										} else if (!callbackRole[0].planStatus) {
 											res.send(JSON.parse(status.planExpired()));
  										} else {
-											dbQuery.getSqlLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
+											dbQuery.getLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
 												varLesson=JSON.parse(callbackLesson)
 												//console.log("callbackUser "+callbackUser);
 												//console.log(callbackLesson);
@@ -292,11 +292,11 @@ router.post('/getLesson',function(req,res,next) {
 					if (callback){
  						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
- 							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+ 							dbQuery.getSelect(dbQuery.whereUser,["user",studentId],function(callbackUser){
  								if (!callbackUser[0]){
  					  				res.send(JSON.parse(status.misbehaviour()));
  								} else {
-									dbQuery.getSqlLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
+									dbQuery.getLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){
 										varLesson=JSON.parse(callbackLesson)
 										//console.log("callbackUser "+callbackUser);
 										//console.log(callbackLesson);

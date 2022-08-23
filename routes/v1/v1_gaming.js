@@ -37,7 +37,7 @@ router.post('/getBuddyChallenge',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getSelectAll(dbQuery.whereMcqMining,[],function(callback){
+							dbQuery.getSelectJson(dbQuery.whereMcqMining,[],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});

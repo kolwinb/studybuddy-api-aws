@@ -21,23 +21,57 @@ var getConnection = function(callback) {
   	});                 
   };
 
-/* getTotalRewards */
-function getTotalRewards(userId){
+function getRewards(){
 return " \
-	SUM( \
 		( \
 			SELECT ("+getOptionRewards('sa')+") as reward \
 			FROM student_answer AS sa \
 			INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-			WHERE sa.user_id="+userId+" AND mo.state=1 \
+			WHERE sa.user_id=user.id AND mo.state=1 \
 		) + \
 		( \
 			SELECT ("+getProfileRewards('up')+") as profileRewards \
 			FROM user_profile as up \
-			WHERE up.user_id="+userId+" \
+			WHERE up.user_id=user.id \
+		) + \
+		( \
+			"+getMcqMiningRewards()+" \
 		) \
-	) as totalRewards \
-";
+		+ \
+		( \
+			SELECT IFNULL(SUM(coin_pool.coin),0) \
+			FROM coin_pool \
+			WHERE coin_pool.user_id = user.uniqid \
+		) \
+		"
+}
+
+/* getTotalRewards */
+function getTotalRewards(){
+return " \
+	SUM( \
+		"+getRewards()+" \
+	) as totalRewards, \
+	( \
+		"+getMcqMiningRewards()+" \
+	) as mcqMiningRewards, \
+	( \
+	SELECT "+getProfileRewards('user_profile')+" \
+		FROM user_profile \
+		WHERE user_profile.user_id=user.id \
+	) as profileRewards, \
+	( \
+		SELECT ("+getOptionRewards('sa')+") as reward \
+		FROM student_answer AS sa \
+		INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
+		WHERE sa.user_id=user.id AND mo.state=1 \
+	) as lessonRewards, \
+	( \
+		SELECT IFNULL(SUM(coin_pool.coin),0) \
+		FROM coin_pool \
+		WHERE coin_pool.user_id = user.uniqid \
+	) as battleRewards \
+	"
 }
 
 /* individual property of profile attribute coins */
@@ -536,38 +570,12 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					WHERE user_id=? /* AND NOW() <= DATE_ADD(student_answer.started,INTERVAL 7 DAY)*/ \
 					GROUP BY DATE_FORMAT(started,'%a'); \
 				/* Wallet */ \
+				( \
 					SELECT \
-						SUM( \
-							( \
-								SELECT ("+getOptionRewards('sa')+") as reward \
-								FROM student_answer AS sa \
-								INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-								WHERE sa.user_id=user.id AND mo.state=1 \
-							) + \
-							( \
-								SELECT ("+getProfileRewards('up')+") as profileRewards \
-								FROM user_profile as up \
-								WHERE up.user_id=user.id \
-							) + \
-							( \
-								"+getMcqMiningRewards()+" \
-							) \
-						) as totalRewards, \
-						( \
-							"+getMcqMiningRewards()+" \
-						) as mcqMiningRewards, \
-						( \
-						SELECT "+getProfileRewards('user_profile')+" \
-							FROM user_profile \
-							WHERE user_profile.user_id=user.id \
-						) as profileRewards, \
-						( \
-							SELECT ("+getOptionRewards('sa')+") as reward \
-							FROM student_answer AS sa \
-							INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
-							WHERE sa.user_id=user.id AND mo.state=1 \
-						) as lessonRewards \
-						FROM user WHERE user.id = ?; \
+					"+getTotalRewards()+" \
+					FROM user \
+					WHERE user.id =? \
+				); \
 				/* Subscribed Details */ \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
@@ -816,12 +824,13 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHERE video.grade=? /* AND video.syllabus=? */ AND video.subject_id=? LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
 	whereOnlineUsers: "SELECT \
-						user.uniqid as gamerId, \
+						(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
+						u.uniqid as gamerId, \
 						up.avatar_id as avatarId, \
 						up.grade_id as gradeId, \
 						up.name as name \
 						FROM user_profile as up \
-						INNER JOIN user ON user.id = up.user_id \
+						INNER JOIN user as u ON u.id = up.user_id \
 						WHERE up.status='online'",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
@@ -834,8 +843,43 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	/* find game5r request exist */
 	whereGameReq:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ?;",
+	whereBattleStatus:"SELECT status FROM battle_pool WHERE id=? AND status='running';",
+	
+	whereBattleEnd:" \
+					SELECT \
+					ba.user_id AS gamerId, \
+					up.name, \
+					up.avatar_id, \
+					(CASE WHEN COUNT(ba.id) = "+properties.battleQuestionThreshold+" \
+						THEN True \
+						ELSE False \
+					END) as hasCompleted, \
+					COUNT(ba.id) as totalQuestions, \
+					(SELECT \
+						COUNT(ban.id) \
+						FROM battle_answer as ban \
+						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
+						WHERE mop.state = 1 AND ban.user_id=ba.user_id \
+					) AS correctAnswers, \
+					(SELECT \
+						COUNT(ban.id) \
+						FROM battle_answer as ban \
+						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
+						WHERE mop.state = 0 AND ban.user_id=ba.user_id \
+					) AS wrongAnswers, \
+					MIN(ba.started) AS startedAt, \
+					MAX(ba.ended) AS endedAt, \
+					TIMEDIFF(MAX(ba.ended),MIN(ba.started)) AS duration \
+					FROM battle_answer AS ba \
+					INNER JOIN user ON user.uniqid = ba.user_id \
+					INNER JOIN user_profile AS up ON up.user_id = user.id \
+					WHERE ba.battle_id=? \
+					GROUP BY ba.user_id \
+					;",
 	whereGameAccept:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ? AND id = ?;",
 	whereBattleId:"SELECT id,status FROM battle_pool WHERE id=?;",
+	whereBattleCoin:"SELECT id FROM coin_pool WHERE user_id=? AND battle_id=? AND type=?;",
+	whereLessCoin:"SELECT ("+getRewards()+") as balance FROM user WHERE user.uniqid=?;",
 	whereBattleAnswer:"SELECT \
 			(CASE WHEN bp.status = 'running' \
 				THEN (CASE WHEN bp.id = (SELECT ba.battle_id FROM battle_answer as ba WHERE ba.battle_id=bp.id AND ba.user_id=? AND ba.question_id=?) \
@@ -846,6 +890,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			END) as status \
 			FROM battle_pool as bp \
 			WHERE bp.id = ?;",
+	
+	insertBattleCoin:"INSERT INTO coin_pool(id,user_id,battle_id,type,coin,datetime) VALUES(?,?,?,?,?,?);",
 	insertBattleAnswer:"INSERT INTO battle_answer(id,user_id,battle_id,question_id,option_id,started,ended) VALUES(?,?,?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	insertGameReq:"INSERT INTO battle_pool(id,user1id,user2id,status,datetime) VALUES(?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	
@@ -867,6 +913,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
+	updateGameStatus:"UPDATE battle_pool SET status=? WHERE id=?;",
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ?;",
 	updateOnlineDefault:"UPDATE user_profile SET status = ?",
 	//updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
@@ -907,7 +954,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			teacher_email=? \
 			WHERE user_id=?;",
 	//methods
-	setSqlUpdate: function(query,fields,callback){
+	setUpdate: function(query,fields,callback){
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
@@ -923,7 +970,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  		});
 	
 	},
-	setUserSqlQuery: function(query,fields,callback) {
+	getSelect: function(query,fields,callback) {
 		//log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
@@ -955,7 +1002,7 @@ getAnswerInsertId: function(query,fields,callback) {
  		});
  	}, 	
  	
- 	setUserInsert: function(query,fields,callback) {
+ 	setInsert: function(query,fields,callback) {
 //		log.info("Sql Insert data -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
@@ -1016,7 +1063,7 @@ getAnswerInsertId: function(query,fields,callback) {
 	});
 	},
 
-	getSqlLesson: function(query,fields,callback) {
+	getLesson: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
    				if (!result){
@@ -1198,7 +1245,7 @@ getAnswerInsertId: function(query,fields,callback) {
 	},
 	
 	//query any table
-	getSelectAll: function(query,fields,callback) {
+	getSelectJson: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
    				if (!result){
@@ -1207,7 +1254,7 @@ getAnswerInsertId: function(query,fields,callback) {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
 					var jsonResults = result.map((mysqlObj, index) => {
-    						return Object.assign({}, mysqlObj);
+     						return Object.assign({}, mysqlObj);
     					});
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonResults)); 		

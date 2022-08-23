@@ -49,7 +49,7 @@ router.post('/mobile',function(req,res){
 	} else if ((!mobile) || (!passwd)){
         res.send(JSON.parse(status.regParamErr()));
 	} else {
-		dbQuery.setUserSqlQuery(dbQuery.wherePhonePasswd,["user",mobile,passwd],function(callback){
+		dbQuery.getSelect(dbQuery.wherePhonePasswd,["user",mobile,passwd],function(callback){
 			if (!callback[0]){
 				res.send(JSON.parse(status.userNotFound()));
 			} else if (callback[0].is_active==0){
@@ -72,7 +72,7 @@ router.post('/mobile',function(req,res){
 				}); 
 				*/
 				//update lastlogin
-				dbQuery.setSqlUpdate(dbQuery.updateLastLogin,["user",signdate,callback[0].id],function(callbackA){
+				dbQuery.setUpdate(dbQuery.updateLastLogin,["user",signdate,callback[0].id],function(callbackA){
 				
 				});
 			}

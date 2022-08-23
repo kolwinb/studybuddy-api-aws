@@ -111,7 +111,7 @@ router.post('/getIqMining',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getSelectAll(dbQuery.whereMcqMining,[],function(callback){
+							dbQuery.getSelectJson(dbQuery.whereMcqMining,[],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});
@@ -176,7 +176,7 @@ router.post('/setMcqAnswer',function(req,res,next) {
 									const started=mcqArr[keyA].startedAt;
 									const ended=mcqArr[keyA].endedAt;
 									/* find option has been answered by student */
-									dbQuery.setUserSqlQuery(dbQuery.whereMiningAnswer,["mcq_mining_answer",studentId,questionId,stageId],function(callbackMining){ //verification data
+									dbQuery.getSelect(dbQuery.whereMiningAnswer,["mcq_mining_answer",studentId,questionId,stageId],function(callbackMining){ //verification data
 										if (callbackMining[0]){
 											if (bodyJson.length-1 == key){
 												if (mcqArr.length-1 == keyA){
@@ -186,7 +186,7 @@ router.post('/setMcqAnswer',function(req,res,next) {
 												}
 											}   
 										} else {
-											dbQuery.setUserSqlQuery(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
+											dbQuery.getSelect(dbQuery.whereOptionQuestionVideo,[optionId],function(callbackOQV){ //verification data
 												if (!callbackOQV[0]) {
 													//console.log("mining answer database error");
 													res.send(JSON.parse(status.server()));
@@ -218,7 +218,7 @@ router.post('/setMcqAnswer',function(req,res,next) {
 																promiseArray.then(function(arrLastId) {
 																	console.log("json length :"+bodyJson.length+", mcq length :"+mcqArr.length+", arrLastId Length:"+arrLastId.length);
 																	console.log("arrLastId list:"+arrLastId.length);
-																	dbQuery.setUserSqlQuery(dbQuery.whereMiningMcqRewards,[stageCoin,arrLastId],function(callbackOState){
+																	dbQuery.getSelect(dbQuery.whereMiningMcqRewards,[stageCoin,arrLastId],function(callbackOState){
 																		if (!callbackOState[0]) {
 																			res.send(JSON.parse(status.server()));
 																		} else {

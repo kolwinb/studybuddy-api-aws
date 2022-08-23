@@ -179,11 +179,11 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 												email:resBody.emailAddresses[0].value
 											}
 
-											dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content],function(callback){
+											dbQuery.getSelect(dbQuery.whereEmail,["user",content],function(callback){
 												if (callback[0]){
 													log.info("whereEmail id : "+content+" : id "+callback[0].id);
 													//finduserId=callback[0].id;
-													dbQuery.setSqlUpdate(dbQuery.updateOauth,["oauth2_token",stateToken,dateTime,callback[0].id],function(callbackA){
+													dbQuery.setUpdate(dbQuery.updateOauth,["oauth2_token",stateToken,dateTime,callback[0].id],function(callbackA){
 														if(callbackA){
 															log.info("google new oauth token updated");
 															//respone herpe
@@ -195,15 +195,15 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 															
 													});
 												} else {
-													dbQuery.setUserInsert(dbQuery.insertUser,["user",content,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
+													dbQuery.setInsert(dbQuery.insertUser,["user",content,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
 														if (callbackB) {
-															dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",content],function(callbackC){
+															dbQuery.getSelect(dbQuery.whereEmail,["user",content],function(callbackC){
 																if (callbackC[0]){
 																	//userId=callbackC[0].id;
 															 		log.info("stateToken :"+stateToken);
 															 		log.info("userid : "+callbackC[0].id);
 																	//jwtToken.jwtAuth(email,3600,function(callback){
-																	dbQuery.setUserInsert(dbQuery.insertOauth,["oauth2_token","NULL",stateToken,dateTime,dateTime,callbackC[0].id],function(callbackD){
+																	dbQuery.setInsert(dbQuery.insertOauth,["oauth2_token","NULL",stateToken,dateTime,dateTime,callbackC[0].id],function(callbackD){
 																		if(callbackD){
 																			
 																			log.info("New google oauth Token stored");
@@ -299,7 +299,7 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 	router.post('/accesstoken',function(req,res){
 		var accessToken=req.body.accessToken;
 		log.info("Access Token :"+accessToken);
-		dbQuery.setUserSqlQuery(dbQuery.whereAccessToken,["oauth2_token",accessToken],function(callback){
+		dbQuery.getSelect(dbQuery.whereAccessToken,["oauth2_token",accessToken],function(callback){
 			if (callback[0]){
 				jwtToken.jwtVerify(accessToken,function(callbackA){
 					if (callbackA){
@@ -341,11 +341,11 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 			userId:resBody.email
 		}
 		
-		dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",resBody.email],function(callback){
+		dbQuery.getSelect(dbQuery.whereEmail,["user",resBody.email],function(callback){
 			if (callback[0]){
 				log.info("google login : "+content+" : id "+callback[0].id);
 				//finduserId=callback[0].id;
-				dbQuery.setSqlUpdate(dbQuery.updateLastLogin,["user",dateTime,callback[0].id],function(callbackAA){
+				dbQuery.setUpdate(dbQuery.updateLastLogin,["user",dateTime,callback[0].id],function(callbackAA){
 					if (callbackAA) {
 						log.info("google new oauth token updated");
 						userContent={
@@ -361,9 +361,9 @@ const TOKEN_PATH = '/home/data/opt/nodejs/studybuddy/routes/oauth/token.json';
 	
 			} else {
 				log.info("google New login : "+content);
-				dbQuery.setUserInsert(dbQuery.insertUser,["user",resBody.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
+				dbQuery.setInsert(dbQuery.insertUser,["user",resBody.email,'NULL',content.givenName,'NULL',dateTime,dateTime,'NULL',1,'NULL'],function(callbackB){
 					if (callbackB) {
-						dbQuery.setUserSqlQuery(dbQuery.whereEmail,["user",resBody.email],function(callbackC){
+						dbQuery.getSelect(dbQuery.whereEmail,["user",resBody.email],function(callbackC){
 							if (callbackC[0]){
 								userContent={
 									userId:callbackC[0].id

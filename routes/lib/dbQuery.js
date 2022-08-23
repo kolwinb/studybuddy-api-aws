@@ -36,7 +36,14 @@ return " \
 		) + \
 		( \
 			"+getMcqMiningRewards()+" \
-		) "
+		) \
+		+ \
+		( \
+			SELECT IFNULL(SUM(coin_pool.coin),0) \
+			FROM coin_pool \
+			WHERE coin_pool.user_id = user.uniqid \
+		) \
+		"
 }
 
 /* getTotalRewards */
@@ -58,7 +65,13 @@ return " \
 		FROM student_answer AS sa \
 		INNER JOIN mcq_option AS mo ON mo.id=sa.option_id \
 		WHERE sa.user_id=user.id AND mo.state=1 \
-	) as lessonRewards "
+	) as lessonRewards, \
+	( \
+		SELECT IFNULL(SUM(coin_pool.coin),0) \
+		FROM coin_pool \
+		WHERE coin_pool.user_id = user.uniqid \
+	) as battleRewards \
+	"
 }
 
 /* individual property of profile attribute coins */
@@ -599,13 +612,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				SELECT * FROM subscription_plan WHERE id > 2;",
 	whereLeaderBoard:"SELECT  \
 							( \
-								"+getOptionRewards('student_answer')+" \
-							+ \
-							(SELECT \
-							"+getProfileRewards('uprofile')+" \
-							FROM user_profile as uprofile \
-							WHERE uprofile.user_id=student_answer.user_id \
-							) \
+								 SELECT SUM("+getRewards()+") FROM user WHERE user.id=user_profile.user_id \
 							) AS coins, \
 						( \
 							SELECT COUNT(mcq_option.id) \
@@ -834,7 +841,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	
 	whereBattleEnd:" \
 					SELECT \
-					ba.user_id, \
+					ba.user_id AS gamerId, \
 					up.name, \
 					up.avatar_id, \
 					(CASE WHEN COUNT(ba.id) = "+properties.battleQuestionThreshold+" \
@@ -941,7 +948,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			teacher_email=? \
 			WHERE user_id=?;",
 	//methods
-	setSqlUpdate: function(query,fields,callback){
+	setUpdate: function(query,fields,callback){
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
@@ -957,7 +964,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  		});
 	
 	},
-	setUserSqlQuery: function(query,fields,callback) {
+	getSelect: function(query,fields,callback) {
 		//log.info("setSqlQuery -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
@@ -989,7 +996,7 @@ getAnswerInsertId: function(query,fields,callback) {
  		});
  	}, 	
  	
- 	setUserInsert: function(query,fields,callback) {
+ 	setInsert: function(query,fields,callback) {
 //		log.info("Sql Insert data -> Fields : "+fields+" : query : "+query);
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
@@ -1050,7 +1057,7 @@ getAnswerInsertId: function(query,fields,callback) {
 	});
 	},
 
-	getSqlLesson: function(query,fields,callback) {
+	getLesson: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
    				if (!result){
@@ -1232,7 +1239,7 @@ getAnswerInsertId: function(query,fields,callback) {
 	},
 	
 	//query any table
-	getSelectAll: function(query,fields,callback) {
+	getSelectJson: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
    				if (!result){

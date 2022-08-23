@@ -42,9 +42,9 @@ var smsSend = {
 				log.info("SMS sent to "+mobile);
 				//add database
 				var timestamp= new Date();
-				dbQuery.setUserSqlQuery(dbQuery.whereOtpNo,["sms_verification",mobile],function(callback){
+				dbQuery.getSelect(dbQuery.whereOtpNo,["sms_verification",mobile],function(callback){
 					if (callback[0]) {
-						dbQuery.setSqlUpdate(dbQuery.updateOtp,["sms_verification",otp,timestamp,mobile],function(callbackA){
+						dbQuery.setUpdate(dbQuery.updateOtp,["sms_verification",otp,timestamp,mobile],function(callbackA){
 							if (callbackA){
 								log.info("sms verification table updated");
 								var jsonString=JSON.stringify({"description":"OTP has been sent."});
@@ -54,7 +54,7 @@ var smsSend = {
 							}
 						});
 					} else {
-						dbQuery.setUserInsert(dbQuery.insertOtp,["sms_verification",'NULL',otp,mobile,timestamp,0],function (callbackB){
+						dbQuery.setInsert(dbQuery.insertOtp,["sms_verification",'NULL',otp,mobile,timestamp,0],function (callbackB){
 							if (callbackB){
 								var jsonString=JSON.stringify({"description":"OTP has been sent."});
 								callbackotp(status.stateSuccess(jsonString));
@@ -70,7 +70,7 @@ var smsSend = {
 		});
 	},
 	otpVerify: function(mobile,otp,callbackotp){
-		dbQuery.setUserSqlQuery(dbQuery.whereOtpNo,["sms_verification",mobile],function(callback){
+		dbQuery.getSelect(dbQuery.whereOtpNo,["sms_verification",mobile],function(callback){
 			if (callback[0]) {
 				if (callback[0].otp == otp){
 					var dateTime= new Date();
@@ -79,7 +79,7 @@ var smsSend = {
 					log.info("timeDifference : " + timeDifference);
 					
 					if (timeDifference	<= 150000){
-						dbQuery.setSqlUpdate(dbQuery.updateIsVerify,["sms_verification",1,dateTime,mobile],function(callbackA){
+						dbQuery.setUpdate(dbQuery.updateIsVerify,["sms_verification",1,dateTime,mobile],function(callbackA){
 							if (callbackA){
 								var jsonString=JSON.stringify({"description":"OTP verified"});
 								callbackotp(status.stateSuccess(jsonString))
@@ -115,9 +115,9 @@ var smsSend = {
 				log.info("SMS sent to "+mobile);
 				//add database
 				var timestamp= new Date();
-				dbQuery.setUserSqlQuery(dbQuery.whereOtpNo,["user_passwdrecovery",mobile],function(callback){
+				dbQuery.getSelect(dbQuery.whereOtpNo,["user_passwdrecovery",mobile],function(callback){
 					if (callback[0]) {
-						dbQuery.setSqlUpdate(dbQuery.updateRecoveryCode,["user_passwdrecovery",recoveryCode,timestamp,0,mobile],function(callbackA){
+						dbQuery.setUpdate(dbQuery.updateRecoveryCode,["user_passwdrecovery",recoveryCode,timestamp,0,mobile],function(callbackA){
 							if (callbackA){
 								log.info("sms verification table updated");
 								var jsonString=JSON.stringify({"description":"Recovery Code has been sent."});
@@ -128,7 +128,7 @@ var smsSend = {
 						});
 					} else {
 						log.info("recovery code not found in user_passwdrecovery table");
-						dbQuery.setUserInsert(dbQuery.insertRecoveryCode,["user_passwdrecovery",'NULL',recoveryCode,mobile,timestamp,0],function (callbackB){
+						dbQuery.setInsert(dbQuery.insertRecoveryCode,["user_passwdrecovery",'NULL',recoveryCode,mobile,timestamp,0],function (callbackB){
 							if (callbackB){
 								var jsonString=JSON.stringify({"description":"Recovery Code has been sent."});
 								callbackRecoveryCode(status.stateSuccess(jsonString));
@@ -144,7 +144,7 @@ var smsSend = {
 		});
 	},
 	verifyRecoveryCode: function(mobile,recoveryCode,callbackRecoveryCode){
-		dbQuery.setUserSqlQuery(dbQuery.whereOtpNo,["user_passwdrecovery",mobile],function(callback){
+		dbQuery.getSelect(dbQuery.whereOtpNo,["user_passwdrecovery",mobile],function(callback){
 			if (callback[0]) {
 				if (callback[0].code == recoveryCode){
 					var dateTime= new Date();
@@ -153,7 +153,7 @@ var smsSend = {
 					log.info("timeDifference : " + timeDifference);
 					
 					if (timeDifference	<= 150000){
-						dbQuery.setSqlUpdate(dbQuery.updateIsVerify,["user_passwdrecovery",1,dateTime,mobile],function(callbackA){
+						dbQuery.setUpdate(dbQuery.updateIsVerify,["user_passwdrecovery",1,dateTime,mobile],function(callbackA){
 							if (callbackA){
 								var jsonString=JSON.stringify({"description":"Recovery code  verified"});
 								callbackRecoveryCode(status.stateSuccess(jsonString))

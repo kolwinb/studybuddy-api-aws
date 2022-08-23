@@ -82,7 +82,7 @@ router.post('/getRecoveryCode',function(req,res,next) {
    		res.send(JSON.parse(status.smsNoRequire()));
    } else {
    		console.log("mobile recovery :"+mobile);
-		dbQuery.setUserSqlQuery(dbQuery.whereMobile,["user",mobile],function(callbackUser){
+		dbQuery.getSelect(dbQuery.whereMobile,["user",mobile],function(callbackUser){
 			console.log("getRecoveryCode :"+callbackUser[0]);
 			if (!callbackUser[0]) {
 				res.send(JSON.parse(status.misbehaviour()));
@@ -115,7 +115,7 @@ router.post('/setRecoveryCode',function(req,res,next) {
    } else if ((!mobile)) {
    		res.send(JSON.parse(status.smsNoRequire()));
    } else {
-		dbQuery.setUserSqlQuery(dbQuery.whereMobile,["user",mobile],function(callbackUser){
+		dbQuery.getSelect(dbQuery.whereMobile,["user",mobile],function(callbackUser){
 			if (!callbackUser[0]){
 				res.send(JSON.parse(status.misbehaviour()));
 			} else {

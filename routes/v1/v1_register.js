@@ -46,25 +46,25 @@ router.post('/',function(req,res){
 	} else if ((!password) && (!mobileNo)) {
 		res.send(JSON.parse(status.regParamErr()));
 	} else {
-    	dbQuery.setUserSqlQuery(dbQuery.whereMobile,["user",mobileNo],function(callback){
+    	dbQuery.getSelect(dbQuery.whereMobile,["user",mobileNo],function(callback){
     		//res.send(JSON.parse(callback));
 			if (!callback[0]){
 				log.error("registration : user not found");
 				//sql insert here
 				log.info("mobile detected, wait for otp confirmation...");
-				dbQuery.setUserSqlQuery(dbQuery.whereOtpNo,["sms_verification",mobileNo],function(callbackVerify){
+				dbQuery.getSelect(dbQuery.whereOtpNo,["sms_verification",mobileNo],function(callbackVerify){
 					if (!callbackVerify[0]){
 						res.send(JSON.parse(status.otpRequired()));
 					} else	if (callbackVerify[0].is_verify == 1){
 						const referralCode=referralGenerator.alphaNumeric('uppercase',4,1);
 						log.info("referral code generated : "+referralCode);
-						dbQuery.setUserInsert(dbQuery.insertUser,["user","",password,"",mobileNo,signdate,signdate,valrand,1,'NULL',3,referralCode,deviceId],function(callbackAdd){
+						dbQuery.setInsert(dbQuery.insertUser,["user","",password,"",mobileNo,signdate,signdate,valrand,1,'NULL',3,referralCode,deviceId],function(callbackAdd){
 							if (!callbackAdd){
 								log.info("user insert error ");
 								res.send(JSON.parse(status.server()));
 							} else {
 								//get referrer user_id
-								dbQuery.getSelectAll(dbQuery.whereReferrerReferee,[referredCode,mobileNo],function(callbackReferrer){
+								dbQuery.getSelectJson(dbQuery.whereReferrerReferee,[referredCode,mobileNo],function(callbackReferrer){
 									if (!callbackReferrer){
 										res.send(JSON.parse(status.server()));
 									} else {
@@ -82,9 +82,9 @@ router.post('/',function(req,res){
 											const refereeId=jsonRef[0]['0'].referee_id;
 											const referrerId=jsonRef[1]['0'].referrer_id;											
 											log.info("referrerId :"+referrerId+", referee_id : "+refereeId);
-											dbQuery.setUserSqlQuery(dbQuery.whereAffiliate,[referrerId,refereeId],function(callbackAffiliate){
+											dbQuery.getSelect(dbQuery.whereAffiliate,[referrerId,refereeId],function(callbackAffiliate){
 												if (!callbackAffiliate[0]){
-													dbQuery.setUserInsert(dbQuery.insertAffiliate,['NULL',referrerId,refereeId,signdate],function(callbackAff){
+													dbQuery.setInsert(dbQuery.insertAffiliate,['NULL',referrerId,refereeId,signdate],function(callbackAff){
 														if(callbackAff){
 															content=JSON.stringify({"description":"Mobile User has been registered with referral code."});
 															res.send(JSON.parse(status.stateSuccess(content)));
@@ -128,11 +128,11 @@ router.post('/setPassword',function(req,res){
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
 		res.send(JSON.parse(status.unAuthApi()));
 	} else {
- 		dbQuery.setUserSqlQuery(dbQuery.whereMobile,["user",mobileNo],function(callbackUser){
+ 		dbQuery.getSelect(dbQuery.whereMobile,["user",mobileNo],function(callbackUser){
  			if (!callbackUser[0]){
 	 			res.send(JSON.parse(status.misbehaviour()));
  			} else {
-	 			dbQuery.setUserSqlQuery(dbQuery.whereOtpNo,["user_passwdrecovery",mobileNo],function(callbackVerify){
+	 			dbQuery.getSelect(dbQuery.whereOtpNo,["user_passwdrecovery",mobileNo],function(callbackVerify){
 					if (!callbackVerify[0]){
 						res.send(JSON.parse(status.recoveryCodeVerification()));
 					} else	if (callbackVerify[0].is_verify == 1){
@@ -140,13 +140,13 @@ router.post('/setPassword',function(req,res){
 						var createdTime=callbackVerify[0].created;
 						var timeDiff=Math.abs(dateTime.getTime() - createdTime.getTime());
                     	if (timeDiff  <= 150000){
-							dbQuery.setSqlUpdate(dbQuery.updateUserPassword,["user",password,mobileNo],function(callbackUpdate){
+							dbQuery.setUpdate(dbQuery.updateUserPassword,["user",password,mobileNo],function(callbackUpdate){
 								if (!callbackUpdate){
 									res.send(JSON.parse(status.server()));
 								} else {
 									//deactivating recovery code
 									const dateTime=new Date();
-									dbQuery.setSqlUpdate(dbQuery.updateRecoveryCodeActivation,["user_passwdrecovery",dateTime,0,mobileNo],function(callbackDeactivate){
+									dbQuery.setUpdate(dbQuery.updateRecoveryCodeActivation,["user_passwdrecovery",dateTime,0,mobileNo],function(callbackDeactivate){
 										if(callbackDeactivate){
 											content=JSON.stringify({"description":"Password reset has been done."});
 											res.send(JSON.parse(status.stateSuccess(content)));

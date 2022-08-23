@@ -70,11 +70,11 @@ router.post('/setAccountDetail',function(req,res,next) {
 				if (callback){
 					jwtModule.jwtGetUserId(rtoken,function(callback){
 						const studentId=callback.userId
-						dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+						dbQuery.getSelect(dbQuery.whereUser,["user",studentId],function(callbackUser){
 							if (!callbackUser[0]){
 								res.send(JSON.parse(status.misbehaviour()));
 							} else {
-								dbQuery.setSqlUpdate(dbQuery.updateAccountDetail,[name,gradeId,avatarId,schoolId,address,favoriteSubject,ambition,birthday,nic,socialLink,email,parentName,parentContact,parentEmail,schoolAddress,schoolContact,schoolEmail,teacherName,teacherContact,teacherEmail,studentId],function(callbackDetails){
+								dbQuery.setUpdate(dbQuery.updateAccountDetail,[name,gradeId,avatarId,schoolId,address,favoriteSubject,ambition,birthday,nic,socialLink,email,parentName,parentContact,parentEmail,schoolAddress,schoolContact,schoolEmail,teacherName,teacherContact,teacherEmail,studentId],function(callbackDetails){
 									if (!callbackDetails){
 										res.send(JSON.parse(status.profileError()));
 									} else {
@@ -116,7 +116,7 @@ router.post('/resetPassword',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log("user_id :"+studentId);
-							dbQuery.setUserSqlQuery(dbQuery.whereUserPassword,[studentId,currentPassword],function(callbackUser){
+							dbQuery.getSelect(dbQuery.whereUserPassword,[studentId,currentPassword],function(callbackUser){
 								//console.log(callbackUser[0]);
 								if (!callbackUser[0]){
 									res.send(JSON.parse(status.misbehaviour()));
@@ -124,7 +124,7 @@ router.post('/resetPassword',function(req,res,next) {
 									if (currentPassword == newPassword){
 										res.send(JSON.parse(status.resetPasswordFail()));
 									} else {
-										dbQuery.setSqlUpdate(dbQuery.updateNewPassword,[newPassword,studentId],function(callbackPassword){
+										dbQuery.setUpdate(dbQuery.updateNewPassword,[newPassword,studentId],function(callbackPassword){
 											if (!callbackPassword){
 												res.send(JSON.parse(status.server()));
 											} else {
@@ -163,7 +163,7 @@ router.post('/getChartSubjectQuestion',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.getSelectAll(dbQuery.chartSubjectQuestion,[studentId],function(callbackChartQuestion){
+							dbQuery.getSelectJson(dbQuery.chartSubjectQuestion,[studentId],function(callbackChartQuestion){
 								if (!callbackChartQuestion) {
 									res.send(JSON.parse(status.profileError()));
 								} else {
@@ -199,7 +199,7 @@ router.post('/getInfo',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.setUserSqlQuery(dbQuery.whereProfileData,[studentId],function(callbackUser){
+							dbQuery.getSelect(dbQuery.whereProfileData,[studentId],function(callbackUser){
 								if (!callbackUser[0]){
 									res.send(JSON.parse(status.profileError()));
 								} else {							
@@ -265,7 +265,7 @@ router.post('/getData',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
+							dbQuery.getSelect(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 								if (!callbackUserProfile[0]) {
 									res.send(JSON.parse(status.profileError()));
 								} else {
@@ -316,15 +316,15 @@ router.post('/setSignup',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							console.log(studentId);
-							dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
+							dbQuery.getSelect(dbQuery.whereUser,["user",studentId],function(callbackUser){
 								if (!callbackUser[0]) {
 									res.send(JSON.parse(status.profileError()));
 								} else {
-									dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
+									dbQuery.getSelect(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 										if (!callbackUserProfile[0]) {
 											console.log("profile data not found");
 											var defaultLang=1;
-											dbQuery.setUserInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,gradeId,avatarId,defaultLang],function(callbackProfile){
+											dbQuery.setInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,gradeId,avatarId,defaultLang],function(callbackProfile){
 												if (!callbackProfile){
 													res.send(JSON.parse(status.server()));
 												} else {
@@ -375,12 +375,12 @@ router.post('/setEdit',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
+							dbQuery.getSelect(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 								if (!callbackUserProfile[0]) {
 									res.send(JSON.parse(status.profileAdding()));
 								} else {
 									//userprofile already there
-									dbQuery.setSqlUpdate(dbQuery.updateProfile,["user_profile",schoolId,studentName,grade,studentId,avatarId],function(callbackUpdating){
+									dbQuery.setUpdate(dbQuery.updateProfile,["user_profile",schoolId,studentName,grade,studentId,avatarId],function(callbackUpdating){
 										if (callbackUpdating){
 											content=JSON.stringify({
 												"description":"user profile updated"
@@ -423,7 +423,7 @@ router.post('/language/info',function(req,res,next) {
 						const studentId=callback.userId;
 							if (studentId){
 								//country list
-								dbQuery.getSelectAll(dbQuery.selectAll,["student_language"],function(callback){
+								dbQuery.getSelectJson(dbQuery.selectAll,["student_language"],function(callback){
 									res.send(JSON.parse(status.stateSuccess(callback)));
 								});
 							} else {
@@ -461,7 +461,7 @@ router.post('/getLanguage',function(req,res,next) {
 						const studentId=callback.userId;
 							if (studentId){
 								//country list
-								dbQuery.getSelectAll(dbQuery.studentLanguage,[studentId],function(callback){
+								dbQuery.getSelectJson(dbQuery.studentLanguage,[studentId],function(callback){
 									res.send(JSON.parse(status.stateSuccess(callback)));
 								});
 							} else {
@@ -499,9 +499,9 @@ router.post('/setLanguage',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 						const studentId=callback.userId;
 							if (studentId){
-								dbQuery.setUserSqlQuery(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
+								dbQuery.getSelect(dbQuery.whereUserProfile,[studentId],function(callbackUserProfile){
 									if (callbackUserProfile[0]) {
-										dbQuery.setSqlUpdate(dbQuery.updateStudentLanguage,[languageId,studentId],function(callbackProfile){
+										dbQuery.setUpdate(dbQuery.updateStudentLanguage,[languageId,studentId],function(callbackProfile){
 											if (!callbackProfile){
 												res.send(JSON.parse(status.server()));
 											} else {
@@ -550,7 +550,7 @@ router.post('/getCountry',function(req,res,next) {
    				jwtModule.jwtVerify(rtoken,function(callback){
 					if (callback){
 						//country list
-						dbQuery.getSelectAll(dbQuery.selectAll,["countries"],function(callback){
+						dbQuery.getSelectJson(dbQuery.selectAll,["countries"],function(callback){
 							res.send(JSON.parse(status.stateSuccess(callback)));
 						});
 					} else {
@@ -581,7 +581,7 @@ router.post('/getGrade',function(req,res,next) {
    				jwtModule.jwtVerify(rtoken,function(callback){
 					if (callback){
 						//country list
-						dbQuery.getSelectAll(dbQuery.whereGrade,["grade"],function(callback){
+						dbQuery.getSelectJson(dbQuery.whereGrade,["grade"],function(callback){
 							res.send(JSON.parse(status.stateSuccess(callback)));
 						});
 					} else {
@@ -613,7 +613,7 @@ router.post('/getProvince',function(req,res,next) {
    				jwtModule.jwtVerify(rtoken,function(callback){
 					if (callback){
 						//province list
-						dbQuery.getSelectAll(dbQuery.whereProvince,["province"],function(callback){
+						dbQuery.getSelectJson(dbQuery.whereProvince,["province"],function(callback){
 							res.send(JSON.parse(status.stateSuccess(callback)));
 						});
 					} else {
@@ -645,7 +645,7 @@ router.post('/getDistrict',function(req,res,next) {
    				jwtModule.jwtVerify(rtoken,function(callback){
 					if (callback){
 						//district list
-						dbQuery.getSelectAll(dbQuery.whereDistrict,["district",provinceId],function(callback){
+						dbQuery.getSelectJson(dbQuery.whereDistrict,["district",provinceId],function(callback){
 							res.send(JSON.parse(status.stateSuccess(callback)));
 						});
 					} else {
@@ -678,7 +678,7 @@ router.post('/getSchool',function(req,res,next) {
    					jwtModule.jwtVerify(rtoken,function(callback){
 						if (callback){
 							//school list for district
-							dbQuery.getSelectAll(dbQuery.whereSchool,["school",districtId],function(callback){
+							dbQuery.getSelectJson(dbQuery.whereSchool,["school",districtId],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});
 						} else {
@@ -714,19 +714,19 @@ router.post('/setSubscription',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.setUserSqlQuery(dbQuery.whereSubscriptionPlan,[planId],function(callbackUser){
+							dbQuery.getSelect(dbQuery.whereSubscriptionPlan,[planId],function(callbackUser){
 								console.log("where subscription plan :"+callbackUser[0].planMode);
 								if (!callbackUser[0].planMode) {
 									res.send(JSON.parse(status.invalidPlanId()));
 								} else {
-									dbQuery.setUserSqlQuery(dbQuery.whereSubscriptionStatus,[planId,gradeId,studentId],function(callbackPeriod){
+									dbQuery.getSelect(dbQuery.whereSubscriptionStatus,[planId,gradeId,studentId],function(callbackPeriod){
 										if (!callbackPeriod[0]){
 											var dateTime=new Date();
-											dbQuery.setUserInsert(dbQuery.insertSubscription,["NULL",studentId,planId,gradeId,dateTime],function(callbackSubscription){
+											dbQuery.setInsert(dbQuery.insertSubscription,["NULL",studentId,planId,gradeId,dateTime],function(callbackSubscription){
 												if (!callbackSubscription){
 													res.send(JSON.parse(status.server()));
 												} else {
-													dbQuery.setSqlUpdate(dbQuery.updateUserRole,[4,studentId],function(callbackUserRole){
+													dbQuery.setUpdate(dbQuery.updateUserRole,[4,studentId],function(callbackUserRole){
 														if (!callbackUserRole){
 															res.send(JSON.parse(status.server()));
 														} else {
