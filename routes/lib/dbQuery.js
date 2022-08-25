@@ -310,6 +310,40 @@ whereMiningMcqRewards:"SELECT \
 						FROM mcq_mining_answer \
 						INNER JOIN mcq_option ON mcq_option.id=mcq_mining_answer.option_id \
 						WHERE mcq_mining_answer.id IN (?) AND mcq_option.state=1;",
+/* iq rewards */
+whereMiningIqRewards:"SELECT \
+							(COUNT(iq_answer.id)*?) AS coins \
+						FROM iq_answer \
+						INNER JOIN iq_option ON iq_option.id=iq_answer.option_id \
+						WHERE iq_answer.id IN (?) AND iq_option.state=1;",
+/* iq mining */
+whereIqLevelList:"SELECT \
+					level as levelId, \
+					@name:=CONCAT('Level ',level) as levelName, \
+					( \
+						CASE WHEN (SELECT iq_answer.id FROM iq_answer WHERE iq_answer.question_id=iq_question.id) IS NULL \
+							THEN 'False' \
+							ELSE 'True' \
+						END	\
+					) as hasCompleted \
+					FROM iq_question \
+					GROUP BY level;",
+whereIqList:"SELECT \
+			iq_question.level as levelId, \
+			iq_question.id as questionId, \
+			iq_question.question as question, \
+			iq_option.id as optionId, \
+			iq_option.option, \
+			( \
+				CASE WHEN iq_option.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
+			FROM iq_question \
+			INNER JOIN iq_option ON iq_option.question_id=iq_question.id \
+			WHERE level = ? \
+			;",
 /* MCQMining  stage 1 to 8*/
 whereMiningMcqList:"SELECT \
 			video.id as lessonId, \
@@ -383,7 +417,7 @@ whereMiningMcqStage: "SELECT \
 									GROUP BY stage_id) \
 							THEN 'True' \
 							ELSE 'False' \
-					END) as isCompleted \
+					END) as hasCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
 					WHERE grade_subject.grade_id=?; \
@@ -397,7 +431,7 @@ whereMiningMcqStage: "SELECT \
 									WHERE stage_id = 9 AND user_id =?) \
 							THEN 'True' \
 							ELSE 'False' \
-					END) as isCompleted \
+					END) as hasCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
 					WHERE grade_subject.grade_id=?;",
@@ -661,6 +695,11 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								INNER JOIN mcq_question ON mcq_question.id = mcq_option.question_id \
 								INNER JOIN video ON  video.id = mcq_question.video_id \
 								WHERE mcq_option.id = ?",
+	whereIqQuestionOption: "SELECT iq_option.id as optionId,\
+								iq_question.id as questionId\
+								FROM iq_option \
+								INNER JOIN iq_question ON iq_question.id = iq_option.question_id \
+								WHERE iq_option.id = ?",								
 	whereUser: "SELECT * FROM ??  WHERE id = ?",
 	whereUserPassword: "SELECT id FROM user WHERE id = ? AND password = ?",
 	whereSubscriptionPlan: "SELECT (CASE \
@@ -900,6 +939,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertMiningMcqAnswer:"INSERT INTO  mcq_mining_answer(id,user_id,stage_id,question_id,option_id,started,ended) \
 							VALUES (?,?,?,?,?,?,?); \
 							SELECT LAST_INSERT_ID();",
+	insertMiningIqAnswer:"INSERT INTO  iq_answer(id,user_id,question_id,option_id,started,ended) \
+							VALUES (?,?,?,?,?,?); \
+							SELECT LAST_INSERT_ID();",					
 	insertProfile:"INSERT INTO  ??(id,school_id,user_id,name,grade_id,avatar_id,language_id) VALUES (?,?,?,?,?,?,?)",	
 	insertUser:"INSERT INTO  ??(email,password,username,phone,date_joined,last_login,uniqid,is_active,id,role_id,referral_code,device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",	
 	insertUserAffiliate:"INSERT INTO  ??(id,referrer_id,referred_id,created) VALUES (?,?,?,?)",	
@@ -1367,7 +1409,7 @@ getAnswerInsertId: function(query,fields,callback) {
 							"optionId":mysqlObj.optionId,
 							"option":mysqlObj.answer,
 							"image":mysqlObj.image,
-							"isCurrect":mysqlObj.isCorrect
+							"isCorrect":mysqlObj.isCorrect
 						}
 						//each option object put into array
 						options.push(optionData);
@@ -1438,7 +1480,7 @@ getMiningMcqList: function(query,fields,callback) {
 							"optionId":mysqlObj.optionId,
 							"option":mysqlObj.answer,
 							"image":mysqlObj.image,
-							"isCurrect":mysqlObj.isCorrect
+							"isCorrect":mysqlObj.isCorrect
 						}
 						//each option object put into array
 						options.push(optionData);
@@ -1456,6 +1498,61 @@ getMiningMcqList: function(query,fields,callback) {
 								"image":mysqlObj.image,
 								"options":options
 							}
+							//console.log("option id: "+mysqlObj.optionId);
+							// put option array into question object at every 4 line
+							//append question into array
+							mcqList.push(question);
+							//clear question object and option object at every 4 line
+							options=[];
+						}
+						
+						return Object.assign({}, mysqlObj);
+					});
+					
+					callback(JSON.stringify(mcqList)); 		
+
+				}
+			});
+			con.release();
+		});
+	},
+	
+getIqList: function(query,fields,callback) {
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+				if (err) { 
+					//throw err;
+					console.log("query :"+query+", fields :"+fields);
+					console.log("getIqList database server error");
+				} else 	if (!result){
+   					callback(JSON.stringify(status.server()));
+ 				} else {
+ 					//single row
+ 					//var normalObj = Object.assign({}, results[0]);
+ 					const [lesson] = result;
+ 					var options =[];
+ 					var mcqList =[];
+ 					var rowCount = 1;
+					var jsonResults = result.map((mysqlObj, index) => {
+						//every row has option
+						var optionData={
+							"optionId":mysqlObj.optionId,
+							"option":mysqlObj.option,
+							"isCorrect":mysqlObj.isCorrect
+						}
+						//each option object put into array
+						options.push(optionData);
+						
+						if (!((index+1) % 4)){
+							//console.log("question Id: "+mysqlObj.questionId);
+							//get only 3 of 5 question
+							var question={
+								"levelId":mysqlObj.levelId,
+								"questionId":mysqlObj.questionId,
+								"question":mysqlObj.question,
+								"options":options
+							}
+							
 							//console.log("option id: "+mysqlObj.optionId);
 							// put option array into question object at every 4 line
 							//append question into array

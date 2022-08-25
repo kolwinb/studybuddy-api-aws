@@ -50,6 +50,71 @@ router.post('/getMcqStage',function(req,res,next) {
 	}
 });
 
+router.post('/getIQLevelList',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+ 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+		//			getJwt=JSON.parse(callback);
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							dbQuery.getSelectJson(dbQuery.whereIqLevelList,[],function(callback){
+								res.send(JSON.parse(status.stateSuccess(callback)));
+							});							
+						});
+					} else {
+						res.send(status.tokenExpired());         
+					}
+				});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
+
+router.post('/getIqList',function(req,res,next) {
+	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
+   	const apiKey = req.body.api_key;
+  	const apiSecret=req.body.api_secret;
+  	const levelId=req.body.level_id;
+ 	
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+		//			getJwt=JSON.parse(callback);
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+								//stageId using indeed of subjectId
+								dbQuery.getIqList(dbQuery.whereIqList,[levelId],function(callbackMiningIq){
+								//dbQuery.getSelectJson(dbQuery.whereIqList,[levelId],function(callbackMiningIq){
+									//console.log("mcqmining :"+callbackMiningMcq);
+									res.send(JSON.parse(status.stateSuccess(callbackMiningIq)));
+								});		
+												
+						});
+					} else {
+						res.send(status.tokenExpired());         
+					}
+				});
+		} else {
+            return res.status(403).send(JSON.parse(status.tokenNone()));
+		}
+	}
+});
+
 router.post('/getMcqList',function(req,res,next) {
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    	const apiKey = req.body.api_key;
@@ -93,38 +158,6 @@ router.post('/getMcqList',function(req,res,next) {
 		}
 	}
 });
-
-router.post('/getIqMining',function(req,res,next) {
-	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
-   	const apiKey = req.body.api_key;
-  	const apiSecret=req.body.api_secret;
-  	const videoId=req.body.grade_id;
- 	
-	if ((!apiKey || !apiSecret)){
-		res.send(JSON.parse(status.unAuthApi()));
-	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
-		res.send(JSON.parse(status.unAuthApi()));
-	} else {
-   		if (rtoken) {
-				jwtModule.jwtVerify(rtoken,function(callback){
-		//			getJwt=JSON.parse(callback);
-					if (callback){
-						jwtModule.jwtGetUserId(rtoken,function(callback){
-							const studentId=callback.userId
-							dbQuery.getSelectJson(dbQuery.whereMcqMining,[],function(callback){
-								res.send(JSON.parse(status.stateSuccess(callback)));
-							});							
-						});
-					} else {
-						res.send(status.tokenExpired());         
-					}
-				});
-		} else {
-            return res.status(403).send(JSON.parse(status.tokenNone()));
-		}
-	}
-});
-
 
 router.post('/setMcqAnswer',function(req,res,next) {
 	const authToken = req.header('Authorization');
@@ -219,6 +252,140 @@ router.post('/setMcqAnswer',function(req,res,next) {
 																	console.log("json length :"+bodyJson.length+", mcq length :"+mcqArr.length+", arrLastId Length:"+arrLastId.length);
 																	console.log("arrLastId list:"+arrLastId.length);
 																	dbQuery.getSelect(dbQuery.whereMiningMcqRewards,[stageCoin,arrLastId],function(callbackOState){
+																		if (!callbackOState[0]) {
+																			res.send(JSON.parse(status.server()));
+																		} else {
+																			resStatus=status.stateSuccess(JSON.stringify({
+																					"description":"Questions have been updated",
+																					"coins":callbackOState[0].coins
+																					}));
+       																		res.send(JSON.parse(resStatus));
+       																	}
+       																});
+																});															
+															}
+														})
+														
+       												} else {
+       													//res.status(200);
+       													res.status(404).json();
+       													//console.log("questionId :"+questionId +"error"+"student answers again videoId :"+videoId);
+       													//responseJson[key].mcq[keyA].status=studentAnswerWarning();
+														//res.send(JSON.parse(status.studentAnswerWarning()));
+       												}
+  												}
+											});
+										}
+									});
+								//Object.assign(respJson,arrJson);
+								//arrJson.data={"videoId":key,"mcq":arrMcq};
+								});
+							});
+							/* json iteration ends here */
+							//res.send(JSON.parse(JSON.stringify(arrJson)));
+							//res.send(JSON.parse(status.studentAnswerWarning()));
+       					});
+
+					} else {
+						res.send(status.tokenExpired());         
+					}      
+				}); 
+		
+    	} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+  	}
+
+});
+
+router.post('/setIqAnswer',function(req,res,next) {
+	const authToken = req.header('Authorization');
+	const apiKey = req.header('x-api-key');
+	const apiSecret = req.header('x-api-secret');
+    const bodyJson=JSON.parse(JSON.stringify(req.body));
+	
+	var respJson={};
+	//console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
+	
+	if (!authToken){
+		console.log("Authorization header missing");
+		res.send(JSON.parse(status.authHeader()));
+	} else	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if (!bodyJson){
+		res.send(JSON.parse(status.paramNone()));
+	} else {
+		const arrToken = authToken.split(" ");
+		const rtoken = arrToken[1];
+   		if (rtoken) {
+				jwtModule.jwtVerify(rtoken,function(callback){
+		//			getJwt=JSON.parse(callback);
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+							//console.log(studentId);
+							let arrJson= {};
+							var totalMcqCoins=0;
+							var arrLastId=new Array(); //get last insert id
+							/* json iteration start here */
+							Object.keys(bodyJson).forEach(function(key){
+								mcqArr=bodyJson[key].mcq;
+								var arrMcq=[];
+								var levelCoin=0;
+								levelId=bodyJson[key].levelId;
+								levelCoin=2;
+								Object.keys(mcqArr).forEach(function(keyA){
+									//console.log('key :'+key+', questionId:'+mcqArr[keyA].questionId);
+									const questionId=mcqArr[keyA].questionId;
+									const optionId=mcqArr[keyA].optionId;
+									const started=mcqArr[keyA].startedAt;
+									const ended=mcqArr[keyA].endedAt;
+									/* find option has been answered by student */
+									dbQuery.getSelect(dbQuery.whereStudentAnswer,["iq_answer",studentId,questionId,optionId],function(callbackMining){ //verification data
+										if (callbackMining[0]){
+											if (bodyJson.length-1 == key){
+												if (mcqArr.length-1 == keyA){
+													res.send(JSON.parse(status.answerProhibited()));
+													//console.log(arrJson);
+													console.log("jason array element : "+bodyJson.length+" key : "+key+" Prohibited user action");
+												}
+											}   
+										} else {
+											dbQuery.getSelect(dbQuery.whereIqQuestionOption,[optionId],function(callbackOQV){ //verification data
+												if (!callbackOQV[0]) {
+													//console.log("mining answer database error");
+													res.send(JSON.parse(status.server()));
+												} else {
+													oId=callbackOQV[0].optionId;
+													qId=callbackOQV[0].questionId;
+													/* validation success or fail */
+													if (oId == optionId && qId == questionId) { //verification with database
+														//console.log("each of option: "+optionId+" ,question: "+questionId+", has been validated");
+														/* insert to student answer and get the last insert id*/
+														
+														dbQuery.getAnswerInsertId(dbQuery.insertMiningIqAnswer,["NULL",studentId,questionId,optionId,started,ended],function(callbackInsertId){
+   															if(!callbackInsertId){
+																res.send(JSON.parse(status.server()));
+															} else {
+																//console.log("lastInsertId: "+callbackInsertId);
+																/* assign lastinsert id to array */
+																const promiseArray = new Promise(function(resolve, reject) {
+																	//console.log("insert id :"+callbackInsertId);
+																	var arrLength=arrLastId.push(callbackInsertId);
+																	/* total video lesson * total questions = total answers*/
+																	if (arrLength == (parseInt(bodyJson.length) * parseInt(mcqArr.length))) {
+																		console.log("inserId Total : "+arrLength);
+																		resolve(arrLastId);
+																	}
+																});
+																/* insert success */
+																promiseArray.then(function(arrLastId) {
+																	console.log("json length :"+bodyJson.length+", mcq length :"+mcqArr.length+", arrLastId Length:"+arrLastId.length);
+																	console.log("arrLastId list:"+arrLastId.length);
+																	/* calculate total coins */
+																	dbQuery.getSelect(dbQuery.whereMiningIqRewards,[levelCoin,arrLastId],function(callbackOState){
 																		if (!callbackOState[0]) {
 																			res.send(JSON.parse(status.server()));
 																		} else {
