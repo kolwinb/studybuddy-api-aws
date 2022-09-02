@@ -39,6 +39,10 @@ return " \
 		) \
 		+ \
 		( \
+			"+getIqMiningRewards()+" \
+		) \
+		+ \
+		( \
 			SELECT IFNULL(SUM(coin_pool.coin),0) \
 			FROM coin_pool \
 			WHERE coin_pool.user_id = user.uniqid \
@@ -55,6 +59,9 @@ return " \
 	( \
 		"+getMcqMiningRewards()+" \
 	) as mcqMiningRewards, \
+	( \
+		"+getIqMiningRewards()+" \
+	) as iqMiningRewards, \
 	( \
 	SELECT "+getProfileRewards('user_profile')+" \
 		FROM user_profile \
@@ -288,6 +295,14 @@ return " \
 	WHERE mma.user_id=user.id AND mcq_option.state=1"
 }
 
+function getIqMiningRewards(){
+return " \
+	SELECT COUNT(iq_answer.id)* "+properties.iqMineCoin+" \
+	FROM iq_answer \
+	INNER JOIN iq_option ON iq_option.id=iq_answer.option_id \
+	WHERE iq_answer.user_id=user.id AND iq_option.state=1"
+}
+
 function getMiningMcqCoin(stageNo){
 if (stageNo == 9){
 	return 5
@@ -372,7 +387,7 @@ whereMiningMcqList:"SELECT \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
-			LIMIT 20 \
+			/* LIMIT 20 */ LIMIT 12 \
 			;",			
 /* MCQMining  stage 9*/
 whereMiningMcqStage9List:"SELECT \
@@ -606,8 +621,10 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				/* Wallet */ \
 				( \
 					SELECT \
-					"+getTotalRewards()+" \
+					"+getTotalRewards()+", \
+					"+getProfileAttRewards('user_profile')+" \
 					FROM user \
+					INNER JOIN user_profile ON user_profile.user_id=user.id \
 					WHERE user.id =? \
 				); \
 				/* Subscribed Details */ \
@@ -875,7 +892,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	whereAccessToken:"SELECT * FROM ?? WHERE token = ?",
 
 	/* find game5r request exist */
-	whereGameReq:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ?;",
+	whereBattleGameReq:"SELECT id,status FROM battle_pool WHERE id=?;",
+	whereGameReq:"SELECT id,status FROM battle_pool WHERE user1id=? AND user2id=? AND status=?;",
 	whereBattleStatus:"SELECT status FROM battle_pool WHERE id=? AND status='running';",
 	
 	whereBattleEnd:" \
@@ -884,24 +902,24 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					up.name, \
 					up.avatar_id, \
 					(CASE WHEN COUNT(ba.id) = "+properties.battleQuestionThreshold+" \
-						THEN True \
-						ELSE False \
+						THEN 'True' \
+						ELSE 'False' \
 					END) as hasCompleted, \
 					COUNT(ba.id) as totalQuestions, \
 					(SELECT \
 						COUNT(ban.id) \
 						FROM battle_answer as ban \
 						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
-						WHERE mop.state = 1 AND ban.user_id=ba.user_id \
+						WHERE mop.state = 1 AND ban.user_id=ba.user_id AND ban.battle_id=ba.battle_id \
 					) AS correctAnswers, \
 					(SELECT \
 						COUNT(ban.id) \
 						FROM battle_answer as ban \
 						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
-						WHERE mop.state = 0 AND ban.user_id=ba.user_id \
+						WHERE mop.state = 0 AND ban.user_id=ba.user_id AND ban.battle_id=ba.battle_id \
 					) AS wrongAnswers, \
-					MIN(ba.started) AS startedAt, \
-					MAX(ba.ended) AS endedAt, \
+					DATE_FORMAT(MIN(ba.started),'%Y-%m-%d %H:%m:%s') AS startedAt, \
+					DATE_FORMAT(MAX(ba.ended),'%Y-%m-%d %H:%m:%s') AS endedAt, \
 					TIMEDIFF(MAX(ba.ended),MIN(ba.started)) AS duration \
 					FROM battle_answer AS ba \
 					INNER JOIN user ON user.uniqid = ba.user_id \
@@ -950,7 +968,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
 	updateGameStatus:"UPDATE battle_pool SET status=? WHERE id=?;",
-	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ?;",
+	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ? AND id=?;",
 	updateOnlineDefault:"UPDATE user_profile SET status = ?",
 	//updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
 	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id = (SELECT id FROM user WHERE uniqId= ?)",
@@ -1111,9 +1129,21 @@ getAnswerInsertId: function(query,fields,callback) {
  					//console.log("mcqOption :"+option[0].id);
 					var jsonVideo = video.map((mysqlObj, index) => {
 							//console.log(jsonVideo);
-							smallList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_240p.m3u').toString().split("\n");
-							mediumList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_360p.m3u').toString().split("\n");;
-							largeList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_480p.m3u').toString().split("\n");;
+							try {
+								smallList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_240p.m3u').toString().split("\n");
+							} catch (e) {
+								log.error("small of playlist file has not been found");
+							}
+							try {
+								mediumList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_360p.m3u').toString().split("\n");;
+							} catch (e) {
+								log.error("medium of playlist has not been found");
+							}
+							try {
+								largeList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_480p.m3u').toString().split("\n");;
+							} catch (e) {
+								log.error("large of playlist has not been found");
+							}
 							
 							mysqlObj.playlists=[
 										{

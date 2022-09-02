@@ -43,6 +43,7 @@ var config={
 	optionCount:4,
 	mcqMine9_Coin:5,
 	mcqMine1_8Coin:3,
+	iqMineCoin:2,
 	gameCoinMin:50,
 	battleCoin:50,
 	gameReward:50,

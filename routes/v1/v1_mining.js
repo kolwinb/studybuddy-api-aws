@@ -335,7 +335,7 @@ router.post('/setIqAnswer',function(req,res,next) {
 								var arrMcq=[];
 								var levelCoin=0;
 								levelId=bodyJson[key].levelId;
-								levelCoin=2;
+								levelCoin=properties.iqMineCoin;
 								Object.keys(mcqArr).forEach(function(keyA){
 									//console.log('key :'+key+', questionId:'+mcqArr[keyA].questionId);
 									const questionId=mcqArr[keyA].questionId;

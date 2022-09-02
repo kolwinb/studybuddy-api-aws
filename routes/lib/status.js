@@ -22,6 +22,9 @@ return JSON.stringify(
 }
 
 var State ={
+	wsFinishError: function(){
+		return  wsSendError(914,"Battle finish not allowed")
+	},
 	wsSystemError: function(){
 		return  wsSendError(913,"Sysetem error")
 	},
