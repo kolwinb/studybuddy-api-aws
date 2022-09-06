@@ -874,14 +874,19 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						WHERE video.grade=? /* AND video.syllabus=? */ AND video.subject_id=? LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
 	whereOnlineUsers: "SELECT \
-						(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
-						u.uniqid as gamerId, \
-						up.avatar_id as avatarId, \
-						up.grade_id as gradeId, \
-						up.name as name \
+								(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
+								u.uniqid as gamerId, \
+								up.avatar_id as avatarId, \
+								up.grade_id as gradeId, \
+								u.phone as mobileNo, \
+								up.name as name \
 						FROM user_profile as up \
 						INNER JOIN user as u ON u.id = up.user_id \
-						WHERE up.status='online'",
+						WHERE u.uniqid != ? AND up.status='online' AND up.grade_id=( \
+										SELECT grade_id \
+										FROM user_profile AS upro \
+										INNER JOIN user as usr ON usr.id = upro.user_id \
+										WHERE usr.uniqid=?)",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
 	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
@@ -1016,7 +1021,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					log.error(fields+" : db update error");
  					callback(false);
 				} else {
-					log.info(fields+" : db update done");
+					//log.info(fields+" : db update done");
 					callback(true);
 				}
  			});

@@ -4,7 +4,7 @@
 #use ~ delimeter to export csv
 
 
-line=$(head -n 1 ../.access)
+line=$(head -n 1 ../../.access)
 uname=${line%:*}
 upass=${line#*:}
 

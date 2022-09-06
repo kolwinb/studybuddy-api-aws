@@ -4,7 +4,7 @@
 #use ~ delimeter to export csv
 
 
-line=$(head -n 1 ../../.access)
+line=$(head -n 1 ../.access)
 uname=${line%:*}
 upass=${line#*:}
 
@@ -12,12 +12,5 @@ upass=${line#*:}
 #msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
 msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 #total answered by given user
-function main(){
+echo "select id,name from video" | $msql >> video.list
 
-echo "DELETE FROM coin_pool; \
-		DELETE FROM battle_answer; \
-		DELETE FROM battle_pool WHERE id > 1; \
-		 UPDATE battle_pool set status='waiting' WHERE id=1;" | $msql
-}
-
-main

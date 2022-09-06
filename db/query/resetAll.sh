@@ -12,8 +12,8 @@ upass=${line#*:}
 #msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
 msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 #total answered by given user
-userId=19
-#echo "DELETE FROM user WHERE id=$userId; DELETE FROM sms_verification WHERE id=$userId" | $msql
+echo "DELETE FROM user; \
+		DELETE FROM sms_verification; \
 		DELETE FROM sms_verification; ALTER TABLE sms_verification AUTO_INCREMENT = 1; \
 		DELETE FROM user_profile; ALTER TABLE user_profile AUTO_INCREMENT = 1; \
 		DELETE FROM user_passwdrecovery; ALTER TABLE user_passwdrecovery AUTO_INCREMENT = 1;\

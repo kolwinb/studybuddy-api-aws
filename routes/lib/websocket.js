@@ -144,6 +144,7 @@ const websocketServer = {
 					wss.clients.forEach((client) => {
 						//only socket equals for api authenticated / client != socket every client except api authentication
 						if (client == socket && client.readyState === websocket.OPEN) {
+							//console.log("client id :"+client.id);
 							getOnlineUsers(client);
 							
 							//client.send("test sending");
@@ -188,7 +189,7 @@ const websocketServer = {
 
 
 const getOnlineUsers = (client) => {
-	dbQuery.getSelectJson(dbQuery.whereOnlineUsers,[1],function(callbackOnline){
+	dbQuery.getSelectJson(dbQuery.whereOnlineUsers,[client.id,client.id],function(callbackOnline){
 		//console.log("callbackOnline :"+callbackOnline);
 		if (callbackOnline[0]){
 			//client.send("clients socket id "+socket.id+", sql uniqid "+callbackOnline[0].gameId);
@@ -225,7 +226,7 @@ const gameEnd = (uniqId,data) => {
 					log.error("GAME-END : "+uniqId+" 'hasCompleted' null occured when game-finish of student");
 					sendError(lookup[uniqId],status.wsFinishError());
 				} else if (players){
-					if ((players[0].hasCompleted) && (players[1].hasCompleted)) {
+					if ((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'True')) {
 						player1Marks=players[0].correctAnswers;
 						player2Marks=players[1].correctAnswers;
 						log.info("players marks A & B "+player1Marks+" : "+player2Marks);
@@ -284,6 +285,12 @@ const gameEnd = (uniqId,data) => {
 								}
 							});						
 						
+						} else if (player2Marks == 0 &&  player1Marks == 0) {
+							log.info(players[1].name+"Both lose");
+							players[1].hasWon='False';
+							players[1].coins=0;
+							players[0].hasWon='False';
+							players[0].coins=0;
 						}
 					
 						//update battle finish state
