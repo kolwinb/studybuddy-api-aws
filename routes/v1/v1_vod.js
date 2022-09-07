@@ -200,7 +200,8 @@ router.post('/getLessonList',function(req,res,next) {
        								
        								//case (> 0):
        								} else {
-       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,planLimit,studentId],function(callbackLessonList){
+       									//dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,planLimit],function(callbackLessonList){
+       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,subjectId,planLimit,studentId],function(callbackLessonList){
        										varCallback=JSON.parse(callbackLessonList);
        										if(varCallback.status=='error'){
        											res.send(JSON.parse(varCallback))

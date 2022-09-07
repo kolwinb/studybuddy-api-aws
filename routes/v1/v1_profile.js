@@ -51,7 +51,7 @@ router.post('/setAccountDetail',function(req,res,next) {
 	const teacherContact=bodyJson.teacherContact;
 	const teacherEmail=bodyJson.teacherEmail;
 	
-	console.log("gradeid"+gradeId);
+	//console.log("setAccountDetail : "+JSON.stringify(bodyJson));
 	if (!authToken){
 		console.log("Authorization header missing");
 		res.send(JSON.parse(status.authHeader()));
@@ -59,7 +59,8 @@ router.post('/setAccountDetail',function(req,res,next) {
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
 		res.send(JSON.parse(status.unAuthApi()));
-	} else if ( (!bodyJson) || (!gradeId) || (!schoolId) || (!avatarId)) {
+	} else if ( (!bodyJson) || (!gradeId) || (!schoolId)) {
+		console.log("data missing :"+JSON.stringify(bodyJson));
 		res.send(JSON.parse(status.paramNone()));
 	} else {
 		const arrToken = authToken.split(" ");
