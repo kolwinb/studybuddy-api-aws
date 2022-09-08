@@ -84,6 +84,7 @@ return " \
 /* individual property of profile attribute coins */
 function getProfileAttRewards(tableName) {
 return " \
+	@bonus := "+escape(properties.reward.bonus)+" AS bonus, \
   	(CASE \
   		WHEN "+tableName+".address IS NULL \
 		  	THEN 0 \
@@ -170,6 +171,7 @@ return " \
 /* calculate profile attribute rewards */
 function getProfileRewards(tableName) {
 return 	"(SUM( \
+		"+escape(properties.reward.bonus)+" + \
 		CASE \
 			WHEN "+tableName+".address IS NULL OR "+tableName+".address ='' \
 				THEN 0 \

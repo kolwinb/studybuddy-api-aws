@@ -52,6 +52,7 @@ var config={
 	lessonUnlimit:100000,
 	subscriptionPeriod:{"trial":7,"basic":1,"standard":3,"premium":6},
 	reward:{
+			bonus: 200,
 			address: 20,
 			favoriteSubject: 20,
 			ambition: 40,

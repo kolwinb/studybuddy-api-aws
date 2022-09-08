@@ -363,6 +363,43 @@ const setAnswer = (uniqId,data) => {
 	});
 }				
 
+//return json object
+const gameReqFrom = (user1id,user2id,data,battleId) => {
+	 const jsonData= {
+		type : "GAME-REQ",
+		payload : {
+		from : user1id,
+		name : data.payload.name,
+		avatarId : data.payload.avatarId,						
+		battleId : battleId
+		//battleId : callbackStatus[0].id
+		}
+	}
+	try {
+		lookup[user2id].send(JSON.stringify(jsonData));
+	} catch(e) {
+		log.error("Before gameReq, INIT required");
+		
+	}		
+}
+
+const gameReqResp=(user1id,user2id,data,battleId)=> {
+	const respJA = {
+		type : "RESP-GAME-REQ",
+		payload : {
+		//from : user1id,
+		to : user2id,
+		//name : data.payload.name,
+		//avatarId : data.payload.avatarId,
+		battleId : battleId
+		}
+	}										
+	try {
+		lookup[user1id].send(JSON.stringify(respJA));
+	} catch (e) {
+		log.error("INIT event required");
+	}																	
+}
 
 const gameReq = (uniqId,data) => {
 	log.info("setChallenge : "+data);
@@ -393,39 +430,17 @@ const gameReq = (uniqId,data) => {
 									if (!callbackInsertId){
 										console.log("insertGameReq database error");
 									} else {
-										const respJ = {
-											type : "GAME-REQ",
-											payload : {
-											from : user1id,
-											//to : user2id,
-											name : data.payload.name,
-											avatarId : data.payload.avatarId,
-											battleId : callbackInsertId
-											}
-										}
-										try {
-											lookup[user2id].send(JSON.stringify(respJ));
-										} catch (e) {
-											log.error("INIT event required");
-										}
+										//send reques to actorB
+										gameReqFrom(user1id,user2id,data,callbackInsertId);
+										//send request status to actor A
+										gameReqResp(user1id,user2id,data,callbackInsertId);	
 									}
 								});
 							} else if (callbackStatus[0].status=='waiting') {
-								const respJ = {
-									type : "GAME-REQ",
-									payload : {
-									from : user1id,
-									//to : user2id,
-									name : data.payload.name,
-									avatarId : data.payload.avatarId,						
-									battleId : callbackStatus[0].id
-									}
-								}		
-								try {
-									lookup[user2id].send(JSON.stringify(respJ));
-								} catch(e) {
-									log.error("Before gameReq, INIT required");
-								}
+								//send reques to actorB
+								gameReqFrom(user1id,user2id,data,callbackStatus[0].id);
+								//send request status to actor A
+								gameReqResp(user1id,user2id,data,callbackStatus[0].id);
 							}
 						});
 					}
@@ -510,14 +525,49 @@ const gameAccept = (uniqId,data) => {
 		
 }
 
-const gameCancel = (uniqId,data) => {
-	log.info("broadcast massege to all clients");
+//battle cancel and game cancel
+const gameRespTo = (user1id,user2id,data,battleId) => {
+	const respJ = {
+		type : "GAME-RESP",
+		payload : {
+		//from : user1id,
+		to : user2id,
+		name : data.payload.name,
+		avatarId : data.payload.avatarId,
+		status : "cancel",
+		battleId : battleId
+		}
+	}
+	try {
+		lookup[user1id].send(JSON.stringify(respJ));
+	} catch (e) {
+		log.error("INIT event required");
+	}									
+}
+
+const gameRespFrom = (user1id,user2id,data,battleId) => {
+	const respJ = {
+		type : "GAME-RESP",
+		payload : {
+		from : user1id,
+		//to : user1id,
+		name : data.payload.name,
+		avatarId : data.payload.avatarId,
+		status : "cancel",
+		battleId : battleId
+		}
+	}
+	try {
+		lookup[user2id].send(JSON.stringify(respJ));
+	} catch (e) {
+		log.error("INIT event required");
+	}									
+}
+
+
+const updateSQL = (user1id,user2id,data,cancelStatus) => {
 	const dateTime = new Date();
-	user1id=data.payload.to;
-	user2id=uniqId;
-	//user2id=data.payload.from;
 	battleId=data.payload.battleId;
-	//const userId = data.payload.to;
 	dbQuery.getSelect(dbQuery.whereBattleGameReq,[battleId],function(callbackWaiting){
 		if (!callbackWaiting){
 			console.log("gameCancel : rows notfound in the whereBattleGameReq");
@@ -526,7 +576,28 @@ const gameCancel = (uniqId,data) => {
 				if (!callbackUpdate){
 					console.log("insertGameReq database error");
 				} else {
-					const respJ = {
+					if (cancelStatus == 'battleCancel') {
+						gameRespFrom(user1id,user2id,data,battleId);
+						gameRespTo(user1id,user2id,data,battleId);
+					} else if (cancelStatus == 'gameCancel') {
+						gameRespFrom(user2id,user1id,data,battleId);
+						gameRespTo(user2id,user1id,data,battleId);					
+					}
+					/*
+					const respJA = {
+						type : "GAME-RESP",
+						payload : {
+						//from : user2id,
+						to : user1id,
+						name : data.payload.name,
+						avatarId : data.payload.avatarId,
+						status : "cancel",
+						battleId : battleId
+						}
+					}
+					lookup[user2id].send(JSON.stringify(respJA));
+	
+					const respJA = {
 						type : "GAME-RESP",
 						payload : {
 						from : user2id,
@@ -537,7 +608,9 @@ const gameCancel = (uniqId,data) => {
 						battleId : battleId
 						}
 					}
-					lookup[user1id].send(JSON.stringify(respJ));
+					lookup[user1id].send(JSON.stringify(respJA));
+					*/
+					
 				}
 			});
 		} else {
@@ -547,9 +620,31 @@ const gameCancel = (uniqId,data) => {
 				description : "Battle not found",
 				}
 			}		
-			lookup[user2id].send(JSON.stringify(respJ));
+			lookup[user1id].send(JSON.stringify(respJ));
 		}
-	});	
+	});
+}
+
+const battleCancel = (uniqId,data) => {
+	log.info("broadcast massege to all clients");
+	user2id=data.payload.to;
+	user1id=uniqId;
+	//user2id=data.payload.from;
+	//battleId=data.payload.battleId;
+	//const userId = data.payload.to;
+	updateSQL(user1id,user2id,data,'battleCancel');
+	
+}
+
+const gameCancel = (uniqId,data) => {
+	log.info("broadcast massege to all clients");
+	const dateTime = new Date();
+	user1id=data.payload.to;
+	user2id=uniqId;
+	//user2id=data.payload.from;
+	//battleId=data.payload.battleId;
+	//const userId = data.payload.to;
+	updateSQL(user1id,user2id,data,'gameCancel');
 }
 
 const gameResp = (uniqId,data) => {
@@ -572,6 +667,7 @@ const handleCommand = {
 	'GAME-REQ' : gameReq,
 	'GAME-ACCEPT' : gameAccept,
 	'GAME-CANCEL' : gameCancel,
+	'BATTLE-CANCEL' : battleCancel,
 	'GAME-RESP' : gameResp,
 	'SET-ANS': setAnswer,
 	'GAME-END': gameEnd,
