@@ -13,11 +13,21 @@ upass=${line#*:}
 msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 #total answered by given user
 echo " \
-	SELECT iqq.level as leve, \
-		iqo.question_id, \
-		iqo.id , \
-		iqo.option \
-	FROM iq_question iqq\
-	INNER JOIN iq_option as iqo ON iqo.question_id=iqq.id \
-	WHERE iqq.level=1 \
-	;" | $msql
+SELECT iq.level AS levelId, \
+
+/* @name:=CONCAT('Level ',iq.level) as levelName, */ \
+iq.hasCompleted as hasCompleted FROM ( \
+SELECT \
+id, \
+level, \
+( \
+	CASE WHEN (SELECT iq_answer.id FROM iq_answer WHERE iq_answer.question_id=iq_question.id) IS NULL \
+	   THEN 'False' \
+	   ELSE 'True' \
+	END \
+) as hasCompleted \
+FROM iq_question \
+GROUP BY level \
+) as iq \
+ORDER BY iq.id \
+" | $msql

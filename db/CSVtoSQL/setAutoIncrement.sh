@@ -13,5 +13,5 @@ upass=${line#*:}
 msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 #total answered by given user
 
-echo "DELETE FROM video;DELETE FROM mcq_question;DELETE FROM mcq_option" |$msql
-echo "ALTER TABLE video AUTO_INCREMENT=1;ALTER TABLE mcq_question AUTO_INCREMENT=1;ALTER TABLE mcq_option AUTO_INCREMENT=1;" |$msql
+#echo "DELETE FROM video;DELETE FROM mcq_question;DELETE FROM mcq_option" |$msql
+#echo "ALTER TABLE video AUTO_INCREMENT=1;ALTER TABLE mcq_question AUTO_INCREMENT=1;ALTER TABLE mcq_option AUTO_INCREMENT=1;" |$msql

@@ -335,16 +335,25 @@ whereMiningIqRewards:"SELECT \
 						WHERE iq_answer.id IN (?) AND iq_option.state=1;",
 /* iq mining */
 whereIqLevelList:"SELECT \
-					level as levelId, \
-					@name:=CONCAT('Level ',level) as levelName, \
-					( \
-						CASE WHEN (SELECT iq_answer.id FROM iq_answer WHERE iq_answer.question_id=iq_question.id) IS NULL \
-							THEN 'False' \
-							ELSE 'True' \
-						END	\
-					) as hasCompleted \
-					FROM iq_question \
-					GROUP BY level;",
+					iq.levelId as levelId, \
+					iq.levelName as levelName, \
+					iq.hasCompleted as hasCompleted \
+					FROM  ( \
+						SELECT \
+						id, \
+						level as levelId, \
+						@name:=CONCAT('Level ',level) as levelName, \
+						( \
+							CASE WHEN (SELECT iq_answer.id FROM iq_answer WHERE iq_answer.question_id=iq_question.id AND user_id=?) IS NULL \
+								THEN 'False' \
+								ELSE 'True' \
+							END	\
+						) as hasCompleted \
+						FROM iq_question \
+						GROUP BY level \
+					) AS iq \
+					ORDER BY iq.id ASC;",
+					
 whereIqList:"SELECT \
 			iq_question.level as levelId, \
 			iq_question.id as questionId, \

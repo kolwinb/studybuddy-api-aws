@@ -66,7 +66,7 @@ router.post('/getIQLevelList',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getSelectJson(dbQuery.whereIqLevelList,[],function(callback){
+							dbQuery.getSelectJson(dbQuery.whereIqLevelList,[studentId],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});

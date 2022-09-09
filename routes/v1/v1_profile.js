@@ -51,7 +51,7 @@ router.post('/setAccountDetail',function(req,res,next) {
 	const teacherContact=bodyJson.teacherContact;
 	const teacherEmail=bodyJson.teacherEmail;
 	
-	//console.log("setAccountDetail : "+JSON.stringify(bodyJson));
+	console.log("setAccountDetail : "+JSON.stringify(bodyJson));
 	if (!authToken){
 		console.log("Authorization header missing");
 		res.send(JSON.parse(status.authHeader()));
