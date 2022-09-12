@@ -56,7 +56,7 @@ module.exports =	{
 	//encrypt pbkdf2
 	encryptPbkdf2: function(var_data,callback){
 		crypto.DEFAULT_ENCODING = 'base64';
-		crypto.pbkdf2(var_data.password,var_data.mobile, 100000, 64, 'sha512', (err, derivedKey) => {
+		crypto.pbkdf2(var_data.password,var_data.mobile, 1000, 64 , 'sha512', (err, derivedKey) => {
 			if (err) throw err;
 			callback (derivedKey);
 		});

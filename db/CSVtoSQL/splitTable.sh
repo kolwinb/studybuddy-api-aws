@@ -33,6 +33,8 @@ else
 		questionRow=$(echo $line | cut -d~ -f13-15)
 		optionRow=$(echo $line | cut -d~ -f16-18)
 
+#		echo "fnumber :"$fnumber
+
 		if [ $fnumber ] ;then
 			((videoId++))
 			((questionId++)) 

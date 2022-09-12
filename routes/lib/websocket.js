@@ -72,7 +72,7 @@ const websocketServer = {
 		wss.on('connection', (socket,req) => {
 			const apiKey = req.headers["x-api-key"];
 			const apiSecret = req.headers["x-api-secret"];
-			const authToken = req.headers["x-token"];
+			var authToken = req.headers["x-token"];
 			console.log("apiKey :"+apiKey+", apiSecret :"+apiSecret+", x-token :"+authToken);
 			
 			if (!apiKey || !apiSecret) {
@@ -106,7 +106,7 @@ const websocketServer = {
 	
 					const type = jsonData.type;
 					//const payload = jsonData.payload;
-					
+					console.log("wss authToken :"+authToken);
 					jwtModule.jwtVerify(authToken,function(callback){
 						if (callback) {
 							jwtModule.jwtGetUserId(authToken,function(callback) {
@@ -120,9 +120,36 @@ const websocketServer = {
 								}
 							});
 						} else {
+						/*
+							jwtModule.jwtGetUserId(authToken,function(callback) {
+								var userId=callback.userId;
+								var uniqId=callback.uniqId;										
+								//handleCommand['GAME-TOKEN'](uniqId,userId);
+								console.log('token verification failed. userId:'+userId+' uniqid:'+uniqId);
+								jwtPayload={
+									userId:userId,
+									uniqId:uniqId
+								}
+								
+								
+								jwtModule.jwtAuth(jwtPayload,60,function(callbackToken){
+									resp=JSON.parse(callbackToken);
+									const respJA = {
+										type : "GAME-TOKEN",
+										payload : {
+										token:resp.data.token
+										}
+									}
+									//var errorState=JSON.parse(status.wsTokenVerification());
+									//errorState.data.token=callbackToken;
+									authToken=resp.data.token; //assign root token
+									//sendError(socket,status.wsTokenVerification());
+									socket.send(JSON.stringify(respJA));			
+								});
+							});
+						*/	
 							sendError(socket,status.wsTokenVerification());
 							//socket.send(JSON.stringify(tokenError));
-							console.log('token verification failed');
 						}								
 					});
 					console.log('socketId :'+socket.id+', message : '+ JSON.stringify(jsonData));
@@ -569,7 +596,7 @@ const updateSQL = (user1id,user2id,data,cancelStatus) => {
 	const dateTime = new Date();
 	battleId=data.payload.battleId;
 	dbQuery.getSelect(dbQuery.whereBattleGameReq,[battleId],function(callbackWaiting){
-		if (!callbackWaiting){
+		if (!callbackWaiting[0]){
 			console.log("gameCancel : rows notfound in the whereBattleGameReq");
 		} if (callbackWaiting[0].status == 'waiting') {
 			dbQuery.setUpdate(dbQuery.updateGameReq,['cancel',dateTime,user1id,user2id,battleId],function(callbackUpdate) {
@@ -662,6 +689,23 @@ const initOnline = (uniqId,data,socket) => {
 				updateOnlineStatus('online',socket.id);
 }
 
+/*
+const setGameToken = (uniqId,userId) => {
+	jwtPayload={
+		userId:uniqId,
+		uniqId:userId
+	}
+	jwtToken.jwtAuth(jwtPayload,60,function(callbackToken){
+		const respJA = {
+			type : "GAME-TOKEN",
+			payload : {
+			//to : user1id,
+			}
+//		socket.send(callbackToken)			
+	});
+
+}
+*/
 const handleCommand = {
 	'INIT'	: initOnline,
 	'GAME-REQ' : gameReq,
@@ -671,6 +715,7 @@ const handleCommand = {
 	'GAME-RESP' : gameResp,
 	'SET-ANS': setAnswer,
 	'GAME-END': gameEnd,
+//	'SET-TOKEN':getGameToken,
 }				
 
 

@@ -21,7 +21,7 @@ var jwtToken = {
 								iss:"learntv",
 								aud:"students",
 								authTime:authDate.getTime(),
-								exp: Math.floor(Date.now()/1000)+(expSeconds*1),
+								exp: Math.floor(Date.now()/1000)+(expSeconds*1), //uniq time in seconds
 								authMethod:authOption},cert);
 		content=JSON.stringify({"token":newToken});
 		callback(state.stateSuccess(content));
@@ -30,7 +30,6 @@ var jwtToken = {
 
 	jwtVerify: function(token,callback){
 //		jwt.verify(token,cert,{aud:'urn:studes'},function(err,decoded)
-;
 		jwt.verify(token,cert,function(err,decoded)
 			{
  			if (err){

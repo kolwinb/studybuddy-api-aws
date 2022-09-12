@@ -61,7 +61,10 @@ router.post('/mobile',function(req,res){
 					uniqId:callback[0].uniqid
 					};
 				
+				//one hour
 				jwtToken.jwtAuth(jwtPayload,3600,function(callback){
+				//one minute
+				//jwtToken.jwtAuth(jwtPayload,60,function(callback){
 					res.send(JSON.parse(callback));
 				
 				});

@@ -525,21 +525,82 @@ const gameAccept = (uniqId,data) => {
 		
 }
 
-const updateSQL = (user1id,user2id,data) => {
+//battle cancel and game cancel
+const gameRespTo = (user1id,user2id,data,battleId) => {
+	const respJ = {
+		type : "GAME-RESP",
+		payload : {
+		//from : user1id,
+		to : user2id,
+		name : data.payload.name,
+		avatarId : data.payload.avatarId,
+		status : "cancel",
+		battleId : battleId
+		}
+	}
+	try {
+		lookup[user1id].send(JSON.stringify(respJ));
+	} catch (e) {
+		log.error("INIT event required");
+	}									
+}
+
+const gameRespFrom = (user1id,user2id,data,battleId) => {
+	const respJ = {
+		type : "GAME-RESP",
+		payload : {
+		from : user1id,
+		//to : user1id,
+		name : data.payload.name,
+		avatarId : data.payload.avatarId,
+		status : "cancel",
+		battleId : battleId
+		}
+	}
+	try {
+		lookup[user2id].send(JSON.stringify(respJ));
+	} catch (e) {
+		log.error("INIT event required");
+	}									
+}
+
+
+const updateSQL = (user1id,user2id,data,cancelStatus) => {
 	const dateTime = new Date();
 	battleId=data.payload.battleId;
 	dbQuery.getSelect(dbQuery.whereBattleGameReq,[battleId],function(callbackWaiting){
-		if (!callbackWaiting){
+		if (!callbackWaiting[0]){
 			console.log("gameCancel : rows notfound in the whereBattleGameReq");
 		} if (callbackWaiting[0].status == 'waiting') {
 			dbQuery.setUpdate(dbQuery.updateGameReq,['cancel',dateTime,user1id,user2id,battleId],function(callbackUpdate) {
 				if (!callbackUpdate){
 					console.log("insertGameReq database error");
 				} else {
-					const respJ = {
+					if (cancelStatus == 'battleCancel') {
+						gameRespFrom(user1id,user2id,data,battleId);
+						gameRespTo(user1id,user2id,data,battleId);
+					} else if (cancelStatus == 'gameCancel') {
+						gameRespFrom(user2id,user1id,data,battleId);
+						gameRespTo(user2id,user1id,data,battleId);					
+					}
+					/*
+					const respJA = {
 						type : "GAME-RESP",
 						payload : {
-						from : user1id,
+						//from : user2id,
+						to : user1id,
+						name : data.payload.name,
+						avatarId : data.payload.avatarId,
+						status : "cancel",
+						battleId : battleId
+						}
+					}
+					lookup[user2id].send(JSON.stringify(respJA));
+	
+					const respJA = {
+						type : "GAME-RESP",
+						payload : {
+						from : user2id,
 						//to : user1id,
 						name : data.payload.name,
 						avatarId : data.payload.avatarId,
@@ -547,9 +608,9 @@ const updateSQL = (user1id,user2id,data) => {
 						battleId : battleId
 						}
 					}
-	
-					lookup[user2id].send(JSON.stringify(respJ));
-					lookup[user1id].send(JSON.stringify(respJ));
+					lookup[user1id].send(JSON.stringify(respJA));
+					*/
+					
 				}
 			});
 		} else {
@@ -571,7 +632,7 @@ const battleCancel = (uniqId,data) => {
 	//user2id=data.payload.from;
 	//battleId=data.payload.battleId;
 	//const userId = data.payload.to;
-	updateSql(user1id,user2id,data);
+	updateSQL(user1id,user2id,data,'battleCancel');
 	
 }
 
@@ -581,40 +642,9 @@ const gameCancel = (uniqId,data) => {
 	user1id=data.payload.to;
 	user2id=uniqId;
 	//user2id=data.payload.from;
-	battleId=data.payload.battleId;
+	//battleId=data.payload.battleId;
 	//const userId = data.payload.to;
-	dbQuery.getSelect(dbQuery.whereBattleGameReq,[battleId],function(callbackWaiting){
-		if (!callbackWaiting){
-			console.log("gameCancel : rows notfound in the whereBattleGameReq");
-		} if (callbackWaiting[0].status == 'waiting') {
-			dbQuery.setUpdate(dbQuery.updateGameReq,['cancel',dateTime,user1id,user2id,battleId],function(callbackUpdate) {
-				if (!callbackUpdate){
-					console.log("insertGameReq database error");
-				} else {
-					const respJ = {
-						type : "GAME-RESP",
-						payload : {
-						from : user2id,
-						//to : user1id,
-						name : data.payload.name,
-						avatarId : data.payload.avatarId,
-						status : "cancel",
-						battleId : battleId
-						}
-					}
-					lookup[user1id].send(JSON.stringify(respJ));
-				}
-			});
-		} else {
-			const respJ = {
-				type : "ERROR",
-				payload : {
-				description : "Battle not found",
-				}
-			}		
-			lookup[user2id].send(JSON.stringify(respJ));
-		}
-	});	
+	updateSQL(user1id,user2id,data,'gameCancel');
 }
 
 const gameResp = (uniqId,data) => {
