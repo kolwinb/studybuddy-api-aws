@@ -14,99 +14,22 @@ msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 #total answered by given user
 
 #get random value from each subject to get single video + 5 question
+function randomMcq(){
+subjectId=$1
+}
 echo " \
-	SELECT \
-		(CASE WHEN video.subject_id = 1 \
-			THEN ( \
-					FLOOR(RAND()*((SELECT vid.id FROM video as vid WHERE vid.subject_id = 3 GROUP BY vid.subject_id) - video.id)+video.id) \
-				) \
-			ELSE ( \
-				CASE WHEN video.subject_id = 3 \
-					THEN ( \
-							FLOOR(RAND()*((SELECT vid.id FROM video as vid WHERE vid.subject_id = 4 GROUP BY vid.subject_id) - video.id)+video.id) \
-						) \
-					ELSE \
-						(CASE WHEN video.subject_id = 4 \
-							THEN ( \
-									FLOOR(RAND()*((SELECT vid.id FROM video as vid WHERE vid.subject_id = 6 GROUP BY vid.subject_id) - video.id)+video.id) \
-								) \
-							ELSE \
-								(CASE WHEN video.subject_id = 6 \
-									THEN ( \
-										FLOOR(RAND()*((SELECT vid.id FROM video as vid WHERE vid.subject_id = 7 GROUP BY vid.subject_id) - video.id)+video.id) \
-										) \
-									ELSE \
-										(CASE WHEN video.subject_id = 7 \
-											THEN ( \
-												FLOOR(RAND()*((SELECT vid.id FROM video as vid WHERE vid.subject_id = 2 GROUP BY vid.subject_id) - video.id)+video.id) \
-												) \
-											ELSE \
-												(CASE WHEN video.subject_id = 2 \
-													THEN ( \
-														FLOOR(RAND()*((SELECT vid.id FROM video as vid WHERE vid.subject_id = 5 GROUP BY vid.subject_id) - video.id)+video.id) \
-														) \
-													ELSE \
-														(CASE WHEN video.subject_id = 5 \
-															THEN ( \
-																FLOOR(RAND()*(479 - video.id)+video.id) \
-																) \
-		 												END) \
-		 										END) \
-		 								END) \
-		 						END) \
-		 				END) \
-		 		END) \
-		 END) AS lessonId, \
+		SELECT \
 		video.id, \
-		video.subject_id \
-	FROM (SELECT video.id as id,video.subject_id as subject_id FROM video GROUP BY video.subject_id) as video \
-	;" | $msql
-	
-	#get random value from each subject to get single video + 5 question
-echo " \
-	SELECT \
-		(CASE WHEN video.subject_id = 1 \
-			THEN ( \
-					FLOOR(RAND()*(91 - video.id)+video.id) \
-				) \
-			ELSE ( \
-				CASE WHEN video.subject_id = 3 \
-					THEN ( \
-							FLOOR(RAND()*(121 - video.id)+video.id) \
-						) \
-					ELSE \
-						(CASE WHEN video.subject_id = 4 \
-							THEN ( \
-									FLOOR(RAND()*(151 - video.id)+video.id) \
-								) \
-							ELSE \
-								(CASE WHEN video.subject_id = 6 \
-									THEN ( \
-										FLOOR(RAND()*(239 - video.id)+video.id) \
-										) \
-									ELSE \
-										(CASE WHEN video.subject_id = 7 \
-											THEN ( \
-												FLOOR(RAND()*(371 - video.id)+video.id) \
-												) \
-											ELSE \
-												(CASE WHEN video.subject_id = 2 \
-													THEN ( \
-														FLOOR(RAND()*(394 - video.id)+video.id) \
-														) \
-													ELSE \
-														(CASE WHEN video.subject_id = 5 \
-															THEN ( \
-																FLOOR(RAND()*(479 - video.id)+video.id) \
-																) \
-		 												END) \
-		 										END) \
-		 								END) \
-		 						END) \
-		 				END) \
-		 		END) \
-		 END) AS lessonId, \
-		video.id, \
-		video.subject_id \
-	FROM (SELECT video.id as id,video.subject_id as subject_id FROM video GROUP BY video.subject_id) as video \
+		video.subject_id, \
+		FLOOR(RAND()*((video.max-video.min)+video.id)) \
+			FROM (SELECT \
+				min(video.id) as min, \
+				max(video.id) as max, \
+				video.id as id, \
+				video.subject_id as subject_id \
+			FROM video \
+			WHERE video.grade= 6 AND lesson <> 0 \
+			GROUP BY video.subject_id \
+			) as video \
+			/* INNER JOIN mcq_question as mcqq ON mcqq.video_id=video.id */ \
 	;" | $msql

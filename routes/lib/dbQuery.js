@@ -1161,22 +1161,26 @@ getAnswerInsertId: function(query,fields,callback) {
 								log.error("large of playlist has not been found");
 							}
 							
-							mysqlObj.playlists=[
-										{
-											"name":"small",
-											"quality":"240p",
-											"videoList":smallList.slice(0,-1)
-										},
-										{
-											"name":"medium",
-											"quality":"360p",
-											"videoList":mediumList.slice(0,-1)
-										},
-										{
-											"name":"large",
-											"quality":"480p",
-											"videoList":largeList.slice(0,-1)
-										}];
+							try {
+								mysqlObj.playlists=[
+											{
+												"name":"small",
+												"quality":"240p",
+												"videoList":smallList.slice(0,-1)
+											},
+											{
+												"name":"medium",
+												"quality":"360p",
+												"videoList":mediumList.slice(0,-1)
+											},
+											{
+												"name":"large",
+												"quality":"480p",
+												"videoList":largeList.slice(0,-1)
+											}];
+							} catch (e) {
+								console.log("playlist files not found");
+							}
 /*										
 							mysqlObj.videoUrls=[{
 										"name":"small",
