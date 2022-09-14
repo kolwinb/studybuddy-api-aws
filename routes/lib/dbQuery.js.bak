@@ -84,6 +84,7 @@ return " \
 /* individual property of profile attribute coins */
 function getProfileAttRewards(tableName) {
 return " \
+	@bonus := "+escape(properties.reward.bonus)+" AS bonus, \
   	(CASE \
   		WHEN "+tableName+".address IS NULL \
 		  	THEN 0 \
@@ -170,6 +171,7 @@ return " \
 /* calculate profile attribute rewards */
 function getProfileRewards(tableName) {
 return 	"(SUM( \
+		"+escape(properties.reward.bonus)+" + \
 		CASE \
 			WHEN "+tableName+".address IS NULL OR "+tableName+".address ='' \
 				THEN 0 \
@@ -310,6 +312,33 @@ if (stageNo == 9){
 	return 3
 }
 }
+
+function getMiningRandStage(count){
+return " \
+		SELECT \
+		stageId, \
+		stageName, \
+		nameE, \
+		(CASE WHEN stageId = \
+		( \
+						SELECT DISTINCT stage_id \
+						FROM mcq_mining_answer \
+						WHERE stage_id = stageId AND user_id =@userId) \
+				THEN 'True' \
+				ELSE 'False' \
+		END) as hasCompleted \
+		FROM ( \
+			SELECT \
+				@lastStage := COUNT(subject.id)+"+count+" as stageId, \
+				@level := CONCAT('Stage ',COUNT(subject.id)+"+count+") as stageName, \
+				@nameE := 'All subjects' as nameE \
+			FROM subject \
+			INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
+			WHERE grade_subject.grade_id=@gradeId \
+			) as stage \
+"
+}
+
 var dbStatements = {
 	//properties
 
@@ -333,16 +362,25 @@ whereMiningIqRewards:"SELECT \
 						WHERE iq_answer.id IN (?) AND iq_option.state=1;",
 /* iq mining */
 whereIqLevelList:"SELECT \
-					level as levelId, \
-					@name:=CONCAT('Level ',level) as levelName, \
-					( \
-						CASE WHEN (SELECT iq_answer.id FROM iq_answer WHERE iq_answer.question_id=iq_question.id) IS NULL \
-							THEN 'False' \
-							ELSE 'True' \
-						END	\
-					) as hasCompleted \
-					FROM iq_question \
-					GROUP BY level;",
+					iq.levelId as levelId, \
+					iq.levelName as levelName, \
+					iq.hasCompleted as hasCompleted \
+					FROM  ( \
+						SELECT \
+						id, \
+						level as levelId, \
+						@name:=CONCAT('Level ',level) as levelName, \
+						( \
+							CASE WHEN (SELECT iq_answer.id FROM iq_answer WHERE iq_answer.question_id=iq_question.id AND user_id=?) IS NULL \
+								THEN 'False' \
+								ELSE 'True' \
+							END	\
+						) as hasCompleted \
+						FROM iq_question \
+						GROUP BY level \
+					) AS iq \
+					ORDER BY iq.id ASC;",
+					
 whereIqList:"SELECT \
 			iq_question.level as levelId, \
 			iq_question.id as questionId, \
@@ -419,7 +457,9 @@ whereMiningMcqStage9List:"SELECT \
 			INNER JOIN grade ON grade.id=video.grade \
 			;",
 /* whereMiningStage */
-whereMiningMcqStage: "SELECT \
+whereMiningMcqStage: " \
+					SET @userId := ?, @gradeId := ?; \
+					SELECT \
 					subject.id as stageId, \
 					@level := CONCAT('Stage ',subject.id) as stageName, \
 					subject.subject_english as nameE, \
@@ -428,29 +468,72 @@ whereMiningMcqStage: "SELECT \
 					 ( \
 									SELECT stage_id \
 									FROM mcq_mining_answer \
-									WHERE stage_id = subject.id AND user_id =? \
+									WHERE stage_id = subject.id AND user_id =@userId \
 									GROUP BY stage_id) \
 							THEN 'True' \
 							ELSE 'False' \
 					END) as hasCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
-					WHERE grade_subject.grade_id=?; \
-				SELECT @lastStage := COUNT(subject.id)+1 as stageId, \
-					@level := CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
-					@nameE := 'All subjects' as nameE, \
-					(CASE WHEN 9 = \
+					WHERE grade_subject.grade_id=@gradeId; \
+				/* stage 9 */ \
+				SELECT \
+					stageId, \
+					stageName, \
+					nameE, \
+					(CASE WHEN stageId = \
 					 ( \
 									SELECT DISTINCT stage_id \
 									FROM mcq_mining_answer \
-									WHERE stage_id = 9 AND user_id =?) \
+									WHERE user_id =@userId AND stage_id=stage.stageId) \
+							THEN 'True' \
+							ELSE 'False' \
+					END) as hasCompleted \
+					FROM ( \
+						SELECT \
+						COUNT(subject.id)+1 as stageId, \
+						CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
+						@nameE := 'All subjects' as nameE \
+						FROM subject \
+						INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
+						WHERE grade_subject.grade_id=@gradeId \
+						) as stage; \
+				"+getMiningRandStage(2)+"; \
+				/* stage 10 */ \
+				/* \
+				SELECT @lastStage := COUNT(subject.id)+2 as stageId, \
+					@level := CONCAT('Stage ',COUNT(subject.id)+2) as stageName, \
+					@nameE := 'All subjects' as nameE, \
+					(CASE WHEN 10 = \
+					 ( \
+									SELECT DISTINCT stage_id \
+									FROM mcq_mining_answer \
+									WHERE stage_id = 10 AND user_id =@userId) \
 							THEN 'True' \
 							ELSE 'False' \
 					END) as hasCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
-					WHERE grade_subject.grade_id=?;",
-
+					WHERE grade_subject.grade_id=@gradeId; \
+				*/ \
+				/* stage 11 ,function getMiningRandMcq*/ \
+				/* \
+				SELECT @lastStage := COUNT(subject.id)+3 as stageId, \
+					@level := CONCAT('Stage ',COUNT(subject.id)+3) as stageName, \
+					@nameE := 'All subjects' as nameE, \
+					(CASE WHEN 11 = \
+					 ( \
+									SELECT DISTINCT stage_id \
+									FROM mcq_mining_answer \
+									WHERE stage_id = 11 AND user_id =@userId) \
+							THEN 'True' \
+							ELSE 'False' \
+					END) as hasCompleted \
+					FROM subject \
+					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
+					WHERE grade_subject.grade_id=@gradeId; \
+				*/ \
+					",
 chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					  subject.subject_english as subject\
 						FROM student_answer \
@@ -871,17 +954,22 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						FROM video \
 						INNER JOIN subject ON subject.id=video.subject_id \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
-						WHERE video.grade=? /* AND video.syllabus=? */ AND video.subject_id=? LIMIT ?; \
+						WHERE video.grade=? AND video.subject_id=? ORDER BY video.id LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
 	whereOnlineUsers: "SELECT \
-						(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
-						u.uniqid as gamerId, \
-						up.avatar_id as avatarId, \
-						up.grade_id as gradeId, \
-						up.name as name \
+								(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
+								u.uniqid as gamerId, \
+								up.avatar_id as avatarId, \
+								up.grade_id as gradeId, \
+								u.phone as mobileNo, \
+								up.name as name \
 						FROM user_profile as up \
 						INNER JOIN user as u ON u.id = up.user_id \
-						WHERE up.status='online'",
+						WHERE u.uniqid != ? AND up.status='online' AND up.grade_id=( \
+										SELECT grade_id \
+										FROM user_profile AS upro \
+										INNER JOIN user as usr ON usr.id = upro.user_id \
+										WHERE usr.uniqid=?)",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
 	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
@@ -1016,7 +1104,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					log.error(fields+" : db update error");
  					callback(false);
 				} else {
-					log.info(fields+" : db update done");
+					//log.info(fields+" : db update done");
 					callback(true);
 				}
  			});
@@ -1145,22 +1233,26 @@ getAnswerInsertId: function(query,fields,callback) {
 								log.error("large of playlist has not been found");
 							}
 							
-							mysqlObj.playlists=[
-										{
-											"name":"small",
-											"quality":"240p",
-											"videoList":smallList.slice(0,-1)
-										},
-										{
-											"name":"medium",
-											"quality":"360p",
-											"videoList":mediumList.slice(0,-1)
-										},
-										{
-											"name":"large",
-											"quality":"480p",
-											"videoList":largeList.slice(0,-1)
-										}];
+							try {
+								mysqlObj.playlists=[
+											{
+												"name":"small",
+												"quality":"240p",
+												"videoList":smallList.slice(0,-1)
+											},
+											{
+												"name":"medium",
+												"quality":"360p",
+												"videoList":mediumList.slice(0,-1)
+											},
+											{
+												"name":"large",
+												"quality":"480p",
+												"videoList":largeList.slice(0,-1)
+											}];
+							} catch (e) {
+								console.log("playlist files not found");
+							}
 /*										
 							mysqlObj.videoUrls=[{
 										"name":"small",
@@ -1403,12 +1495,14 @@ getAnswerInsertId: function(query,fields,callback) {
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
-					const [subject,lastStage] = result;
+					const [usergradeids,subject,stage_9,stage_10,stage_11] = result;
 					var jsonResults = subject.map((mysqlObj, index) => {
 							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.png';
     						return Object.assign({}, mysqlObj);
     					});
-    				jsonResults.push(lastStage[0]);
+    				jsonResults.push(stage_9[0]);
+    				jsonResults.push(stage_10[0]);
+    				//jsonResults.push(stage_11[0]);
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonResults)); 		
 			}

@@ -312,6 +312,33 @@ if (stageNo == 9){
 	return 3
 }
 }
+
+function getMiningRandStage(count){
+return " \
+		SELECT \
+		stageId, \
+		stageName, \
+		nameE, \
+		(CASE WHEN stageId = \
+		( \
+						SELECT DISTINCT stage_id \
+						FROM mcq_mining_answer \
+						WHERE stage_id = stageId AND user_id =@userId) \
+				THEN 'True' \
+				ELSE 'False' \
+		END) as hasCompleted \
+		FROM ( \
+			SELECT \
+				@lastStage := COUNT(subject.id)+"+count+" as stageId, \
+				@level := CONCAT('Stage ',COUNT(subject.id)+"+count+") as stageName, \
+				@nameE := 'All subjects' as nameE \
+			FROM subject \
+			INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
+			WHERE grade_subject.grade_id=@gradeId \
+			) as stage \
+"
+}
+
 var dbStatements = {
 	//properties
 
@@ -430,7 +457,9 @@ whereMiningMcqStage9List:"SELECT \
 			INNER JOIN grade ON grade.id=video.grade \
 			;",
 /* whereMiningStage */
-whereMiningMcqStage: "SELECT \
+whereMiningMcqStage: " \
+					SET @userId := ?, @gradeId := ?; \
+					SELECT \
 					subject.id as stageId, \
 					@level := CONCAT('Stage ',subject.id) as stageName, \
 					subject.subject_english as nameE, \
@@ -439,29 +468,72 @@ whereMiningMcqStage: "SELECT \
 					 ( \
 									SELECT stage_id \
 									FROM mcq_mining_answer \
-									WHERE stage_id = subject.id AND user_id =? \
+									WHERE stage_id = subject.id AND user_id =@userId \
 									GROUP BY stage_id) \
 							THEN 'True' \
 							ELSE 'False' \
 					END) as hasCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
-					WHERE grade_subject.grade_id=?; \
-				SELECT @lastStage := COUNT(subject.id)+1 as stageId, \
-					@level := CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
-					@nameE := 'All subjects' as nameE, \
-					(CASE WHEN 9 = \
+					WHERE grade_subject.grade_id=@gradeId; \
+				/* stage 9 */ \
+				SELECT \
+					stageId, \
+					stageName, \
+					nameE, \
+					(CASE WHEN stageId = \
 					 ( \
 									SELECT DISTINCT stage_id \
 									FROM mcq_mining_answer \
-									WHERE stage_id = 9 AND user_id =?) \
+									WHERE user_id =@userId AND stage_id=stage.stageId) \
+							THEN 'True' \
+							ELSE 'False' \
+					END) as hasCompleted \
+					FROM ( \
+						SELECT \
+						COUNT(subject.id)+1 as stageId, \
+						CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
+						@nameE := 'All subjects' as nameE \
+						FROM subject \
+						INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
+						WHERE grade_subject.grade_id=@gradeId \
+						) as stage; \
+				"+getMiningRandStage(2)+"; \
+				/* stage 10 */ \
+				/* \
+				SELECT @lastStage := COUNT(subject.id)+2 as stageId, \
+					@level := CONCAT('Stage ',COUNT(subject.id)+2) as stageName, \
+					@nameE := 'All subjects' as nameE, \
+					(CASE WHEN 10 = \
+					 ( \
+									SELECT DISTINCT stage_id \
+									FROM mcq_mining_answer \
+									WHERE stage_id = 10 AND user_id =@userId) \
 							THEN 'True' \
 							ELSE 'False' \
 					END) as hasCompleted \
 					FROM subject \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
-					WHERE grade_subject.grade_id=?;",
-
+					WHERE grade_subject.grade_id=@gradeId; \
+				*/ \
+				/* stage 11 ,function getMiningRandMcq*/ \
+				/* \
+				SELECT @lastStage := COUNT(subject.id)+3 as stageId, \
+					@level := CONCAT('Stage ',COUNT(subject.id)+3) as stageName, \
+					@nameE := 'All subjects' as nameE, \
+					(CASE WHEN 11 = \
+					 ( \
+									SELECT DISTINCT stage_id \
+									FROM mcq_mining_answer \
+									WHERE stage_id = 11 AND user_id =@userId) \
+							THEN 'True' \
+							ELSE 'False' \
+					END) as hasCompleted \
+					FROM subject \
+					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
+					WHERE grade_subject.grade_id=@gradeId; \
+				*/ \
+					",
 chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					  subject.subject_english as subject\
 						FROM student_answer \
@@ -1423,12 +1495,14 @@ getAnswerInsertId: function(query,fields,callback) {
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
-					const [subject,lastStage] = result;
+					const [usergradeids,subject,stage_9,stage_10,stage_11] = result;
 					var jsonResults = subject.map((mysqlObj, index) => {
 							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.png';
     						return Object.assign({}, mysqlObj);
     					});
-    				jsonResults.push(lastStage[0]);
+    				jsonResults.push(stage_9[0]);
+    				jsonResults.push(stage_10[0]);
+    				//jsonResults.push(stage_11[0]);
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonResults)); 		
 			}

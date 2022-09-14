@@ -12,8 +12,38 @@ upass=${line#*:}
 #msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
 msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 #total answered by given user
+
 echo " \
-	SELECT COUNT(id) \
-	FROM mcq_mining_answer as mma \
-	WHERE mma.stage_id=9 \
-	;" | $msql
+SET @userId := 1, @gradeId = 6; \
+SELECT \
+@userId,@gradeId, \
+@lastStage := COUNT(subject.id)+1 as stageId, \
+CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
+@nameE := 'All subjects' as nameE, \
+(CASE WHEN @lastStage = \
+		( \
+		SELECT DISTINCT stage_id \
+		FROM mcq_mining_answer \
+		WHERE stage_id = 9 AND user_id = @userId) \
+	THEN 'True' \
+	ELSE 'False' \
+END) as hasCompleted \
+FROM subject \
+INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
+WHERE grade_subject.grade_id=@gradeId; \
+" | $msql
+
+echo " \
+SET @userId := 1, @gradeId = 6; \
+SELECT \
+* \
+FROM ( \
+SELECT \
+@lastStage := COUNT(subject.id)+1  stageId, \
+@sageName := CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
+@nameE := 'All subjects' as nameE \
+FROM subject \
+INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
+WHERE grade_subject.grade_id=@gradeId \
+) as stage \
+" | $msql

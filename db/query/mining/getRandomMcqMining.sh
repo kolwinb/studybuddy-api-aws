@@ -21,7 +21,9 @@ echo " \
 		SELECT \
 		video.id, \
 		video.subject_id, \
-		FLOOR(RAND()*((video.max-video.min)+video.id)) \
+		video.min as min, \
+		video.max as max, \
+		FLOOR(RAND()*(video.max-video.min)+video.min) \
 			FROM (SELECT \
 				min(video.id) as min, \
 				max(video.id) as max, \

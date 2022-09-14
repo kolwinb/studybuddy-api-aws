@@ -36,7 +36,7 @@ router.post('/getMcqStage',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							dbQuery.getMiningMcqStage(dbQuery.whereMiningMcqStage,[studentId,gradeId,studentId,gradeId],function(callback){
+							dbQuery.getMiningMcqStage(dbQuery.whereMiningMcqStage,[studentId,gradeId],function(callback){
 								res.send(JSON.parse(status.stateSuccess(callback)));
 							});							
 						});
