@@ -508,8 +508,9 @@ const gameAccept = (uniqId,data) => {
 					}
 					lookup[user1id].send(JSON.stringify(respJ));
 					
-					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMcq){
+					//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMcq){
 					//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,7],function(callbackMcq){
+					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMcq){
 						if (callbackMcq){
 							//console.log("stage9 mcqs :"+JSON.stringify(callbackMcq));
 							const respMcq = {

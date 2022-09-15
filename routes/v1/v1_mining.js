@@ -134,13 +134,18 @@ router.post('/getMcqList',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							if (stageId==9) {
+							if (stageId > 9) {
+								dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMiningMcq){
+									//console.log("mcqmining :"+callbackMiningMcq);
+									res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
+								});		
+							} else if (stageId == 9) {
 								//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId,syllabusId],function(callbackMiningMcq){
 								dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMiningMcq){
 									//console.log("mcqmining :"+callbackMiningMcq);
 									res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
 								});		
-							} else {
+							} else if (stageId > 9) {
 								//stageId using indeed of subjectId
 								//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,syllabusId,stageId],function(callbackMiningMcq){
 								dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,stageId],function(callbackMiningMcq){

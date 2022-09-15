@@ -17,21 +17,24 @@ msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 function randomMcq(){
 subjectId=$1
 }
+
+
 echo " \
 		SELECT \
-		video.id, \
-		video.subject_id, \
-		video.min as min, \
-		video.max as max, \
-		FLOOR(RAND()*(video.max-video.min)+video.min) \
+			mcq_question.id, \
+			vid.grade, \
+			vid.subject_id, \
+			randId \
 			FROM (SELECT \
-				min(video.id) as min, \
-				max(video.id) as max, \
-				video.id as id, \
-				video.subject_id as subject_id \
+				/* DISTINCT(video.subject_id), */ \
+				/* FLOOR(RAND()*(max(id)-min(id))+min(id)) as randId */ \
+				FLOOR(RAND()*(10-min(id))+min(id)) as randId \
 			FROM video \
-			WHERE video.grade= 6 AND lesson <> 0 \
-			GROUP BY video.subject_id \
+			WHERE grade=6 AND lesson != 0 \
+			GROUP BY subject_id \
 			) as video \
-			/* INNER JOIN mcq_question as mcqq ON mcqq.video_id=video.id */ \
+			INNER JOIN video as vid on vid.id=randId \
+			INNER JOIN mcq_question on mcq_question.video_id=vid.id \
 	;" | $msql
+
+echo " "

@@ -428,17 +428,18 @@ whereMiningMcqList:"SELECT \
 			/* LIMIT 20 */ LIMIT 12 \
 			;",			
 /* MCQMining  stage 9*/
-whereMiningMcqStage9List:"SELECT \
+whereMiningMcqStage9List:" \
+			SELECT \
 			video.id as lessonId, \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as image, \
+			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as image, \
+			mcq_option.image as answerImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -448,13 +449,47 @@ whereMiningMcqStage9List:"SELECT \
 			FROM ( \
 					SELECT * \
 					FROM video \
-					WHERE video.grade = ? /*  AND video.syllabus = ? */ \
+					WHERE video.grade=? /*  AND video.syllabus = ? */ \
 					GROUP BY video.subject_id \
 				 ) AS video \
 			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
+			;",
+/* Random stage > 9*/
+whereMiningMcqRandList:" \
+			SELECT \
+			video.id as lessonId, \
+			mcq_question.id as questionId, \
+			mcq_question.heading as heading, \
+			mcq_question.question as question, \
+			mcq_question.image as QuestionImage, \
+			subject.subject_english as subject, \
+			grade.grade_english as grade, \
+			mcq_option.id as optionId, \
+			mcq_option.option as answer, \
+			mcq_option.image as answerImage, \
+			( \
+				CASE WHEN mcq_option.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
+			FROM ( \
+					SELECT \
+					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
+					FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId \
+					FROM video \
+					WHERE grade=? AND lesson <> 0 \
+					GROUP BY subject_id \
+					) AS randVideo \
+			INNER JOIN video ON video.id=randVideo.randId \
+			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
+			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
+			INNER JOIN subject ON subject.id=video.subject_id \
+			INNER JOIN grade ON grade.id=video.grade \
+			WHERE video.grade=? \
 			;",
 /* whereMiningStage */
 whereMiningMcqStage: " \
@@ -477,63 +512,30 @@ whereMiningMcqStage: " \
 					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
 					WHERE grade_subject.grade_id=@gradeId; \
 				/* stage 9 */ \
-				SELECT \
-					stageId, \
-					stageName, \
-					nameE, \
-					(CASE WHEN stageId = \
-					 ( \
-									SELECT DISTINCT stage_id \
-									FROM mcq_mining_answer \
-									WHERE user_id =@userId AND stage_id=stage.stageId) \
-							THEN 'True' \
-							ELSE 'False' \
-					END) as hasCompleted \
-					FROM ( \
-						SELECT \
-						COUNT(subject.id)+1 as stageId, \
-						CONCAT('Stage ',COUNT(subject.id)+1) as stageName, \
-						@nameE := 'All subjects' as nameE \
-						FROM subject \
-						INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
-						WHERE grade_subject.grade_id=@gradeId \
-						) as stage; \
-				"+getMiningRandStage(2)+"; \
+				"+getMiningRandStage(1)+"; \
 				/* stage 10 */ \
-				/* \
-				SELECT @lastStage := COUNT(subject.id)+2 as stageId, \
-					@level := CONCAT('Stage ',COUNT(subject.id)+2) as stageName, \
-					@nameE := 'All subjects' as nameE, \
-					(CASE WHEN 10 = \
-					 ( \
-									SELECT DISTINCT stage_id \
-									FROM mcq_mining_answer \
-									WHERE stage_id = 10 AND user_id =@userId) \
-							THEN 'True' \
-							ELSE 'False' \
-					END) as hasCompleted \
-					FROM subject \
-					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
-					WHERE grade_subject.grade_id=@gradeId; \
-				*/ \
-				/* stage 11 ,function getMiningRandMcq*/ \
-				/* \
-				SELECT @lastStage := COUNT(subject.id)+3 as stageId, \
-					@level := CONCAT('Stage ',COUNT(subject.id)+3) as stageName, \
-					@nameE := 'All subjects' as nameE, \
-					(CASE WHEN 11 = \
-					 ( \
-									SELECT DISTINCT stage_id \
-									FROM mcq_mining_answer \
-									WHERE stage_id = 11 AND user_id =@userId) \
-							THEN 'True' \
-							ELSE 'False' \
-					END) as hasCompleted \
-					FROM subject \
-					INNER JOIN grade_subject ON grade_subject.subject_id = subject.id \
-					WHERE grade_subject.grade_id=@gradeId; \
-				*/ \
-					",
+				"+getMiningRandStage(2)+"; \
+				/* stage 11 */ \
+				"+getMiningRandStage(3)+"; \
+				/* stage 12 */ \
+				"+getMiningRandStage(4)+"; \
+				/* stage 13 */ \
+				"+getMiningRandStage(5)+"; \
+				/* stage 14 */ \
+				"+getMiningRandStage(6)+"; \
+				/* stage 15 */ \
+				"+getMiningRandStage(7)+"; \
+				/* stage 16 */ \
+				"+getMiningRandStage(8)+"; \
+				/* stage 17 */ \
+				"+getMiningRandStage(9)+"; \
+				/* stage 18 */ \
+				"+getMiningRandStage(10)+"; \
+				/* stage 19 */ \
+				"+getMiningRandStage(11)+"; \
+				/* stage 20 */ \
+				"+getMiningRandStage(12)+"; \
+				",
 chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					  subject.subject_english as subject\
 						FROM student_answer \
@@ -1495,14 +1497,38 @@ getAnswerInsertId: function(query,fields,callback) {
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
-					const [usergradeids,subject,stage_9,stage_10,stage_11] = result;
+					const [
+						usergradeids,
+						subject,
+						stage_9,
+						stage_10,
+						stage_11,
+						stage_12,
+						stage_13,
+						stage_14,
+						stage_15,
+						stage_16,
+						stage_17,
+						stage_18,
+						stage_19,
+						stage_20						
+						] = result;
 					var jsonResults = subject.map((mysqlObj, index) => {
 							mysqlObj.thumb=properties.thumbUrl+'/'+mysqlObj.nameE+'.png';
     						return Object.assign({}, mysqlObj);
     					});
     				jsonResults.push(stage_9[0]);
     				jsonResults.push(stage_10[0]);
-    				//jsonResults.push(stage_11[0]);
+    				jsonResults.push(stage_11[0]);
+    				jsonResults.push(stage_12[0]);
+    				jsonResults.push(stage_13[0]);
+    				jsonResults.push(stage_14[0]);
+    				jsonResults.push(stage_15[0]);
+    				jsonResults.push(stage_16[0]);
+    				jsonResults.push(stage_17[0]);
+    				jsonResults.push(stage_18[0]);
+    				jsonResults.push(stage_19[0]);
+    				jsonResults.push(stage_20[0]);    				
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonResults)); 		
 			}
@@ -1515,8 +1541,8 @@ getAnswerInsertId: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) { 
-					//throw err;
-					console.log("getminingmcqstage9List database server error");
+					throw err;
+					//console.log("getminingmcqstage9List database server error");
 				} else 	if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
@@ -1638,7 +1664,7 @@ getMiningMcqList: function(query,fields,callback) {
 				}
 			});
 			con.release();
-		});
+	npp	});
 	},
 	
 getIqList: function(query,fields,callback) {
