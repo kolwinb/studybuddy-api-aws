@@ -225,8 +225,7 @@ const gameEnd = (uniqId,data) => {
 				} else if (!players[1]){
 					log.error("GAME-END : "+uniqId+" 'hasCompleted' null occured when game-finish of student");
 					sendError(lookup[uniqId],status.wsFinishError());
-				} else if (players){
-					if ((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'True')) {
+				} else if (((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'True')) {
 						player1Marks=players[0].correctAnswers;
 						player2Marks=players[1].correctAnswers;
 						log.info("players marks A & B "+player1Marks+" : "+player2Marks);

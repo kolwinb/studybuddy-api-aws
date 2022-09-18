@@ -69,6 +69,7 @@ echo "SET @userId := $userId; SET @date_joined := (SELECT user.date_joined FROM 
 	LEFT JOIN subscription_plan as sp ON sp.id=ssg.plan_id \
 	WHERE ssg.user_id=@userId \
 	;" | $msql
+echo "UPDATE user SET role_id=$roleId WHERE id=$userId" | $msql
 	main
 }
 main

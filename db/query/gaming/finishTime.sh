@@ -16,7 +16,7 @@ msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 
 echo " \
 SELECT \
-(CASE WHEN COUNT(ba.id) = 3 \
+(CASE WHEN COUNT(ba.id) <> 0 \
 	THEN 'True' \
 	ELSE 'False' \
 	END) as isFinished, \
@@ -42,10 +42,30 @@ up.avatar_id \
 FROM battle_answer as ba \
 INNER JOIN user ON user.uniqid=ba.user_id \
 INNER JOIN user_profile as up ON up.user_id=user.id \
-WHERE ba.battle_id=$1 \
+WHERE ba.battle_id=$1 AND ba.user_id='1660785554424o0lg2ll6ycu70t' \
 GROUP BY ba.user_id \
 ; \
 " | $msql
 
+echo " \
+SELECT \
+(CASE WHEN COUNT(ba.id) <> 0 \
+	THEN 'True' \
+	ELSE 'False' \
+	END) as isFinished, \
+ba.user_id, \
+up.name, \
+up.avatar_id \
+FROM user_profile as up \
+INNER JOIN user ON user.uniqid=up.user_id \
+INNER JOIN battle_answer as ba ON ba.user_id=user.id \
+WHERE ba.battle_id=$1 AND user.uniqid='1660785554424o0lg2ll6ycu70t' \
+GROUP BY ba.user_id \
+; \
+" | $msql
+
+#WHERE ba.battle_id=$1 AND ba.user_id='1660785554424o0lg2ll6ycu70t' \
+
+#WHERE ba.battle_id=$1 AND ba.user_id='424o0lnpwl5oudqjl' \
 
 #(SELECT COUNT(bans.id) FROM battle_answer as bans INNER JOIN mcq_option as mop ON mop.option_id=bans.option_d  WHERE bans.battle_id=ba.battle_id AND mop.state=1). \

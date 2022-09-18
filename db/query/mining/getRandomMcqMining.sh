@@ -37,4 +37,22 @@ echo " \
 			INNER JOIN mcq_question on mcq_question.video_id=vid.id \
 	;" | $msql
 
+echo "IQ "
+echo " \
+		SELECT \
+			iqqu.id, \
+			iqqu.level, \
+			iqo.option, \
+			iqo.state \
+			FROM (SELECT \
+				/* DISTINCT(video.subject_id), */ \
+				/* FLOOR(RAND()*(max(id)-min(id))+min(id)) as randId */ \
+				id \
+			FROM iq_question \
+			ORDER BY RAND() LIMIT 6 \
+			) as iqq \
+			INNER JOIN iq_question as iqqu ON iqqu.id=iqq.id \
+			INNER JOIN iq_option as iqo ON iqo.question_id=iqq.id \
+	;" | $msql
+
 echo " "

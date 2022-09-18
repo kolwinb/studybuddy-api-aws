@@ -145,7 +145,7 @@ router.post('/getMcqList',function(req,res,next) {
 									//console.log("mcqmining :"+callbackMiningMcq);
 									res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
 								});		
-							} else if (stageId > 9) {
+							} else if (stageId < 9) {
 								//stageId using indeed of subjectId
 								//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,syllabusId,stageId],function(callbackMiningMcq){
 								dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,stageId],function(callbackMiningMcq){

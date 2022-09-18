@@ -37,7 +37,7 @@ function heartbeat(){
 const updateOnlineStatus = (status,socketId) => {
 	dbQuery.setUpdate(dbQuery.updateOnlineStatus,[status,socketId],function(callbackOnline) {
 		if (callbackOnline) {
-			console.log("userid "+socketId+" updated");
+			console.log("db : userid "+socketId+", status :"+status+" updated");
 			//socket.send(JSON.parse(status.stateSuccess(JSON.stringify({"description":"user status online"}))));
 		} else {
 			console.log("mysql error");
@@ -73,7 +73,7 @@ const websocketServer = {
 			const apiKey = req.headers["x-api-key"];
 			const apiSecret = req.headers["x-api-secret"];
 			var authToken = req.headers["x-token"];
-			console.log("apiKey :"+apiKey+", apiSecret :"+apiSecret+", x-token :"+authToken);
+			//console.log("apiKey :"+apiKey+", apiSecret :"+apiSecret+", x-token :"+authToken);
 			
 			if (!apiKey || !apiSecret) {
 				sendError(socket,status.wsAuth());
@@ -92,7 +92,7 @@ const websocketServer = {
 				//const ip = req.socket.remoteAddress;
 				
 				socket.on('message', function(data){
-					console.log('ws data :'+data);
+					//console.log('ws data :'+data);
 					let jsonData;
 					
 					try {
@@ -106,16 +106,17 @@ const websocketServer = {
 	
 					const type = jsonData.type;
 					//const payload = jsonData.payload;
-					console.log("wss authToken :"+authToken);
+					//console.log("wss authToken :"+authToken);
 					jwtModule.jwtVerify(authToken,function(callback){
 						if (callback) {
 							jwtModule.jwtGetUserId(authToken,function(callback) {
 								var userId=callback.userId;
 								var uniqId=callback.uniqId;			
-								console.log("jwt uniqId :"+uniqId)
+								console.log("UserId : "+userId+" => jwt uniqId :"+uniqId)
 								try {
 									handleCommand[type](uniqId,jsonData,socket);
 								} catch (e) {
+									//event not found
 									sendError(socket,status.wsEvent());
 								}
 							});
@@ -152,7 +153,7 @@ const websocketServer = {
 							//socket.send(JSON.stringify(tokenError));
 						}								
 					});
-					console.log('socketId :'+socket.id+', message : '+ JSON.stringify(jsonData));
+					console.log('socketId : '+socket.id+', message : '+ data);
 					//users[socket.id]=1;
 					//toUserWebSocket = lookup[22];
 					//toUserWebSocket.send("hello from 22");
@@ -181,6 +182,7 @@ const websocketServer = {
 
 				
 				//disconnect client after 10 seconds if network failure
+				/*
 				const interval = setInterval(function ping() {
 					wss.clients.forEach(function each(socket) {
 						if (socket.isAlive === false){
@@ -192,7 +194,7 @@ const websocketServer = {
 						socket.ping();
 					});
 				},30000);
-				
+				*/
 				//socket.send('studybuddy online chat');
 				
 				socket.on('error',(error) => {
@@ -202,9 +204,9 @@ const websocketServer = {
 				socket.on('close', (close) => {
 					console.log('socketId : '+socket.id+' connection has been disconnected by user');
 					//id--;
-					clearInterval(interval);
 					//delete users[socket.id];
 					//update online status of the user
+					//clearInterval(interval);
 					socket.terminate();
 					updateOnlineStatus(2,socket.id);
 				});
@@ -228,6 +230,112 @@ const getOnlineUsers = (client) => {
 	});
 }
 
+const debitBattleCoin = (gamerId,battleId,coinAmt,dateTime) => {
+	dbQuery.getSelect(dbQuery.whereBattleCoin,[gamerId,battleId,'debit'],function(callbackCoin){
+		if (!callbackCoin[0]){
+			dbQuery.setInsert(dbQuery.insertBattleCoin,['',gamerId,battleId,'debit',coinAmt,dateTime],function(){});
+		} else {
+			sendError(lookup[gamerId],status.wsBattleCoin());
+		}
+	});
+}
+
+const getGameResult= (players,battleId,dateTime) => {
+	player1Marks=players[0].correctAnswers;
+	player2Marks=players[1].correctAnswers;
+	log.info("players marks A & B "+player1Marks+" : "+player2Marks);
+	
+	if (player1Marks == player2Marks){
+		log.info(players[0].name+" marks equal with "+players[1].name);
+		players[0].hasWon='True';
+		players[0].coins=100;
+		players[1].hasWon='True';
+		players[1].coins=100;
+		
+		debitBattleCoin(players[0].gamerId,battleId,100,dateTime);
+		debitBattleCoin(players[1].gamerId,battleId,100,dateTime);
+		
+		/*
+		dbQuery.getSelect(dbQuery.whereBattleCoin,[players[0].gamerId,battleId,'debit'],function(callbackCoin){
+			if (!callbackCoin[0]){
+				dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[0].gamerId,battleId,'debit',100,dateTime],function(){});
+			} else {
+				sendError(lookup[players[0].gamerId],status.wsBattleCoin());
+			}
+		});
+		
+		dbQuery.getSelect(dbQuery.whereBattleCoin,[players[1].gamerId,battleId,'debit'],function(callbackCoin){
+			if (!callbackCoin[0]){
+			dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[1].gamerId,battleId,'debit',100,dateTime],function(){});
+			} else {
+				sendError(lookup[players[1].gamerId],status.wsBattleCoin());
+			}
+		});
+		*/
+		
+	} else if (player1Marks > player2Marks) {
+		log.info(players[0].name+" WON");
+		players[0].hasWon='True';
+		players[0].coins=100;
+		players[1].hasWon='False';
+		players[1].coins=0;
+
+		debitBattleCoin(players[0].gamerId,battleId,100,dateTime);
+		/*
+		dbQuery.getSelect(dbQuery.whereBattleCoin,[players[0].gamerId,battleId,'debit'],function(callbackCoin){
+			if (!callbackCoin[0]){
+				dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[0].gamerId,battleId,'debit',100,dateTime],function(){});
+			} else {
+				sendError(lookup[players[0].gamerId],status.wsBattleCoin());
+			}
+		});
+		*/
+								
+	} else if (player2Marks > player1Marks) {
+		log.info(players[1].name+" WON");
+		players[1].hasWon='True';
+		players[1].coins=100;
+		players[0].hasWon='False';
+		players[0].coins=0;
+
+		debitBattleCoin(players[1].gamerId,battleId,100,dateTime);
+		/*
+		dbQuery.getSelect(dbQuery.whereBattleCoin,[players[1].gamerId,battleId,'debit'],function(callbackCoin){
+			if (!callbackCoin[0]){
+				dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[1].gamerId,battleId,'debit',100,dateTime],function(){});
+			} else {
+				sendError(lookup[players[1].gamerId],status.wsBattleCoin());
+			}
+		});						
+		*/
+	} else if (player2Marks == 0 &&  player1Marks == 0) {
+		log.info(players[1].name+"Both lose");
+		players[1].hasWon='False';
+		players[1].coins=0;
+		players[0].hasWon='False';
+		players[0].coins=0;
+	}
+	//update battle_pool
+	updateGameStatus(players,battleId);
+}
+
+const updateGameStatus = (players,battleId) => {
+	//update battle finish state
+	dbQuery.setUpdate(dbQuery.updateGameStatus,['finish',battleId],function(callbackFinish){
+		if (callbackFinish){
+			const respJ = {
+						"type":"GAME-RESULT",
+						payload: players
+					}
+			lookup[players[0].gamerId].send(JSON.stringify(respJ));
+			lookup[players[1].gamerId].send(JSON.stringify(respJ));
+		} else {
+			sendError(lookup[players[0].gamerId],status.wsSystemError());
+			sendError(lookup[players[1].gamerId],status.wsSystemError());
+		}
+	});
+}
+
 const gameEnd = (uniqId,data) => {
 	log.info("GAME-END : "+JSON.stringify(data)+"uniqId : "+uniqId);
 	const dateTime = new Date();
@@ -247,96 +355,24 @@ const gameEnd = (uniqId,data) => {
 				players=JSON.parse(callbackEnd);
 				log.info("GAME-END callbackEnd:"+JSON.stringify(players));
 				if (!players[0]) {
-					log.error("GAME-END : "+uniqId+" 'hasCompleted' null occured when game-finish of student");
+					log.error("GAME-END : "+uniqId+" ' hasCompleted' null occured when game-finish of student");
 					sendError(lookup[uniqId],status.wsFinishError());
 				} else if (!players[1]){
-					log.error("GAME-END : "+uniqId+" 'hasCompleted' null occured when game-finish of student");
+					log.error("GAME-END : "+uniqId+" ' hasCompleted' null occured when game-finish of student");
 					sendError(lookup[uniqId],status.wsFinishError());
-				} else if (players){
-					if ((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'True')) {
-						player1Marks=players[0].correctAnswers;
-						player2Marks=players[1].correctAnswers;
-						log.info("players marks A & B "+player1Marks+" : "+player2Marks);
-						
-						if (player1Marks == player2Marks){
-							log.info(players[0].name+" marks equal with "+players[1].name);
-							players[0].hasWon='True';
-							players[0].coins=100;
-							players[1].hasWon='True';
-							players[1].coins=100;
-							
-							dbQuery.getSelect(dbQuery.whereBattleCoin,[players[0].gamerId,battleId,'debit'],function(callbackCoin){
-								if (!callbackCoin[0]){
-									dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[0].gamerId,battleId,'debit',100,dateTime],function(){});
-								} else {
-									sendError(lookup[players[0].gamerId],status.wsBattleCoin());
-								}
-							});
-							
-							dbQuery.getSelect(dbQuery.whereBattleCoin,[players[1].gamerId,battleId,'debit'],function(callbackCoin){
-								if (!callbackCoin[0]){
-								dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[1].gamerId,battleId,'debit',100,dateTime],function(){});
-								} else {
-									sendError(lookup[players[1].gamerId],status.wsBattleCoin());
-								}
-							});
-	
-							
-						} else if (player1Marks > player2Marks) {
-							log.info(players[0].name+" WON");
-							players[0].hasWon='True';
-							players[0].coins=100;
-							players[1].hasWon='False';
-							players[1].coins=0;
-	
-							dbQuery.getSelect(dbQuery.whereBattleCoin,[players[0].gamerId,battleId,'debit'],function(callbackCoin){
-								if (!callbackCoin[0]){
-									dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[0].gamerId,battleId,'debit',100,dateTime],function(){});
-								} else {
-									sendError(lookup[players[0].gamerId],status.wsBattleCoin());
-								}
-							});
-													
-						} else if (player2Marks > player1Marks) {
-							log.info(players[1].name+" WON");
-							players[1].hasWon='True';
-							players[1].coins=100;
-							players[0].hasWon='False';
-							players[0].coins=0;
-	
-							dbQuery.getSelect(dbQuery.whereBattleCoin,[players[1].gamerId,battleId,'debit'],function(callbackCoin){
-								if (!callbackCoin[0]){
-									dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[1].gamerId,battleId,'debit',100,dateTime],function(){});
-								} else {
-									sendError(lookup[players[1].gamerId],status.wsBattleCoin());
-								}
-							});						
-						
-						} else if (player2Marks == 0 &&  player1Marks == 0) {
-							log.info(players[1].name+"Both lose");
-							players[1].hasWon='False';
-							players[1].coins=0;
-							players[0].hasWon='False';
-							players[0].coins=0;
-						}
-					
-						//update battle finish state
-						dbQuery.setUpdate(dbQuery.updateGameStatus,['finish',battleId],function(callbackFinish){
-							if (callbackFinish){
-								const respJ = {
-											"type":"GAME-RESULT",
-											payload: players
-										}
-								lookup[players[0].gamerId].send(JSON.stringify(respJ));
-								lookup[players[1].gamerId].send(JSON.stringify(respJ));
-							} else {
-								sendError(lookup[uniqId],status.wsSystemError());
-							}
-						});
-					} else {
-					
-						sendError(lookup[uniqId],status.wsBattleNotFinish());
-					}
+				//} else if (players){
+				/*
+				} else	if ((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'True')) {
+					getGameResult(players,battleId,dateTime);
+				} else	if ((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'False')) {
+					getGameResult(players,battleId,dateTime);
+				} else	if ((players[0].hasCompleted == 'False') && (players[1].hasCompleted == 'True')) {
+					getGameResult(players,battleId,dateTime);
+				*/
+				} else	if ((players[0].hasCompleted == 'False') && (players[1].hasCompleted == 'False')) {
+					updateGameStatus(players,battleId,dateTime);
+				} else {
+					getGameResult(players,battleId,dateTime);
 				}
 			});
 		
@@ -355,9 +391,9 @@ const setAnswer = (uniqId,data) => {
 	console.log("setAnswer : uniqid :"+uniqId+" : "+data);
 	
 	dbQuery.getSelect(dbQuery.whereBattleAnswer,[userId,questionId,battleId],function(callbackBattle){
-		if (!callbackBattle[0]){
-			log.info("sent answers without creating battle, misbehaviour");
-		} else if  (callbackBattle[0].status) {
+		if  (!callbackBattle[0]) {
+			log.error("battleanswer table");
+		} else if (callbackBattle[0].status) {
 			dbQuery.getAnswerInsertId(dbQuery.insertBattleAnswer,['',userId,battleId,questionId,optionId,startedAt,endedAt],function(callbackInsertId){
 				if(callbackInsertId){
 					const respJ = {
@@ -376,6 +412,7 @@ const setAnswer = (uniqId,data) => {
 					"type":"ANS-RESULT",
 					payload:{
 						status:"error",
+						hasCompleted:"True",
 						description:"prohibited action occured",
 						battleId:battleId,
 						questionId:questionId
@@ -428,11 +465,36 @@ const gameReqResp=(user1id,user2id,data,battleId)=> {
 	}																	
 }
 
+const battleHandler = (user1id,user2id,data,dateTime) => {
+	dbQuery.getSelect(dbQuery.whereGameReq,[user1id,user2id,'waiting'],function(callbackStatus){
+		//console.log("gameReq battlepool : "+callbackStatus[0].status);
+		//if ((!callbackStatus[0]) || (callbackStatus[0].status != 'waiting') || (callbackStatus[0].status=='cancel' || callbackStatus[0].status=='finish'))  {
+		//if ((!callbackStatus[0]) || (callbackStatus[0].status !== 'waiting') || (callbackStatus[0].status !== 'running'))  {
+		if (!callbackStatus[0])  {
+			dbQuery.getAnswerInsertId(dbQuery.insertGameReq,['',user1id,user2id,'waiting',dateTime],function(callbackInsertId) {
+				if (!callbackInsertId){
+					console.log("insertGameReq database error");
+				} else {
+					//send reques to actorB
+					gameReqFrom(user1id,user2id,data,callbackInsertId);
+					//send request status to actor A
+					gameReqResp(user1id,user2id,data,callbackInsertId);	
+				}
+			});
+		} else if (callbackStatus[0].status=='waiting') {
+			//send reques to actorB
+			gameReqFrom(user1id,user2id,data,callbackStatus[0].id);
+			//send request status to actor A
+			gameReqResp(user1id,user2id,data,callbackStatus[0].id);
+		}
+	});
+}
+
 const gameReq = (uniqId,data) => {
-	log.info("setChallenge : "+data);
-	log.info("challenge requestion from "+data.payload.from+" to "+data.payload.to);
-	const dateTime = new Date();
+	log.info("gameReq : "+data);
+	log.info("gameReq : challenge requestion from "+data.payload.from+" to "+data.payload.to);
 	//user1id=data.payload.from;
+	const dateTime = new Date();
 	user1id=uniqId;
 	user2id=data.payload.to;
 	//const userId = data.payload.to;
@@ -447,33 +509,44 @@ const gameReq = (uniqId,data) => {
 						sendError(lookup[user1id],status.wsReqUserNotFound());
 					} else if (callbackLessCoin[0].balance < properties.gameCoinMin) {
 						sendError(lookup[user1id],status.wsReqLessFund());
-					} else {			
-						dbQuery.getSelect(dbQuery.whereGameReq,[user1id,user2id,'waiting'],function(callbackStatus){
-							//console.log("gameReq battlepool : "+callbackStatus[0].status);
-				 			//if ((!callbackStatus[0]) || (callbackStatus[0].status != 'waiting') || (callbackStatus[0].status=='cancel' || callbackStatus[0].status=='finish'))  {
-				 			//if ((!callbackStatus[0]) || (callbackStatus[0].status !== 'waiting') || (callbackStatus[0].status !== 'running'))  {
-				 			if (!callbackStatus[0])  {
-								dbQuery.getAnswerInsertId(dbQuery.insertGameReq,['',user1id,user2id,'waiting',dateTime],function(callbackInsertId) {
-									if (!callbackInsertId){
-										console.log("insertGameReq database error");
+					} else {
+						//find running battle when req event
+						dbQuery.getSelect(dbQuery.whereGameReq,[user1id,user2id,'running'],function(callbackRunning){
+							if (!callbackRunning[0]) {
+								battleHandler(user1id,user2id,data,dateTime);
+							} else {
+								const battleId=callbackRunning[0].id
+								dbQuery.setUpdate(dbQuery.updateGameReq,['waiting',dateTime,user1id,user2id,battleId],function(callbackUpdate) {
+									if (!callbackUpdate){
+										console.log("update database error");
 									} else {
-										//send reques to actorB
-										gameReqFrom(user1id,user2id,data,callbackInsertId);
-										//send request status to actor A
-										gameReqResp(user1id,user2id,data,callbackInsertId);	
+										console.log("change previous running status to cancel on battleId: "+battleId);
+										battleHandler(user1id,user2id,data,dateTime);
 									}
 								});
-							} else if (callbackStatus[0].status=='waiting') {
-								//send reques to actorB
-								gameReqFrom(user1id,user2id,data,callbackStatus[0].id);
-								//send request status to actor A
-								gameReqResp(user1id,user2id,data,callbackStatus[0].id);
 							}
 						});
 					}
 				});
 			}
 		});
+}
+
+const setBattleCoinState = (userId,battleId,dateTime) => {
+	dbQuery.getSelect(dbQuery.whereBattleCoin,[userId,battleId,'credit'],function (callbackStatus){
+		//add user1id coin to coin_pool
+		if (!callbackStatus[0]){
+			dbQuery.setInsert(dbQuery.insertBattleCoin,['',userId,battleId,'credit',-1 * properties.battleCoin,dateTime],function(callbackCoin){
+				if (callbackCoin){
+					console.log("Coin Pool : "+userId+" "+properties.battleCoin+" now added");
+				} else {
+					console.log("coin pool insert error");
+				}						
+			});
+		} else {
+					console.log("Coin Pool : "+userId+" "+properties.battleCoin+" previously added");
+		}
+	});
 }
 
 const gameAccept = (uniqId,data) => {
@@ -510,7 +583,8 @@ const gameAccept = (uniqId,data) => {
 					
 					//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMcq){
 					//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,7],function(callbackMcq){
-					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMcq){
+					//dbQuery.getBuddyChallengeRandList(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMcq){
+					dbQuery.getMiningMcqStage9List(dbQuery.whereChallengeRandList,[gradeId,gradeId],function(callbackMcq){
 						if (callbackMcq){
 							//console.log("stage9 mcqs :"+JSON.stringify(callbackMcq));
 							const respMcq = {
@@ -526,16 +600,20 @@ const gameAccept = (uniqId,data) => {
 							
 						}
 					});
+					setBattleCoinState(user1id,battleId,dateTime);
+					setBattleCoinState(user2id,battleId,dateTime);			
 					
-					//add user1id coin to coin_pool
-					dbQuery.setInsert(dbQuery.insertBattleCoin,['',user1id,battleId,'credit',-1 * properties.battleCoin,dateTime],function(callbackCoin){
-						if (callbackCoin){
-							console.log("Coin Pool : "+user1id+" "+properties.battleCoin+" added");
-						} else {
-							console.log("coin pool insert error");
-						}						
+					/*
+					dbQuery.getSelect(dbQuery.whereBattleCoin,[user1id,bttleId,'credit'],function (callbackStatus){
+						//add user1id coin to coin_pool
+						dbQuery.setInsert(dbQuery.insertBattleCoin,['',user1id,battleId,'credit',-1 * properties.battleCoin,dateTime],function(callbackCoin){
+							if (callbackCoin){
+								console.log("Coin Pool : "+user1id+" "+properties.battleCoin+" added");
+							} else {
+								console.log("coin pool insert error");
+							}						
+						});
 					});
-					
 					//add user2id coin to coin_pool
 					dbQuery.setInsert(dbQuery.insertBattleCoin,['',user2id,battleId,'credit',-1 * properties.battleCoin,dateTime],function(callbackCoin){
 						if (callbackCoin){
@@ -543,7 +621,8 @@ const gameAccept = (uniqId,data) => {
 						} else {
 							console.log("coin pool insert error");
 						}
-					});					
+					});
+					*/					
 				}
 			});
 		} else {
@@ -597,6 +676,7 @@ const updateSQL = (user1id,user2id,data,cancelStatus) => {
 	const dateTime = new Date();
 	battleId=data.payload.battleId;
 	dbQuery.getSelect(dbQuery.whereBattleGameReq,[battleId],function(callbackWaiting){
+	try {
 		if (!callbackWaiting[0]){
 			console.log("gameCancel : rows notfound in the whereBattleGameReq");
 		} if (callbackWaiting[0].status == 'waiting') {
@@ -641,7 +721,7 @@ const updateSQL = (user1id,user2id,data,cancelStatus) => {
 					
 				}
 			});
-		} else {
+		} else if (callbackWaiting[0].status == 'finish') {
 			const respJ = {
 				type : "ERROR",
 				payload : {
@@ -650,11 +730,14 @@ const updateSQL = (user1id,user2id,data,cancelStatus) => {
 			}		
 			lookup[user1id].send(JSON.stringify(respJ));
 		}
+		} catch (e) {
+			console.log("gameAccept : status column not found");
+		}
 	});
 }
 
 const battleCancel = (uniqId,data) => {
-	log.info("broadcast massege to all clients");
+	log.info("battle cancel occured");
 	user2id=data.payload.to;
 	user1id=uniqId;
 	//user2id=data.payload.from;
@@ -665,7 +748,7 @@ const battleCancel = (uniqId,data) => {
 }
 
 const gameCancel = (uniqId,data) => {
-	log.info("broadcast massege to all clients");
+	log.info("gameCancel occured");
 	const dateTime = new Date();
 	user1id=data.payload.to;
 	user2id=uniqId;
@@ -674,11 +757,6 @@ const gameCancel = (uniqId,data) => {
 	//const userId = data.payload.to;
 	updateSQL(user1id,user2id,data,'gameCancel');
 }
-
-const gameResp = (uniqId,data) => {
-	log.info("broadcast massege to all clients");
-}
-
 
 
 const initOnline = (uniqId,data,socket) => {
@@ -713,7 +791,6 @@ const handleCommand = {
 	'GAME-ACCEPT' : gameAccept,
 	'GAME-CANCEL' : gameCancel,
 	'BATTLE-CANCEL' : battleCancel,
-	'GAME-RESP' : gameResp,
 	'SET-ANS': setAnswer,
 	'GAME-END': gameEnd,
 //	'SET-TOKEN':getGameToken,

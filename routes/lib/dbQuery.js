@@ -425,7 +425,7 @@ whereMiningMcqList:"SELECT \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
-			/* LIMIT 20 */ LIMIT 12 \
+			/* LIMIT 20 */ /* LIMIT 12 */ \
 			;",			
 /* MCQMining  stage 9*/
 whereMiningMcqStage9List:" \
@@ -459,6 +459,67 @@ whereMiningMcqStage9List:" \
 			;",
 /* Random stage > 9*/
 whereMiningMcqRandList:" \
+			SELECT \
+			video.id as lessonId, \
+			mcq_question.id as questionId, \
+			mcq_question.heading as heading, \
+			mcq_question.question as question, \
+			mcq_question.image as QuestionImage, \
+			subject.subject_english as subject, \
+			grade.grade_english as grade, \
+			mcq_option.id as optionId, \
+			mcq_option.option as answer, \
+			mcq_option.image as answerImage, \
+			( \
+				CASE WHEN mcq_option.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
+			FROM ( \
+					SELECT \
+					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
+					FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId \
+					FROM video \
+					WHERE grade=? AND lesson <> 0 \
+					GROUP BY subject_id \
+					) AS randVideo \
+			INNER JOIN video ON video.id=randVideo.randId \
+			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
+			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
+			INNER JOIN subject ON subject.id=video.subject_id \
+			INNER JOIN grade ON grade.id=video.grade \
+			WHERE video.grade=? \
+			; \
+			SELECT \
+			@iqq.level as lessonId, \
+			iqq.id as questionId, \
+			@heading := 'NULL' as heading, \
+			iqq.question as question, \
+			@Qimage := 'NULL' as QuestionImage, \
+			@grade := 'IQ' as grade, \
+			iqq.level as subject, \
+			iqo.id as optionId, \
+			iqo.option as answer, \
+			@answerImage = 'NULL' as answerImage, \
+			( \
+				CASE WHEN iqo.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
+			FROM ( \
+					SELECT \
+					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
+					id \
+					FROM iq_question as iqq \
+					ORDER BY RAND() LIMIT 6 \
+					) AS iqqu \
+			INNER JOIN iq_question AS iqq ON iqq.id=iqqu.id \
+			INNER JOIN iq_option AS iqo ON iqo.question_id=iqq.id \
+			;",
+/* gaming rand */
+whereChallengeRandList:" \
 			SELECT \
 			video.id as lessonId, \
 			mcq_question.id as questionId, \
@@ -991,26 +1052,44 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					ba.user_id AS gamerId, \
 					up.name, \
 					up.avatar_id, \
-					(CASE WHEN COUNT(ba.id) = "+properties.battleQuestionThreshold+" \
+					(CASE WHEN /* ba.id IS NOT NULL */ COUNT(ba.id) = "+properties.battleQuestionThreshold+" \
 						THEN 'True' \
 						ELSE 'False' \
 					END) as hasCompleted, \
-					COUNT(ba.id) as totalQuestions, \
-					(SELECT \
-						COUNT(ban.id) \
-						FROM battle_answer as ban \
-						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
-						WHERE mop.state = 1 AND ban.user_id=ba.user_id AND ban.battle_id=ba.battle_id \
-					) AS correctAnswers, \
-					(SELECT \
-						COUNT(ban.id) \
-						FROM battle_answer as ban \
-						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
-						WHERE mop.state = 0 AND ban.user_id=ba.user_id AND ban.battle_id=ba.battle_id \
-					) AS wrongAnswers, \
-					DATE_FORMAT(MIN(ba.started),'%Y-%m-%d %H:%m:%s') AS startedAt, \
-					DATE_FORMAT(MAX(ba.ended),'%Y-%m-%d %H:%m:%s') AS endedAt, \
-					TIMEDIFF(MAX(ba.ended),MIN(ba.started)) AS duration \
+					(CASE WHEN ba.id IS NULL \
+						THEN 0 \
+						ELSE COUNT(ba.id) \
+					END) as totalQuestions, \
+					(CASE WHEN ba.id IS NULL \
+						THEN 0 \
+						ELSE (SELECT \
+							COUNT(ban.id) \
+							FROM battle_answer as ban \
+							INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
+							WHERE mop.state = 1 AND ban.user_id=ba.user_id AND ban.battle_id=ba.battle_id \
+							) \
+					END) AS correctAnswers, \
+					(CASE WHEN ba.id IS NULL \
+						THEN 0 \
+						ELSE (SELECT \
+							COUNT(ban.id) \
+							FROM battle_answer as ban \
+							INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
+							WHERE mop.state = 0 AND ban.user_id=ba.user_id AND ban.battle_id=ba.battle_id \
+							) \
+					END) AS wrongAnswers, \
+					(CASE WHEN ba.id IS NULL \
+						THEN '0000-00-00 00:00:00' \
+						ELSE DATE_FORMAT(MIN(ba.started),'%Y-%m-%d %H:%m:%s') \
+					END) AS startedAt, \
+					(CASE WHEN ba.id IS NULL \
+						THEN '0000-00-00 00:00:00' \
+						ELSE DATE_FORMAT(MAX(ba.ended),'%Y-%m-%d %H:%m:%s') \
+					END) AS endedAt, \
+					(CASE WHEN ba.id IS NULL \
+						THEN '0000-00-00 00:00:00' \
+						ELSE TIMEDIFF(MAX(ba.ended),MIN(ba.started)) \
+					END) AS duration \
 					FROM battle_answer AS ba \
 					INNER JOIN user ON user.uniqid = ba.user_id \
 					INNER JOIN user_profile AS up ON up.user_id = user.id \
@@ -1609,6 +1688,112 @@ getAnswerInsertId: function(query,fields,callback) {
 			con.release();
 		});
 	},
+	getBuddyChallengeRandList: function(query,fields,callback) {
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+				if (err) { 
+					throw err;
+					//console.log("getminingmcqstage9List database server error");
+				} else 	if (!result){
+   					callback(JSON.stringify(status.server()));
+ 				} else {
+ 					//single row
+ 					//var normalObj = Object.assign({}, results[0]);
+ 					const [lesson,iq] = result;
+ 					var options =[];
+ 					var mcqList =[];
+ 					var iqOption = []; //iq options
+ 					var iqList = [];//iq questions
+ 					var qCount = 0; //for every 3 question 
+
+					//mcq from IQs
+					var iqJson = iq.map((iqObj,index) => {
+						var optionData={
+							"optionId":iqObj.optionId,
+							"option":iqObj.answer,
+							"image":iqObj.image,
+							"isCorrect":iqObj.isCorrect
+						}
+						
+						//apened option into option array
+						iqOption.push(optionData);		
+						if (!((index+1) % 4)){
+								var iqQuestion={
+									"lessonId":iqObj.lessonId,
+									"grade":iqObj.grade,
+									"subject":iqObj.subject,
+									"questionId":iqObj.questionId,
+									"heading":iqObj.heading,
+									"question":iqObj.question,
+									"image":iqObj.image,
+									"options":iqOption
+								}
+								//console.log("qcount < 3 :"+qCount+" : "+question.questionId);
+								iqList.push(iqQuestion);
+								iqOption=[];
+						}
+						return Object.assign({}, iqObj);
+					});
+					
+					//mcq from grades
+					var jsonResults = lesson.map((mysqlObj, index) => {
+						//every row has option
+						
+						var optionData={
+							"optionId":mysqlObj.optionId,
+							"option":mysqlObj.answer,
+							"image":mysqlObj.image,
+							"isCorrect":mysqlObj.isCorrect
+						}
+						//each option object put into array
+						options.push(optionData);
+						
+						if (!((index+1) % 4)){
+							//qCount++;
+							//console.log("rowCount: "+qCount);
+							//console.log("question Id: "+mysqlObj.questionId);
+							//limit only 3 question
+							qCount++;
+							if (qCount <= 3) {
+								var question={
+									"lessonId":mysqlObj.lessonId,
+									"grade":mysqlObj.grade,
+									"subject":mysqlObj.subject,
+									"questionId":mysqlObj.questionId,
+									"heading":mysqlObj.heading,
+									"question":mysqlObj.question,
+									"image":mysqlObj.image,
+									"options":options
+								}
+								//console.log("qcount < 3 :"+qCount+" : "+question.questionId);
+								mcqList.push(question);
+								//every 5 question reset qcount to 0
+							} else if (qCount == 5) {
+								//console.log("qcount at limit :"+qCount);
+								qCount=0;
+							} 
+
+							//console.log("option id: "+mysqlObj.optionId);
+							// put option array into question object at every 4 line
+							//append question into array and avoid null occurance of every 3 question
+							//if (question) {
+							//	mcqList.push(question);
+							//}
+							//clear question object and option object at every 4 line
+							options=[];
+						}
+						
+						return Object.assign({}, mysqlObj);
+					});
+					//push iq question/option into mcqList array
+					mcqList.push(iqList);
+					callback(JSON.stringify(mcqList)); 		
+
+				}
+			});
+			con.release();
+		});
+	},
 getMiningMcqList: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
@@ -1664,7 +1849,7 @@ getMiningMcqList: function(query,fields,callback) {
 				}
 			});
 			con.release();
-	npp	});
+		});
 	},
 	
 getIqList: function(query,fields,callback) {
