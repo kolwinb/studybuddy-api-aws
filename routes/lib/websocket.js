@@ -69,6 +69,7 @@ const websocketServer = {
 		
 		//var id=0;
 		//var lookup={};
+
 		//disconnect client after 10 seconds if network failure
 		const interval = setInterval(function ping() {
 			wss.clients.forEach(function each(socket) {
@@ -81,6 +82,10 @@ const websocketServer = {
 				socket.ping();
 			});
 		},5000);
+		
+		wss.on('close', function close(){
+			clearInterval(interval);
+		});
 
 		wss.on('connection', (socket,req) => {
 			const apiKey = req.headers["x-api-key"];
@@ -193,8 +198,6 @@ const websocketServer = {
 					});				
 				},10000);									
 
-				
-
 				//socket.send('studybuddy online chat');
 				
 				socket.on('error',(error) => {
@@ -246,7 +249,7 @@ const getGameResult= (players,battleId,dateTime) => {
 	log.info("players marks A & B "+player1Marks+" : "+player2Marks);
 	
 	if (player1Marks == player2Marks){
-		log.info(players[0].name+" marks equal with "+players[1].name);
+		log.info(players[0].name+" = "+players[1].name);
 		players[0].hasWon='True';
 		players[0].coins=100;
 		players[1].hasWon='True';
@@ -302,7 +305,7 @@ const updateGameStatus = (players,battleId) => {
 }
 
 const gameEnd = (uniqId,data) => {
-	log.info("GAME-END : "+JSON.stringify(data)+"uniqId : "+uniqId);
+	log.info("GAME-END : "+JSON.stringify(data)+" uniqId : "+uniqId);
 	const dateTime = new Date();
 	const battleId=data.payload.battleId;
 	//const userId = data["payload"]["gamerId"];
@@ -322,9 +325,11 @@ const gameEnd = (uniqId,data) => {
 				if (!players[0]) {
 					log.error("GAME-END : "+uniqId+" ' hasCompleted' null occured when game-finish of student");
 					sendError(lookup[uniqId],status.wsFinishError());
+					//sendError(lookup[uniqId],players[0]);
 				} else if (!players[1]){
 					log.error("GAME-END : "+uniqId+" ' hasCompleted' null occured when game-finish of student");
 					sendError(lookup[uniqId],status.wsFinishError());
+					//sendError(lookup[uniqId],players[1]);
 				//} else if (players){
 				/*
 				} else	if ((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'True')) {
@@ -548,8 +553,11 @@ const gameAccept = (uniqId,data) => {
 					
 					//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMcq){
 					//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,7],function(callbackMcq){
+					//dbQuery.getMiningMcqStage9List(dbQuery.whereChallengeRandList,[gradeId,gradeId],function(callbackMcq){
+					//production
 					//dbQuery.getBuddyChallengeRandList(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMcq){
-					dbQuery.getMiningMcqStage9List(dbQuery.whereChallengeRandList,[gradeId,gradeId],function(callbackMcq){
+					//test 
+					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMcq){
 						if (callbackMcq){
 							//console.log("stage9 mcqs :"+JSON.stringify(callbackMcq));
 							const respMcq = {

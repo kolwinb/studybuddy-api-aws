@@ -479,7 +479,7 @@ whereMiningMcqRandList:" \
 			FROM ( \
 					SELECT \
 					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
-					FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId \
+					FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId \
 					FROM video \
 					WHERE grade=? AND lesson <> 0 \
 					GROUP BY subject_id \
@@ -490,6 +490,7 @@ whereMiningMcqRandList:" \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
 			WHERE video.grade=? \
+			LIMIT 4 \
 			;",
 /* gaming rand */
 whereChallengeRandList:" \
@@ -513,7 +514,7 @@ whereChallengeRandList:" \
 			FROM ( \
 					SELECT \
 					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
-					FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId \
+					FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId \
 					FROM video \
 					WHERE grade=? AND lesson <> 0 \
 					GROUP BY subject_id \
@@ -613,9 +614,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					video.short_desc as shortDesc, \
 					video.long_desc as longDesc, \
 					video.name as fileName, \
-					grade.grade_english as grade, \
-					syllabus.syllabus_english as syllabus, \
-					subject.subject_english as subject \
+					@grade := grade.grade_english as grade, \
+					@syllabus := syllabus.syllabus_english as syllabus, \
+					@subject := subject.subject_english as subject \
 					FROM video \
 					INNER JOIN subject ON subject.id=video.subject_id \
 					INNER JOIN grade ON grade.id=video.grade \
@@ -624,10 +625,16 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					SELECT mcq_question.id,\
 					mcq_question.heading,\
 					mcq_question.question, \
-					mcq_question.image \
+					(CASE WHEN mcq_question.image != '' \
+						THEN CONCAT('"+properties.vodUrl+"','/',@grade,'/',@syllabus,'/',@subject,'/mcq/',mcq_question.image) \
+						ELSE 'null'\
+					END ) as image \
 					FROM mcq_question \
 					WHERE mcq_question.video_id=?; \
-					SELECT mcq_option.id, mcq_option.option, mcq_option.image, CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect \
+					SELECT mcq_option.id, \
+					mcq_option.option, \
+					mcq_option.image, \
+					CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect \
 					FROM mcq_option \
 					INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
 					WHERE mcq_question.video_id=?",
@@ -1052,7 +1059,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					ba.user_id AS gamerId, \
 					up.name, \
 					up.avatar_id, \
-					(CASE WHEN /* ba.id IS NOT NULL */ COUNT(ba.id) = "+properties.battleQuestionThreshold+" \
+					(CASE WHEN ba.id IS NOT NULL /* COUNT(ba.id) = "+properties.battleQuestionThreshold+" */ \
 						THEN 'True' \
 						ELSE 'False' \
 					END) as hasCompleted, \

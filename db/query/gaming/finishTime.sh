@@ -42,14 +42,14 @@ up.avatar_id \
 FROM battle_answer as ba \
 INNER JOIN user ON user.uniqid=ba.user_id \
 INNER JOIN user_profile as up ON up.user_id=user.id \
-WHERE ba.battle_id=$1 AND ba.user_id='1660785554424o0lg2ll6ycu70t' \
+WHERE ba.battle_id=$1 AND ba.user_id='1663565746424o0lbkal88c3ct4'  /* ba.user_id='1660785554424o0lg2ll6ycu70t' */ \
 GROUP BY ba.user_id \
 ; \
 " | $msql
 
 echo " \
 SELECT \
-(CASE WHEN COUNT(ba.id) <> 0 \
+(CASE WHEN ba.id IS NOT NULL \
 	THEN 'True' \
 	ELSE 'False' \
 	END) as isFinished, \
@@ -57,10 +57,9 @@ ba.user_id, \
 up.name, \
 up.avatar_id \
 FROM user_profile as up \
-INNER JOIN user ON user.uniqid=up.user_id \
-INNER JOIN battle_answer as ba ON ba.user_id=user.id \
-WHERE ba.battle_id=$1 AND user.uniqid='1660785554424o0lg2ll6ycu70t' \
-GROUP BY ba.user_id \
+INNER JOIN user ON user.id=up.user_id \
+LEFT JOIN battle_answer as ba ON ba.user_id=user.id \
+WHERE ba.battle_id=$1 AND user.uniqid='1663565746424o0lbkal88c3ct4' \
 ; \
 " | $msql
 

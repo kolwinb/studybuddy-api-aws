@@ -490,6 +490,7 @@ whereMiningMcqRandList:" \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
 			WHERE video.grade=? \
+			LIMIT 4 \
 			;",
 /* gaming rand */
 whereChallengeRandList:" \
@@ -1055,52 +1056,60 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	
 	whereBattleEnd:" \
 					SELECT \
-					ba.user_id AS gamerId, \
+					user.uniqid AS gamerId, \
 					up.name, \
 					up.avatar_id, \
-					(CASE WHEN /* ba.id IS NOT NULL */ COUNT(ba.id) = "+properties.battleQuestionThreshold+" \
+					(CASE WHEN ba.id IS NOT NULL \
 						THEN 'True' \
 						ELSE 'False' \
 					END) as hasCompleted, \
-					(CASE WHEN ba.id IS NULL \
-						THEN 0 \
-						ELSE COUNT(ba.id) \
-					END) as totalQuestions, \
-					(CASE WHEN ba.id IS NULL \
-						THEN 0 \
-						ELSE (SELECT \
-							COUNT(ban.id) \
-							FROM battle_answer as ban \
-							INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
-							WHERE mop.state = 1 AND ban.user_id=ba.user_id AND ban.battle_id=ba.battle_id \
-							) \
-					END) AS correctAnswers, \
-					(CASE WHEN ba.id IS NULL \
-						THEN 0 \
-						ELSE (SELECT \
-							COUNT(ban.id) \
-							FROM battle_answer as ban \
-							INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
-							WHERE mop.state = 0 AND ban.user_id=ba.user_id AND ban.battle_id=ba.battle_id \
-							) \
-					END) AS wrongAnswers, \
-					(CASE WHEN ba.id IS NULL \
-						THEN '0000-00-00 00:00:00' \
-						ELSE DATE_FORMAT(MIN(ba.started),'%Y-%m-%d %H:%m:%s') \
-					END) AS startedAt, \
-					(CASE WHEN ba.id IS NULL \
-						THEN '0000-00-00 00:00:00' \
-						ELSE DATE_FORMAT(MAX(ba.ended),'%Y-%m-%d %H:%m:%s') \
-					END) AS endedAt, \
-					(CASE WHEN ba.id IS NULL \
-						THEN '0000-00-00 00:00:00' \
-						ELSE TIMEDIFF(MAX(ba.ended),MIN(ba.started)) \
-					END) AS duration \
-					FROM battle_answer AS ba \
-					INNER JOIN user ON user.uniqid = ba.user_id \
-					INNER JOIN user_profile AS up ON up.user_id = user.id \
-					WHERE ba.battle_id=? \
-					GROUP BY ba.user_id \
+					(SELECT \
+						COUNT(ban.id) \
+						FROM battle_answer as ban \
+						WHERE ban.user_id = user.uniqid AND ban.battle_id=bp.id \
+					) as totalQuestions, \
+					(SELECT \
+						COUNT(ban.id) \
+						FROM battle_answer as ban \
+						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
+						WHERE ban.user_id = user.uniqid AND ban.battle_id = bp.id AND mop.state = 1 \
+					) as correctAnswers, \
+					(SELECT \
+						COUNT(ban.id) \
+						FROM battle_answer as ban \
+						INNER JOIN mcq_option as mop ON mop.id=ban.option_id \
+						WHERE ban.user_id = user.uniqid AND ban.battle_id = bp.id AND mop.state = 0 \
+					) as wrongAnswers, \
+					(SELECT \
+						(CASE WHEN COUNT(ban.id) = 0 \
+							THEN '0000-00-00 00:00:00' \
+							ELSE DATE_FORMAT(MIN(ban.started),'%Y-%m-%d %H:%m:%s') \
+						END) as started \
+						FROM battle_answer as ban \
+						WHERE ban.user_id = user.uniqid AND ban.battle_id=bp.id \
+					) as startedAt, \
+					(SELECT \
+						(CASE WHEN COUNT(ban.id) = 0 \
+							THEN '0000-00-00 00:00:00' \
+							ELSE DATE_FORMAT(MAX(ban.started),'%Y-%m-%d %H:%m:%s') \
+						END) as ended \
+						FROM battle_answer as ban \
+						WHERE ban.user_id = user.uniqid AND ban.battle_id=bp.id \
+					) as endedAt, \
+					(SELECT \
+						(CASE WHEN COUNT(ban.id) = 0 \
+							THEN '0000-00-00 00:00:00' \
+							ELSE TIMEDIFF(MAX(ban.ended),MIN(ban.started)) \
+						END) as duration \
+						FROM battle_answer as ban \
+						WHERE ban.user_id = user.uniqid AND ban.battle_id=bp.id \
+					) as duration \
+					FROM battle_pool AS bp \
+					INNER JOIN user ON user.uniqid=bp.user1id OR user.uniqid=bp.user2id \
+					INNER JOIN user_profile as up ON up.user_id=user.id \
+					LEFT JOIN battle_answer AS ba ON ba.battle_id=bp.id \
+					WHERE bp.id=? \
+					GROUP BY up.user_id \
 					;",
 	whereGameAccept:"SELECT id,status FROM battle_pool WHERE user1id = ? AND user2id = ? AND id = ?;",
 	whereBattleId:"SELECT id,status FROM battle_pool WHERE id=?;",
