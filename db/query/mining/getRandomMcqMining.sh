@@ -21,6 +21,9 @@ subjectId=$1
 
 echo " \
 		SELECT \
+			video.total, \
+			video.max, \
+			video.minMax, \
 			mcq_question.id, \
 			vid.grade, \
 			vid.subject_id, \
@@ -28,7 +31,11 @@ echo " \
 			FROM (SELECT \
 				/* DISTINCT(video.subject_id), */ \
 				/* FLOOR(RAND()*(max(id)-min(id))+min(id)) as randId */ \
-				FLOOR(RAND()*(10-min(id))+min(id)) as randId \
+				COUNT(id) as Total, \
+				max(id) as max, \
+				SUM(COUNT(id)+min(id)) as minMax, \
+				FLOOR(RAND()*(max(id)-min(id))+min(id)) as randId, \
+				subject_id \
 			FROM video \
 			WHERE grade=6 AND lesson != 0 \
 			GROUP BY subject_id \
@@ -56,3 +63,16 @@ echo " \
 	;" | $msql
 
 echo " "
+
+echo " \
+	SELECT \
+	video.id, \
+	video.subject_id, \
+	video.grade \
+	FROM video \
+	INNER JOIN mcq_question on mcq_question.video_id=video.id \
+	INNER JOIN mcq_option on mcq_option.question_id=mcq_question.id \
+	WHERE video.grade=6 \
+	ORDER BY RAND() \
+	LIMIT 24 \
+	;" | $msql

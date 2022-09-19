@@ -69,6 +69,19 @@ const websocketServer = {
 		
 		//var id=0;
 		//var lookup={};
+		//disconnect client after 10 seconds if network failure
+		const interval = setInterval(function ping() {
+			wss.clients.forEach(function each(socket) {
+				if (socket.isAlive === false){
+					updateOnlineStatus(2,socket.id);
+					return socket.terminate();
+				}
+				
+				socket.isAlive = false;
+				socket.ping();
+			});
+		},5000);
+
 		wss.on('connection', (socket,req) => {
 			const apiKey = req.headers["x-api-key"];
 			const apiSecret = req.headers["x-api-secret"];
@@ -181,20 +194,7 @@ const websocketServer = {
 				},10000);									
 
 				
-				//disconnect client after 10 seconds if network failure
-				/*
-				const interval = setInterval(function ping() {
-					wss.clients.forEach(function each(socket) {
-						if (socket.isAlive === false){
-							updateOnlineStatus(2,socket.id);
-							 return socket.terminate();
-						}
-						
-						socket.isAlive = false;
-						socket.ping();
-					});
-				},30000);
-				*/
+
 				//socket.send('studybuddy online chat');
 				
 				socket.on('error',(error) => {
@@ -255,23 +255,6 @@ const getGameResult= (players,battleId,dateTime) => {
 		debitBattleCoin(players[0].gamerId,battleId,100,dateTime);
 		debitBattleCoin(players[1].gamerId,battleId,100,dateTime);
 		
-		/*
-		dbQuery.getSelect(dbQuery.whereBattleCoin,[players[0].gamerId,battleId,'debit'],function(callbackCoin){
-			if (!callbackCoin[0]){
-				dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[0].gamerId,battleId,'debit',100,dateTime],function(){});
-			} else {
-				sendError(lookup[players[0].gamerId],status.wsBattleCoin());
-			}
-		});
-		
-		dbQuery.getSelect(dbQuery.whereBattleCoin,[players[1].gamerId,battleId,'debit'],function(callbackCoin){
-			if (!callbackCoin[0]){
-			dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[1].gamerId,battleId,'debit',100,dateTime],function(){});
-			} else {
-				sendError(lookup[players[1].gamerId],status.wsBattleCoin());
-			}
-		});
-		*/
 		
 	} else if (player1Marks > player2Marks) {
 		log.info(players[0].name+" WON");
@@ -281,15 +264,6 @@ const getGameResult= (players,battleId,dateTime) => {
 		players[1].coins=0;
 
 		debitBattleCoin(players[0].gamerId,battleId,100,dateTime);
-		/*
-		dbQuery.getSelect(dbQuery.whereBattleCoin,[players[0].gamerId,battleId,'debit'],function(callbackCoin){
-			if (!callbackCoin[0]){
-				dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[0].gamerId,battleId,'debit',100,dateTime],function(){});
-			} else {
-				sendError(lookup[players[0].gamerId],status.wsBattleCoin());
-			}
-		});
-		*/
 								
 	} else if (player2Marks > player1Marks) {
 		log.info(players[1].name+" WON");
@@ -299,15 +273,6 @@ const getGameResult= (players,battleId,dateTime) => {
 		players[0].coins=0;
 
 		debitBattleCoin(players[1].gamerId,battleId,100,dateTime);
-		/*
-		dbQuery.getSelect(dbQuery.whereBattleCoin,[players[1].gamerId,battleId,'debit'],function(callbackCoin){
-			if (!callbackCoin[0]){
-				dbQuery.setInsert(dbQuery.insertBattleCoin,['',players[1].gamerId,battleId,'debit',100,dateTime],function(){});
-			} else {
-				sendError(lookup[players[1].gamerId],status.wsBattleCoin());
-			}
-		});						
-		*/
 	} else if (player2Marks == 0 &&  player1Marks == 0) {
 		log.info(players[1].name+"Both lose");
 		players[1].hasWon='False';

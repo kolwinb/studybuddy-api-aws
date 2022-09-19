@@ -479,7 +479,41 @@ whereMiningMcqRandList:" \
 			FROM ( \
 					SELECT \
 					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
-					FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId \
+					FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId \
+					FROM video \
+					WHERE grade=? AND lesson <> 0 \
+					GROUP BY subject_id \
+					) AS randVideo \
+			INNER JOIN video ON video.id=randVideo.randId \
+			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
+			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
+			INNER JOIN subject ON subject.id=video.subject_id \
+			INNER JOIN grade ON grade.id=video.grade \
+			WHERE video.grade=? \
+			;",
+/* gaming rand */
+whereChallengeRandList:" \
+			SELECT \
+			video.id as lessonId, \
+			mcq_question.id as questionId, \
+			mcq_question.heading as heading, \
+			mcq_question.question as question, \
+			mcq_question.image as QuestionImage, \
+			subject.subject_english as subject, \
+			grade.grade_english as grade, \
+			mcq_option.id as optionId, \
+			mcq_option.option as answer, \
+			mcq_option.image as answerImage, \
+			( \
+				CASE WHEN mcq_option.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
+			FROM ( \
+					SELECT \
+					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
+					FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId \
 					FROM video \
 					WHERE grade=? AND lesson <> 0 \
 					GROUP BY subject_id \
@@ -510,47 +544,13 @@ whereMiningMcqRandList:" \
 			) as isCorrect \
 			FROM ( \
 					SELECT \
-					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
+					FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId, \
 					id \
 					FROM iq_question as iqq \
 					ORDER BY RAND() LIMIT 6 \
 					) AS iqqu \
 			INNER JOIN iq_question AS iqq ON iqq.id=iqqu.id \
 			INNER JOIN iq_option AS iqo ON iqo.question_id=iqq.id \
-			;",
-/* gaming rand */
-whereChallengeRandList:" \
-			SELECT \
-			video.id as lessonId, \
-			mcq_question.id as questionId, \
-			mcq_question.heading as heading, \
-			mcq_question.question as question, \
-			mcq_question.image as QuestionImage, \
-			subject.subject_english as subject, \
-			grade.grade_english as grade, \
-			mcq_option.id as optionId, \
-			mcq_option.option as answer, \
-			mcq_option.image as answerImage, \
-			( \
-				CASE WHEN mcq_option.state = 1 \
-					THEN 'True' \
-					ELSE 'False' \
-				END \
-			) as isCorrect \
-			FROM ( \
-					SELECT \
-					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
-					FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId \
-					FROM video \
-					WHERE grade=? AND lesson <> 0 \
-					GROUP BY subject_id \
-					) AS randVideo \
-			INNER JOIN video ON video.id=randVideo.randId \
-			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
-			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
-			INNER JOIN subject ON subject.id=video.subject_id \
-			INNER JOIN grade ON grade.id=video.grade \
-			WHERE video.grade=? \
 			;",
 /* whereMiningStage */
 whereMiningMcqStage: " \
@@ -613,9 +613,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					video.short_desc as shortDesc, \
 					video.long_desc as longDesc, \
 					video.name as fileName, \
-					grade.grade_english as grade, \
-					syllabus.syllabus_english as syllabus, \
-					subject.subject_english as subject \
+					@grade := grade.grade_english as grade, \
+					@syllabus := syllabus.syllabus_english as syllabus, \
+					@subject := subject.subject_english as subject \
 					FROM video \
 					INNER JOIN subject ON subject.id=video.subject_id \
 					INNER JOIN grade ON grade.id=video.grade \
@@ -624,10 +624,16 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					SELECT mcq_question.id,\
 					mcq_question.heading,\
 					mcq_question.question, \
-					mcq_question.image \
+					(CASE WHEN mcq_question.image != '' \
+						THEN CONCAT('"+properties.vodUrl+"','/',@grade,'/',@syllabus,'/',@subject,'/mcq/',mcq_question.image) \
+						ELSE 'null'\
+					END ) as image \
 					FROM mcq_question \
 					WHERE mcq_question.video_id=?; \
-					SELECT mcq_option.id, mcq_option.option, mcq_option.image, CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect \
+					SELECT mcq_option.id, \
+					mcq_option.option, \
+					mcq_option.image, \
+					CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect \
 					FROM mcq_option \
 					INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
 					WHERE mcq_question.video_id=?",
