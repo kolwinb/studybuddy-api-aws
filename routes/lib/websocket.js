@@ -322,6 +322,7 @@ const gameEnd = (uniqId,data) => {
 			dbQuery.getSelectJson(dbQuery.whereBattleEnd,[battleId],function(callbackEnd) {
 				players=JSON.parse(callbackEnd);
 				log.info("GAME-END callbackEnd:"+JSON.stringify(players));
+				/*
 				if (!players[0]) {
 					log.error("GAME-END : "+uniqId+" ' hasCompleted' null occured when game-finish of student");
 					sendError(lookup[uniqId],status.wsFinishError());
@@ -331,24 +332,31 @@ const gameEnd = (uniqId,data) => {
 					sendError(lookup[uniqId],status.wsFinishError());
 					//sendError(lookup[uniqId],players[1]);
 				//} else if (players){
-				/*
-				} else	if ((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'True')) {
-					getGameResult(players,battleId,dateTime);
-				} else	if ((players[0].hasCompleted == 'True') && (players[1].hasCompleted == 'False')) {
-					getGameResult(players,battleId,dateTime);
-				} else	if ((players[0].hasCompleted == 'False') && (players[1].hasCompleted == 'True')) {
-					getGameResult(players,battleId,dateTime);
 				*/
-				} else	if ((players[0].hasCompleted == 'False') && (players[1].hasCompleted == 'False')) {
-					updateGameStatus(players,battleId,dateTime);
+
+				if ((toTimestamp(players[0].battleStartedAt) >= toTimestamp("00:00:30")) || (toTimestamp(players[1].battleStartedAt) >= toTimestamp("00:00:30"))) {
+						updateGameStatus(players,battleId,dateTime);
+				} else if ((properties.battleQuestionThreshold == players[0].totalQuestions) && (properties.battleQuestionThreshold == players[1].totalQuestions)) {
+					if ((players[0].totalQuestions == 0) && (players[1].totalQuestions == 0)) {
+						updateGameStatus(players,battleId,dateTime);
+					} else {
+						getGameResult(players,battleId,dateTime);
+					}
 				} else {
-					getGameResult(players,battleId,dateTime);
+					log.info("can't end battle because of the others are not finished");
+					sendError(lookup[uniqId],status.wsFinishError());
 				}
 			});
 		
 		}
 	});
 }				
+
+const toTimestamp= (strDate) => {
+	const dt = new Date(strDate).getTime();
+	log.info("toTimestamp : "+dt);
+	return dt / 1000;
+}
 
 const setAnswer = (uniqId,data) => {
 	const userId=uniqId;

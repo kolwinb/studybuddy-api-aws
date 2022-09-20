@@ -764,12 +764,13 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					WHERE student_answer.user_id=? AND video.subject_id IN \
 					( SELECT id FROM subject) GROUP By video.subject_id; \
 				/* chart of total lesson by last 7 day */ \
-				SELECT COUNT(DISTINCT(video.id)) AS totalLessons, \
+				SELECT \
+					COUNT(DISTINCT(video.id)) AS totalLessons, \
 					DATE_FORMAT(started,'%a') AS dayName \
 					FROM student_answer \
 					INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
 					INNER JOIN video ON video.id=mcq_question.video_id \
-					WHERE user_id=? /* AND NOW() <= DATE_ADD(student_answer.started,INTERVAL 7 DAY)*/ \
+					WHERE user_id=? AND NOW() <= DATE_ADD(student_answer.started,INTERVAL 7 DAY)  \
 					GROUP BY DATE_FORMAT(started,'%a'); \
 				/* Wallet */ \
 				( \
@@ -1059,6 +1060,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					user.uniqid AS gamerId, \
 					up.name, \
 					up.avatar_id, \
+					bp.datetime as battleStartedAt, \
 					(CASE WHEN ba.id IS NOT NULL \
 						THEN 'True' \
 						ELSE 'False' \
