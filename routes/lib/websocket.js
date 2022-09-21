@@ -248,7 +248,14 @@ const getGameResult= (players,battleId,dateTime) => {
 	player2Marks=players[1].correctAnswers;
 	log.info("players marks A & B "+player1Marks+" : "+player2Marks);
 	
-	if (player1Marks == player2Marks){
+	if (player2Marks == 0 &&  player1Marks == 0) {
+		log.info(players[1].name+"Both lose");
+		players[1].hasWon='False';
+		players[1].coins=0;
+		players[0].hasWon='False';
+		players[0].coins=0;
+
+	} else if (player1Marks == player2Marks){
 		log.info(players[0].name+" = "+players[1].name);
 		players[0].hasWon='True';
 		players[0].coins=100;
@@ -257,8 +264,6 @@ const getGameResult= (players,battleId,dateTime) => {
 		
 		debitBattleCoin(players[0].gamerId,battleId,100,dateTime);
 		debitBattleCoin(players[1].gamerId,battleId,100,dateTime);
-		
-		
 	} else if (player1Marks > player2Marks) {
 		log.info(players[0].name+" WON");
 		players[0].hasWon='True';
@@ -276,12 +281,7 @@ const getGameResult= (players,battleId,dateTime) => {
 		players[0].coins=0;
 
 		debitBattleCoin(players[1].gamerId,battleId,100,dateTime);
-	} else if (player2Marks == 0 &&  player1Marks == 0) {
-		log.info(players[1].name+"Both lose");
-		players[1].hasWon='False';
-		players[1].coins=0;
-		players[0].hasWon='False';
-		players[0].coins=0;
+;
 	}
 	//update battle_pool
 	updateGameStatus(players,battleId);
@@ -322,28 +322,22 @@ const gameEnd = (uniqId,data) => {
 			dbQuery.getSelectJson(dbQuery.whereBattleEnd,[battleId],function(callbackEnd) {
 				players=JSON.parse(callbackEnd);
 				log.info("GAME-END callbackEnd:"+JSON.stringify(players));
-				/*
-				if (!players[0]) {
-					log.error("GAME-END : "+uniqId+" ' hasCompleted' null occured when game-finish of student");
-					sendError(lookup[uniqId],status.wsFinishError());
-					//sendError(lookup[uniqId],players[0]);
-				} else if (!players[1]){
-					log.error("GAME-END : "+uniqId+" ' hasCompleted' null occured when game-finish of student");
-					sendError(lookup[uniqId],status.wsFinishError());
-					//sendError(lookup[uniqId],players[1]);
-				//} else if (players){
-				*/
 
-				if ((toTimestamp(players[0].battleStartedAt) >= toTimestamp("00:00:30")) || (toTimestamp(players[1].battleStartedAt) >= toTimestamp("00:00:30"))) {
-						updateGameStatus(players,battleId,dateTime);
+				const playerATime=toTimestamp(players[0].endedAt);
+				const playerBTime=toTimestamp(players[1].endedAt);
+				const timeLimit=toTimestamp(players[0].battleStartedAt)+parseInt(properties.limitTimeInSec); //in seconds 60*30= 1800 (30m), 60*60 = h, 
+				const currentStamp=toTimestamp(Date.now()); //get timestamp
+				
+				console.log("GAME-END TIME -> currentStamp :"+currentStamp+", timeLimit :"+timeLimit+", playerATime :"+playerATime+", playerBTime :"+playerBTime);
+				if ((isNaN(playerBTime) && isNaN(playerATime)) && (currentStamp >= timeLimit)) {
+					getGameResult(players,battleId,dateTime)
+				} else if (isNaN(playerATime) && (currentStamp >= timeLimit)) {
+					getGameResult(players,battleId,dateTime);
+				} else if (isNaN(playerBTime) && (currentStamp >= timeLimit)) { 
+					getGameResult(players,battleId,dateTime)
 				} else if ((properties.battleQuestionThreshold == players[0].totalQuestions) && (properties.battleQuestionThreshold == players[1].totalQuestions)) {
-					if ((players[0].totalQuestions == 0) && (players[1].totalQuestions == 0)) {
-						updateGameStatus(players,battleId,dateTime);
-					} else {
-						getGameResult(players,battleId,dateTime);
-					}
-				} else {
-					log.info("can't end battle because of the others are not finished");
+					getGameResult(players,battleId,dateTime);
+				} else if ((properties.battleQuestionThreshold > players[0].totalQuestions) || (properties.battleQuestionThreshold > players[1].totalQuestions)) {
 					sendError(lookup[uniqId],status.wsFinishError());
 				}
 			});
@@ -354,7 +348,7 @@ const gameEnd = (uniqId,data) => {
 
 const toTimestamp= (strDate) => {
 	const dt = new Date(strDate).getTime();
-	log.info("toTimestamp : "+dt);
+	//log.info("toTimestamp : "+dt);
 	return dt / 1000;
 }
 
@@ -565,7 +559,7 @@ const gameAccept = (uniqId,data) => {
 					//production
 					//dbQuery.getBuddyChallengeRandList(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMcq){
 					//test 
-					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMcq){
+					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningGameRandList,[gradeId,gradeId],function(callbackMcq){
 						if (callbackMcq){
 							//console.log("stage9 mcqs :"+JSON.stringify(callbackMcq));
 							const respMcq = {

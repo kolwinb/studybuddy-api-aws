@@ -490,8 +490,41 @@ whereMiningMcqRandList:" \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
 			WHERE video.grade=? \
-			LIMIT 4 \
 			;",
+whereMiningGameRandList:" \
+			SELECT \
+			video.id as lessonId, \
+			mcq_question.id as questionId, \
+			mcq_question.heading as heading, \
+			mcq_question.question as question, \
+			mcq_question.image as QuestionImage, \
+			subject.subject_english as subject, \
+			grade.grade_english as grade, \
+			mcq_option.id as optionId, \
+			mcq_option.option as answer, \
+			mcq_option.image as answerImage, \
+			( \
+				CASE WHEN mcq_option.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
+			FROM ( \
+					SELECT \
+					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
+					FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId \
+					FROM video \
+					WHERE grade=? AND lesson <> 0 \
+					GROUP BY subject_id \
+					) AS randVideo \
+			INNER JOIN video ON video.id=randVideo.randId \
+			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
+			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
+			INNER JOIN subject ON subject.id=video.subject_id \
+			INNER JOIN grade ON grade.id=video.grade \
+			WHERE video.grade=? \
+			LIMIT 8 \
+			;",			
 /* gaming rand */
 whereChallengeRandList:" \
 			SELECT \
@@ -765,13 +798,16 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					( SELECT id FROM subject) GROUP By video.subject_id; \
 				/* chart of total lesson by last 7 day */ \
 				SELECT \
-					COUNT(DISTINCT(video.id)) AS totalLessons, \
-					DATE_FORMAT(started,'%a') AS dayName \
+					COUNT(DISTINCT(video.id)) as totalLessons, \
+					/* DATE_FORMAT(started,'%a') AS dayName */ \
+					DATE_FORMAT(started,'%Y-%m-%d') AS dayName \
 					FROM student_answer \
 					INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
 					INNER JOIN video ON video.id=mcq_question.video_id \
-					WHERE user_id=? AND NOW() <= DATE_ADD(student_answer.started,INTERVAL 7 DAY)  \
-					GROUP BY DATE_FORMAT(started,'%a'); \
+					WHERE user_id=? AND started >= (NOW() - INTERVAL 7 DAY) \
+					/* GROUP BY DATE_FORMAT(started,'%a') */ \
+					GROUP BY DATE_FORMAT (started,'%d') \
+					; \
 				/* Wallet */ \
 				( \
 					SELECT \
@@ -1060,7 +1096,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					user.uniqid AS gamerId, \
 					up.name, \
 					up.avatar_id, \
-					bp.datetime as battleStartedAt, \
+					DATE_FORMAT(bp.datetime,'%Y-%m-%d %H:%m:%s') as battleStartedAt, \
 					(CASE WHEN ba.id IS NOT NULL \
 						THEN 'True' \
 						ELSE 'False' \
@@ -1466,9 +1502,13 @@ getAnswerInsertId: function(query,fields,callback) {
     						return Object.assign({}, mysqlObj);
     					});
     				 	
-					const chartDay = chartOfDay.map((mysqlObj, index) => {
+    				//chart of the day question
+					var chartDay = chartOfDay.map((mysqlObj, index) => {
+							//console.log(mysqlObj.dayName);
+							//Object.assign(mysqlObj,emptyQuestionDay);
     						return Object.assign({}, mysqlObj);
     					}); 			
+
     				
 					const langList = languageData.map((mysqlObj, index) => {
 						return Object.assign({}, mysqlObj);
