@@ -61,7 +61,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 	
 	var respJson={};
 	//console.log("authToken : "+authToken+", apiKey: "+apiKey+", apiSecret: "+apiSecret+", bodyJson: "+JSON.stringify(req.body));
-	
+	console.log("bodyjson videoId :"+bodyJson[0].videoId);
 	if (!authToken){
 		console.log("Authorization header missing");
 		res.send(JSON.parse(status.authHeader()));
@@ -69,7 +69,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
 		res.send(JSON.parse(status.unAuthApi()));
-	} else if (!bodyJson){
+	} else if (bodyJson[0].mcq.length == 0){
 		res.send(JSON.parse(status.paramNone()));
 	} else {
 		const arrToken = authToken.split(" ");

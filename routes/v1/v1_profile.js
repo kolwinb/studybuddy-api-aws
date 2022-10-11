@@ -205,33 +205,20 @@ router.post('/getInfo',function(req,res,next) {
 									res.send(JSON.parse(status.profileError()));
 								} else {							
 									dbQuery.getProfileInfo(dbQuery.profileInfo,[studentId,studentId,studentId,studentId,studentId,studentId,studentId],function(callbackUserProfile){
-										userJsonProfile=JSON.stringify(callbackUserProfile);
-										userProfile=JSON.parse(userJsonProfile);
-										if (!userProfile) {
+										//userJsonProfile=JSON.stringify(callbackUserProfile);
+										//userProfile=JSON.parse(userJsonProfile);
+										userProfile=JSON.parse(callbackUserProfile);
+										//console.log("profileInfo :"+JSON.stringify(userProfile.personalInfo.gradeId));
+										if (!userProfile.personalInfo) {
 											res.send(JSON.parse(status.profileError()));
 										} else {
 											//userProfile=JSON.parse(callbackUserProfile);
-											//console.log(userProfile);
-											//console.log(userProfile[0]['0'].correctAnswers);
+											//console.log(userProfile.personalInfo);
+											//console.log("userProfile ->"+userProfile[0]['0'].correctAnswers);
 											//console.log("property coin : "+property.coin);
-											/*
-											profileData=JSON.stringify({
-												correctAnswers:userProfile[0]['0'].correctAnswers,
-												wrongAnswers:userProfile[1]['0'].wrongAnswers,
-												totalLessons:userProfile[2]['0'].totalLessons,
-												totalQestions:userProfile[3]['0'].totalQuestions,
-												province:userProfile[4]['0'].province,
-												district:userProfile[4]['0'].district,
-												school:userProfile[4]['0'].school,
-												studentName:userProfile[4]['0'].studentName,
-												studentGrade:userProfile[4]['0'].studentGrade,
-												earnings:parseInt(userProfile[0]['0'].correctAnswers)*parseInt(property.coin),
-												languageList:userProfile[5]['0']
-											});
-											*/
 											
 											//res.send(JSON.parse(status.stateSuccess(userProfile)));
-											res.send(JSON.parse(status.stateSuccess(userProfile)));
+											res.send(JSON.parse(status.stateSuccess(JSON.stringify(userProfile))));
 											
 										}
 									});
@@ -327,7 +314,16 @@ router.post('/setSignup',function(req,res,next) {
 											var defaultLang=1;
 											dbQuery.setInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,gradeId,avatarId,defaultLang],function(callbackProfile){
 												if (!callbackProfile){
-													res.send(JSON.parse(status.server()));
+													dbQuery.setUpdate(dbQuery.updateProfile,["user_profile",schoolId,studentName,gradeId,avatarId,studentId],function (callbackProfileUpdate){
+														if(!callbackProfileUpdate){
+															res.send(JSON.parse(status.server()));
+														} else {
+															content=JSON.stringify({								
+																"description":"Profile has been updated."
+															});
+															res.send(JSON.parse(status.stateSuccess(content)));														
+														}
+													});
 												} else {
 													content=JSON.stringify({								
 														"description":"Profile data added."

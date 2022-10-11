@@ -16,4 +16,4 @@ echo "SELECT * \
 FROM video \
 INNER JOIN mcq_question ON mcq_question.video_id=video.id \
 INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
-WHERE video.id=6;" | $msql
+WHERE video.id=$1 and mcq_question.id=$2;" | $msql

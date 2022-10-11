@@ -17,7 +17,8 @@ function main(){
 echo "DELETE FROM coin_pool; \
 		DELETE FROM battle_answer; \
 		DELETE FROM battle_pool WHERE id > 1; \
-		 UPDATE battle_pool set status='waiting' WHERE id=1;" | $msql
+		;" | $msql
+#		 UPDATE battle_pool set status='waiting' WHERE id=1;" | $msql
 }
 
 main

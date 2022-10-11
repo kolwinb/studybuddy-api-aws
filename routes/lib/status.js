@@ -22,6 +22,9 @@ return JSON.stringify(
 }
 
 var State ={
+	wsOngoingError: function(){
+		return  wsSendError(915,"Battle is being run, Try again after little while...")
+	},
 	wsFinishError: function(){
 		return  wsSendError(914,"Battle is not allowed to finish")
 	},

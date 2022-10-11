@@ -1,7 +1,7 @@
 var https = require("https");
 const status=require('./status');
 //module.exports = function (data,url,path,callback) {
-exports.api  = function (data,url,path,callback) {
+var api  = (data,url,path) => {
 	var retData='';
 	const options = {
 		hostname: url,
@@ -30,16 +30,21 @@ exports.api  = function (data,url,path,callback) {
 	
 		resp.on('end', () => {
 //			console.log("https data recieved: "+res_data);
-			return callback(JSON.parse(res_data));
-
+			//return callback(JSON.parse(res_data));
+			//fetch promise api chain
+			return Promise.resolve(JSON.parse(res_data));
 		});
 	});
 
 	httpreq.on('error', error => {
 		console.error(error)
-		return callback(JSON.parse(status.operator));
+		//return callback(JSON.parse(status.operator));
+		//fectch api chain
+		return Promise.reject(JSON.parse(status.operator));
 	});
 
 	httpreq.write(data);
 	httpreq.end();
 }
+
+module.exports = api;

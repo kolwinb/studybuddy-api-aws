@@ -403,12 +403,12 @@ whereMiningMcqList:"SELECT \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as image, \
+			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as image, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -425,7 +425,7 @@ whereMiningMcqList:"SELECT \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
-			/* LIMIT 20 */ /* LIMIT 12 */ \
+			LIMIT 60 /* LIMIT 20 */  /* LIMIT 12 */ \
 			;",			
 /* MCQMining  stage 9*/
 whereMiningMcqStage9List:" \
@@ -439,7 +439,7 @@ whereMiningMcqStage9List:" \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as answerImage, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -464,12 +464,12 @@ whereMiningMcqRandList:" \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as QuestionImage, \
+			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as answerImage, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -497,12 +497,12 @@ whereMiningGameRandList:" \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as QuestionImage, \
+			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as answerImage, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -523,7 +523,7 @@ whereMiningGameRandList:" \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
 			WHERE video.grade=? \
-			LIMIT 8 \
+			LIMIT ? \
 			;",			
 /* gaming rand */
 whereChallengeRandList:" \
@@ -532,12 +532,12 @@ whereChallengeRandList:" \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as QuestionImage, \
+			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as answerImage, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -564,7 +564,7 @@ whereChallengeRandList:" \
 			iqq.id as questionId, \
 			@heading := 'NULL' as heading, \
 			iqq.question as question, \
-			@Qimage := 'NULL' as QuestionImage, \
+			@Qimage := 'NULL' as questionImage, \
 			@grade := 'IQ' as grade, \
 			iqq.level as subject, \
 			iqo.id as optionId, \
@@ -666,7 +666,10 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					WHERE mcq_question.video_id=?; \
 					SELECT mcq_option.id, \
 					mcq_option.option, \
-					mcq_option.image, \
+					(CASE WHEN mcq_option.image != '' \
+						THEN CONCAT('"+properties.vodUrl+"','/',@grade,'/',@syllabus,'/',@subject,'/mcq/',mcq_option.image) \
+						ELSE 'null' \
+					END) as image, \
 					CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect \
 					FROM mcq_option \
 					INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
@@ -1024,6 +1027,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					WHERE grade_subject.grade_id=?",
 	selectLessonList: "SELECT video.id as id, \
 						video.grade as grade, \
+						grade.grade_english as gradeName, \
 						CONCAT(video.term,' වන වාරය') as termS, \
 						video.episode as episode, \
 						video.lesson_name as heading, \
@@ -1060,6 +1064,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  								WHERE mcq_question.video_id=video.id) as totalQuestions \
 						FROM video \
 						INNER JOIN subject ON subject.id=video.subject_id \
+						INNER JOIN grade on grade.id=video.grade \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
 						WHERE video.grade=? AND video.subject_id=? ORDER BY video.id LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
@@ -1088,8 +1093,19 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	/* find game5r request exist */
 	whereBattleGameReq:"SELECT id,status FROM battle_pool WHERE id=?;",
-	whereGameReq:"SELECT id,status FROM battle_pool WHERE user1id=? AND user2id=? AND status=?;",
-	whereBattleStatus:"SELECT status FROM battle_pool WHERE id=? AND status='running';",
+	whereGameRunning:"SELECT ( \
+						CASE WHEN user1id IS NULL \
+							THEN 'False' \
+							ELSE 'True' \
+						END) as user1idState, \
+						CASE WHEN user2id IS NULL \
+							THEN 'False' \
+							ELSE 'True' \
+						END) as user2idState \
+						 FROM battle_pool WHERE (user1id=? OR user2id=?) AND status='running';",
+	whereUserBStatus:"SELECT id,status,datetime FROM battle_pool WHERE (user1id=? OR user2id=?) AND status LIKE 'running';",
+	whereGameReq:"SELECT id,status FROM battle_pool WHERE (user1id=? AND user2id=?) AND status=?;",
+	whereBattleStatus:"SELECT status,datetime FROM battle_pool WHERE id=? AND status='running';",
 	
 	whereBattleEnd:" \
 					SELECT \
@@ -1191,6 +1207,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	updateGameStatus:"UPDATE battle_pool SET status=? WHERE id=?;",
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ? AND id=?;",
+	updateGameRunning:"UPDATE battle_pool SET status=?,datetime=? WHERE id=?;",
 	updateOnlineDefault:"UPDATE user_profile SET status = ?",
 	//updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
 	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id = (SELECT id FROM user WHERE uniqId= ?)",
@@ -1206,7 +1223,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	updateIsVerify:"UPDATE ?? SET is_verify=?, created=? WHERE mobile=?",
 	updateOauth:"UPDATE ?? SET token=?, updated=? WHERE user_id=?",
 	updateLastLogin:"UPDATE ?? SET last_login=? WHERE id = ?",
-	updateProfile:"UPDATE ?? SET school_id=?,student_name=?,student_grade=?,avatar_id=? WHERE student_id=?",
+	updateProfile:"UPDATE ?? SET school_id=?,name=?,grade_id=?,avatar_id=? WHERE user_id=?",
 	updateAccountDetail:"UPDATE user_profile SET \
 			name=?, \
 			grade_id=?, \
@@ -1694,7 +1711,7 @@ getAnswerInsertId: function(query,fields,callback) {
 						var optionData={
 							"optionId":mysqlObj.optionId,
 							"option":mysqlObj.answer,
-							"image":mysqlObj.image,
+							"image":mysqlObj.optionImage,
 							"isCorrect":mysqlObj.isCorrect
 						}
 						//each option object put into array
@@ -1714,7 +1731,7 @@ getAnswerInsertId: function(query,fields,callback) {
 									"questionId":mysqlObj.questionId,
 									"heading":mysqlObj.heading,
 									"question":mysqlObj.question,
-									"image":mysqlObj.image,
+									"image":mysqlObj.questionImage,
 									"options":options
 								}
 								//console.log("qcount < 3 :"+qCount+" : "+question.questionId);
@@ -1738,6 +1755,7 @@ getAnswerInsertId: function(query,fields,callback) {
 						return Object.assign({}, mysqlObj);
 					});
 					
+					//console.log("stage9List mcqs: "+JSON.stringify(mcqList));
 					callback(JSON.stringify(mcqList)); 		
 
 				}
@@ -1799,7 +1817,7 @@ getAnswerInsertId: function(query,fields,callback) {
 						var optionData={
 							"optionId":mysqlObj.optionId,
 							"option":mysqlObj.answer,
-							"image":mysqlObj.image,
+							"image":mysqlObj.optionImage,
 							"isCorrect":mysqlObj.isCorrect
 						}
 						//each option object put into array
@@ -1819,7 +1837,7 @@ getAnswerInsertId: function(query,fields,callback) {
 									"questionId":mysqlObj.questionId,
 									"heading":mysqlObj.heading,
 									"question":mysqlObj.question,
-									"image":mysqlObj.image,
+									"image":mysqlObj.questionImage,
 									"options":options
 								}
 								//console.log("qcount < 3 :"+qCount+" : "+question.questionId);
@@ -1871,7 +1889,7 @@ getMiningMcqList: function(query,fields,callback) {
 						var optionData={
 							"optionId":mysqlObj.optionId,
 							"option":mysqlObj.answer,
-							"image":mysqlObj.image,
+							"image":mysqlObj.optionImage,
 							"isCorrect":mysqlObj.isCorrect
 						}
 						//each option object put into array
@@ -1887,7 +1905,7 @@ getMiningMcqList: function(query,fields,callback) {
 								"questionId":mysqlObj.questionId,
 								"heading":mysqlObj.heading,
 								"question":mysqlObj.question,
-								"image":mysqlObj.image,
+								"image":mysqlObj.questionImage,
 								"options":options
 							}
 							//console.log("option id: "+mysqlObj.optionId);
@@ -1978,7 +1996,8 @@ getIqList: function(query,fields,callback) {
  					const [video,favorite] = result
 					var jsonResults = video.map((mysqlObj, index) => {
 							mysqlObj.type="directory";
-							mysqlObj.thumb=properties.vodUrl+'/grade-0'+mysqlObj.grade+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.png';
+							//mysqlObj.thumb=properties.vodUrl+'/grade-0'+mysqlObj.grade+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.png';
+							mysqlObj.thumb=properties.vodUrl+'/'+mysqlObj.gradeName+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.png';
 							/*
 							mysqlObj.favorite=favorite.map((favoriteObj,index) => {
 								if (mysqlObj.id == favoriteObj.video_id){

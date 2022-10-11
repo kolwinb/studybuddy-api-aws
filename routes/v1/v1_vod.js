@@ -172,7 +172,7 @@ router.post('/getLessonList',function(req,res,next) {
  							const studentId=callbackU.userId;
  							//console.log("getLessonList :"+studentId);
  							dbQuery.getSelect(dbQuery.whereUserRole,[studentId,gradeId],function(callbackRole){
- 								console.log("whereUserRole :"+callbackRole[0]);
+ 								console.log("whereUserRole :"+JSON.stringify(callbackRole[0]));
  								if (!callbackRole[0]){
  									res.send(JSON.parse(status.server()));
  								} else {

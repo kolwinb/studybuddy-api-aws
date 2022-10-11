@@ -13,9 +13,12 @@ upass=${line#*:}
 msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
 #total answered by given user
 
-gradeId=9
+gradeId=11
 subjectId=1
-for subjectId in {1..8}
+
+#for subjectId in {1..8}
+#grade 10 onwards
+for subjectId in {1..10}
 do
 echo " \
 INSERT INTO grade_subject(id,grade_id,subject_id) VALUES('',$gradeId,$subjectId);" | $msql

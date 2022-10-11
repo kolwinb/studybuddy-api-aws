@@ -1,7 +1,8 @@
 /*
-exports.mobitelUrl="api.mspace.lk";
+caasNotificationCallback=https://api.learntv.lk/studybuddy/v1/mobitel/callback/caas
+exports.mobitelUrl="https://api.mspace.lk";
 exports.dialogUrl="api.dialog.lk";
-exports.idearmart="api.ideamart.io";
+exports.idearmart="https://api.ideamart.io";
 
 exports.dialogOtpRequest="https://api.dialog.lk/subscription/otp/request";
 exports.dialogOtpVerify="https://api.dialog.lk/subscription/otp/verify";
@@ -48,7 +49,8 @@ var config={
 	battleCoin:50,
 	gameReward:50,
 	battleQuestionThreshold:2,
-	limitTimeInSec:1800,
+	battleQuestionLimit:4,
+	limitTimeInSec:70,
 	trialLessonLimit:5,
 	lessonUnlimit:100000,
 	subscriptionPeriod:{"trial":7,"basic":1,"standard":3,"premium":6},

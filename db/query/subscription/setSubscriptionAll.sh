@@ -10,66 +10,38 @@ upass=${line#*:}
 
 
 #msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
-msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
+msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
 #total answered by given user
 
 function main(){
-echo "SELECT id,phone FROM user;" | $msql
-
-printf "Enter ID :"
-read userId
-
-echo "SELECT * FROM user_role;" | $msql
-printf "Enter roleId :"
-read roleId
-
-echo "SELECT * from subscription_plan;" | $msql
-printf "Enter planId :"
-read planId
-
-echo "SELECT * FROM grade;" | $msql
-printf "Enter gradeId :"
-read gradeId
+#teacher role
+userArr=$(echo "SELECT id FROM user WHERE role_id=1 and date_joined > '2022-10-05';" | $msql)
+gradeArr=$(echo "SELECT id FROM grade;" | $msql)
 
 dateTime=$(date '+%Y-%m-%d %H:%M:%S')
 dateObj=$(date)
-echo "INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES('NULL',$userId,$planId,$gradeId,'$dateTime')" | $msql
+planId=1
+echo $userArr
+for userId in ${userArr}
+do
+ echo $userId
+ for gradeId in ${gradeArr}
+ do
+	 getState=$(echo "SELECT id FROM student_subscription_grade WHERE user_id=$userId AND plan_id=$planId AND grade_id=$gradeId" | $msql)
+	 if [ -z $getState ]
+	 then
+	  echo $useId" "$planId" "$gradeId" subscription Not found, it is being enabled..." 
+	  echo "INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES('NULL',$userId,$planId,$gradeId,'$dateTime')" | $msql
+	 else 
+	  echo $useId" "$planId" "$gradeId" subscription Found" 
+	 fi
+ done
+done
+#free plan
 
-printf "/n/n"
+#grade id 6 to 13
 
-echo "SET @userId := $userId; SET @date_joined := (SELECT user.date_joined FROM user WHERE user.id=@userId) ; \
-	SELECT \
-	@userId, \
-	grade.id as gradeId, \
-	grade.grade_english as gradeName, \
-		(CASE WHEN ssg.plan_id IS NOT NULL AND ssg.user_id=@userId \
-			THEN sp.name \
-			ELSE 'trial' \
-		END) as planName, \
-		(CASE WHEN ssg.plan_id IS NOT NULL AND ssg.user_id=@userId \
-			THEN sp.id \
-			ELSE (SELECT id FROM subscription_plan WHERE name like 'trial') \
-		END) as planId, \
-		(CASE WHEN ssg.started IS NOT NULL AND ssg.user_id=@userId \
-			THEN ssg.started \
-			ELSE (@date_joined) \
-		END) as startedAt, \
-		(CASE \
-			WHEN ssg.plan_id IS NULL \
-				THEN DATE_ADD(@date_joined, INTERVAL 7 DAY) \
-			WHEN ssg.plan_id = 3 \
-				THEN DATE_ADD(ssg.started, INTERVAL 1 MONTH) \
-			WHEN ssg.plan_id = 4 \
-				THEN DATE_ADD(ssg.started, INTERVAL 3 MONTH) \
-			WHEN ssg.plan_id = 5 \
-				THEN DATE_ADD(ssg.started, INTERVAL 12 MONTH) \
-		END) as endedAt \
-	FROM grade \
-	LEFT JOIN student_subscription_grade as ssg ON ssg.grade_id=grade.id \
-	LEFT JOIN subscription_plan as sp ON sp.id=ssg.plan_id \
-	WHERE ssg.user_id=@userId \
-	;" | $msql
-	main
+
 }
 main
 #	CROSS JOIN user ON user.id=ssg.user_id \

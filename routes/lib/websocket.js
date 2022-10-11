@@ -314,30 +314,43 @@ const gameEnd = (uniqId,data) => {
 		//log.info("whereBattleStatus : "+callbackStatus[0].status);
 		if (!callbackStatus[0]){
 			try {
-				sendError(lookup[uniqId],status.wsBattleNotFound());
+				//sendError(lookup[uniqId],status.wsBattleNotFound());
+				log.info("battle session not found");
 			} catch(e) {
 				log.error("INIT required");
 			}
 		} else {
+			log.info("battle started at :"+callbackStatus[0]+" "+callbackStatus[0].datetime);
+			var currentStamp=toTimestamp(new Date()); //get timestamp
+			//in seconds 60*30= 1800 (30m), 60*60 = h,
+			var sumOfSec = (Number(properties.limitTimeInSec)*Number(properties.battleQuestionThreshold))-10;
+			//var timeLimit=toTimestamp(callbackStatus[0].datetime)+Number(properties.limitTimeInSec);
+			var timeLimit=toTimestamp(callbackStatus[0].datetime)+sumOfSec;
 			dbQuery.getSelectJson(dbQuery.whereBattleEnd,[battleId],function(callbackEnd) {
 				players=JSON.parse(callbackEnd);
 				log.info("GAME-END callbackEnd:"+JSON.stringify(players));
 
-				const playerATime=toTimestamp(players[0].endedAt);
-				const playerBTime=toTimestamp(players[1].endedAt);
-				const timeLimit=toTimestamp(players[0].battleStartedAt)+parseInt(properties.limitTimeInSec); //in seconds 60*30= 1800 (30m), 60*60 = h, 
-				const currentStamp=toTimestamp(Date.now()); //get timestamp
+				var playerATime=toTimestamp(players[0].endedAt);
+				var playerBTime=toTimestamp(players[1].endedAt);
 				
 				console.log("GAME-END TIME -> currentStamp :"+currentStamp+", timeLimit :"+timeLimit+", playerATime :"+playerATime+", playerBTime :"+playerBTime);
-				if ((isNaN(playerBTime) && isNaN(playerATime)) && (currentStamp >= timeLimit)) {
+				if (((timeLimit > playerBTime) && (timeLimit > playerATime)) && (currentStamp >= timeLimit)) {
+					log.info("gameEnd test case 1, when both timelimit over when they answered.");
 					getGameResult(players,battleId,dateTime)
-				} else if (isNaN(playerATime) && (currentStamp >= timeLimit)) {
+				} else if ((isNaN(playerBTime) && isNaN(playerATime)) && (currentStamp >= timeLimit)) {
+					log.info("gameEnd test case 2, both null answered and timeLimit over");
+					getGameResult(players,battleId,dateTime)
+				} else if (isNaN(playerATime) && currentStamp >= timeLimit) {
+					log.info("gameEnd test case 3, null answered from playerA and timeLimit over");
 					getGameResult(players,battleId,dateTime);
-				} else if (isNaN(playerBTime) && (currentStamp >= timeLimit)) { 
+				} else if (isNaN(playerBTime) && currentStamp >= timeLimit) { 
+					log.info("gameEnd test case 4, null answered from playerB and timeLimit over");
 					getGameResult(players,battleId,dateTime)
 				} else if ((properties.battleQuestionThreshold == players[0].totalQuestions) && (properties.battleQuestionThreshold == players[1].totalQuestions)) {
+					log.info("gameEnd test case 5, both answered");
 					getGameResult(players,battleId,dateTime);
 				} else if ((properties.battleQuestionThreshold > players[0].totalQuestions) || (properties.battleQuestionThreshold > players[1].totalQuestions)) {
+					log.info("gameEnd case 6 some of them not answered all questions");
 					sendError(lookup[uniqId],status.wsFinishError());
 				}
 			});
@@ -466,7 +479,7 @@ const gameReq = (uniqId,data) => {
 	log.info("gameReq : "+data);
 	log.info("gameReq : challenge requestion from "+data.payload.from+" to "+data.payload.to);
 	//user1id=data.payload.from;
-	const dateTime = new Date();
+	var dateTime = new Date();
 	user1id=uniqId;
 	user2id=data.payload.to;
 	//const userId = data.payload.to;
@@ -482,20 +495,51 @@ const gameReq = (uniqId,data) => {
 					} else if (callbackLessCoin[0].balance < properties.gameCoinMin) {
 						sendError(lookup[user1id],status.wsReqLessFund());
 					} else {
-						//find running battle when req event
-						dbQuery.getSelect(dbQuery.whereGameReq,[user1id,user2id,'running'],function(callbackRunning){
-							if (!callbackRunning[0]) {
-								battleHandler(user1id,user2id,data,dateTime);
-							} else {
-								const battleId=callbackRunning[0].id
-								dbQuery.setUpdate(dbQuery.updateGameReq,['waiting',dateTime,user1id,user2id,battleId],function(callbackUpdate) {
-									if (!callbackUpdate){
-										console.log("update database error");
-									} else {
-										console.log("change previous running status to cancel on battleId: "+battleId);
+						// geting others parties running battle status
+						dbQuery.getSelect(dbQuery.whereUserBStatus,[user2id,user2id],function(callbackUserB){
+							if (callbackUserB[0]) {
+								var userGameTime=toTimestamp(callbackUserB[0].datetime);
+								var currentStamp=toTimestamp(new Date()); //get timestamp
+								var timeLimit=toTimestamp(callbackUserB[0].datetime)+(Number(properties.limitTimeInSec) * Number(properties.battleQuestionThreshold));
+								if (timeLimit > currentStamp){
+									log.info("ongoing session found");
+									sendError(lookup[user1id],status.wsOngoingError());
+								} else if (timeLimit < currentStamp) {
+									
+									log.info("user2id battle timeout ("+timeLimit+") : "+callbackUserB[0].id+" : "+callbackUserB[0].status);
+
+									dbQuery.setUpdate(dbQuery.updateGameRunning,['timeout',dateTime,callbackUserB[0].id], function(callbackTimeout){
+										if (!callbackTimeout) {
+											log.error("update battle_pool  gamereq table error");
+										} else {
+											//console.log("game timout");
+											battleHandler(user1id,user2id,data,dateTime);
+											//sendError(lookup[user1id],status.wsOngoingError());
+											//sendError(lookup[user2id],status.wsOngoingError());
+										}	
+									});
+									
+							 	}
+
+								//if (userGameTime.getTime() 
+							} else if (!callbackUserB[0]) {
+								//find running battle when req event
+								dbQuery.getSelect(dbQuery.whereGameReq,[user1id,user2id,'running'],function(callbackRunning){
+									if (!callbackRunning[0]) {
 										battleHandler(user1id,user2id,data,dateTime);
+									} else {
+										const battleId=callbackRunning[0].id
+										dbQuery.setUpdate(dbQuery.updateGameReq,['waiting',dateTime,user1id,user2id,battleId],function(callbackUpdate) {
+											if (!callbackUpdate){
+												console.log("update database error");
+											} else {
+												console.log("change previous running status to cancel on battleId: "+battleId);
+												battleHandler(user1id,user2id,data,dateTime);
+											}
+										});
 									}
 								});
+							
 							}
 						});
 					}
@@ -552,6 +596,8 @@ const gameAccept = (uniqId,data) => {
 						}
 					}
 					lookup[user1id].send(JSON.stringify(respJ));
+					var gameRowLimit=Number(properties.battleQuestionLimit) * parseInt(properties.battleQuestionThreshold);
+					console.log("gameRowLimit: "+gameRowLimit);
 					
 					//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMcq){
 					//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,7],function(callbackMcq){
@@ -559,9 +605,9 @@ const gameAccept = (uniqId,data) => {
 					//production
 					//dbQuery.getBuddyChallengeRandList(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMcq){
 					//test 
-					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningGameRandList,[gradeId,gradeId],function(callbackMcq){
+					dbQuery.getMiningMcqStage9List(dbQuery.whereMiningGameRandList,[gradeId,gradeId,gameRowLimit],function(callbackMcq){
 						if (callbackMcq){
-							//console.log("stage9 mcqs :"+JSON.stringify(callbackMcq));
+							console.log("game random mcqs :"+JSON.parse(callbackMcq));
 							const respMcq = {
 								type : "GAME-BEGIN",
 								payload : {
@@ -578,26 +624,6 @@ const gameAccept = (uniqId,data) => {
 					setBattleCoinState(user1id,battleId,dateTime);
 					setBattleCoinState(user2id,battleId,dateTime);			
 					
-					/*
-					dbQuery.getSelect(dbQuery.whereBattleCoin,[user1id,bttleId,'credit'],function (callbackStatus){
-						//add user1id coin to coin_pool
-						dbQuery.setInsert(dbQuery.insertBattleCoin,['',user1id,battleId,'credit',-1 * properties.battleCoin,dateTime],function(callbackCoin){
-							if (callbackCoin){
-								console.log("Coin Pool : "+user1id+" "+properties.battleCoin+" added");
-							} else {
-								console.log("coin pool insert error");
-							}						
-						});
-					});
-					//add user2id coin to coin_pool
-					dbQuery.setInsert(dbQuery.insertBattleCoin,['',user2id,battleId,'credit',-1 * properties.battleCoin,dateTime],function(callbackCoin){
-						if (callbackCoin){
-							console.log("Coin Pool : "+user2id+" "+properties.battleCoin+" added");
-						} else {
-							console.log("coin pool insert error");
-						}
-					});
-					*/					
 				}
 			});
 		} else {
@@ -666,33 +692,6 @@ const updateSQL = (user1id,user2id,data,cancelStatus) => {
 						gameRespFrom(user2id,user1id,data,battleId);
 						gameRespTo(user2id,user1id,data,battleId);					
 					}
-					/*
-					const respJA = {
-						type : "GAME-RESP",
-						payload : {
-						//from : user2id,
-						to : user1id,
-						name : data.payload.name,
-						avatarId : data.payload.avatarId,
-						status : "cancel",
-						battleId : battleId
-						}
-					}
-					lookup[user2id].send(JSON.stringify(respJA));
-	
-					const respJA = {
-						type : "GAME-RESP",
-						payload : {
-						from : user2id,
-						//to : user1id,
-						name : data.payload.name,
-						avatarId : data.payload.avatarId,
-						status : "cancel",
-						battleId : battleId
-						}
-					}
-					lookup[user1id].send(JSON.stringify(respJA));
-					*/
 					
 				}
 			});
