@@ -17,11 +17,16 @@ echo ""
 echo "select distinct(video.id), DAYNAME(started) from student_answer INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id INNER JOIN video ON video.id=mcq_question.video_id WHERE user_id=28 GROUP BY DAYNAME(started);"|$msql
 
 echo "SELECT COUNT(DISTINCT(video.id)) AS totalLesson, \
-	DATE_FORMAT(started,'%a') AS dayName \
+	DATE_FORMAT(started,'%a') AS dayName, \
+	(CASE WHEN started IS NULL AND DATE_FORMAT(NOW()-INTERVAL 7 DAY,'%a') = 'Sun' \
+		THEN 0 \
+		ELSE 11 \
+	END) AS Sun \
 	FROM student_answer \
 	INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
 	INNER JOIN video ON video.id=mcq_question.video_id \
-	WHERE user_id=28 GROUP BY DATE_FORMAT(started,'%a') ;"|$msql
+	WHERE user_id=1 AND started >= (NOW()-INTERVAL 7 DAY) \
+	 GROUP BY DATE_FORMAT(started,'%a') ;"|$msql
 #	GROUP BY DAYNAME(started);"|$msql
 
 

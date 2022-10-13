@@ -36,13 +36,13 @@ const apiSecret=scope.signIn.apiSecret;
 router.post('/mobile',function(req,res){
     var signdate = new Date();
 	log.info("sign in : "+signdate.toLocaleString());    
-	log.info("sign in : "+signdate.getTime());    
+	//log.info("sign in : "+signdate.getTime());    
 	const mobile=req.body.mobileNo;
 	const passwd=req.body.password;
 	api_key=req.body.api_key;
 	api_secret=req.body.api_secret;
 	
-	log.info("api_key :"+api_key+", api_secret :"+api_secret+", mobile :"+mobile+", password "+passwd);
+	//log.info("api_key :"+api_key+", api_secret :"+api_secret+", mobile :"+mobile+", password "+passwd);
 	
 	if ((apiKey != api_key) || (apiSecret != api_secret)){
 		res.send(JSON.parse(status.unAuthApi()));
@@ -62,18 +62,12 @@ router.post('/mobile',function(req,res){
 					};
 				
 				//one hour
-				jwtToken.jwtAuth(jwtPayload,3600,function(callback){
+				jwtToken.jwtAuth(jwtPayload,3600,function(callbackJwt){
 				//one minute
-				//jwtToken.jwtAuth(jwtPayload,60,function(callback){
-					res.send(JSON.parse(callback));
+				//jwtToken.jwtAuth(jwtPayload,60,function(callbackJwt){
+					res.send(JSON.parse(callbackJwt));
 				
 				});
-				/*
-				jwtToken.jwtAuth(mobile,3600,function(callback){
-					res.send(JSON.parse(callback));
-				
-				}); 
-				*/
 				//update lastlogin
 				dbQuery.setUpdate(dbQuery.updateLastLogin,["user",signdate,callback[0].id],function(callbackA){
 				

@@ -802,8 +802,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				/* chart of total lesson by last 7 day */ \
 				SELECT \
 					COUNT(DISTINCT(video.id)) as totalLessons, \
-					/* DATE_FORMAT(started,'%a') AS dayName */ \
-					DATE_FORMAT(started,'%Y-%m-%d') AS dayName \
+					DATE_FORMAT(started,'%a') AS dayName \
+					/* DATE_FORMAT(started,'%Y-%m-%d') AS dayName */ \
 					FROM student_answer \
 					INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
 					INNER JOIN video ON video.id=mcq_question.video_id \
@@ -1482,6 +1482,7 @@ getAnswerInsertId: function(query,fields,callback) {
 	getProfileInfo: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
+  				dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
    				if (!result){
    					callback(status.server());
  				} else {
@@ -1520,12 +1521,44 @@ getAnswerInsertId: function(query,fields,callback) {
     					});
     				 	
     				//chart of the day question
+					var dayList=[];
 					var chartDay = chartOfDay.map((mysqlObj, index) => {
-							//console.log(mysqlObj.dayName);
+							//console.log("chartDay mysqlObj "+mysqlObj.dayName);
+							for (const dName of dayArray){
+								if (mysqlObj.dayName != dName) {
+								
+									emptyDay = {
+											"totalLessons":0,
+											"dayName":dName
+										};
+									dayList.push(emptyDay);
+									//console.log("day array not match : "+dName);
+								
+								} else {
+									dayList.push(mysqlObj);
+								}	
+							}
 							//Object.assign(mysqlObj,emptyQuestionDay);
-    						return Object.assign({}, mysqlObj);
+    						//return Object.assign({}, mysqlObj);
+    						return Object.assign({}, dayList);
     					}); 			
 
+					//console.log(dayList);
+					//append empty lesson days to chart
+					//console.log("chartOfDay :"+JSON.stringify(chartOfDay));
+					if (chartOfDay.length == 0){
+						console.log("empty day chart found");
+						for (const dName of dayArray){
+							emptyDay = {
+									"totalLessons":0,
+									"dayName":dName
+								};
+							dayList.push(emptyDay);
+							//console.log("day array not match : "+dName);
+						}
+														
+					}
+					Object.assign(chartDay,dayList);
     				
 					const langList = languageData.map((mysqlObj, index) => {
 						return Object.assign({}, mysqlObj);
