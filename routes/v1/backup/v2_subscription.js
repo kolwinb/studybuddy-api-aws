@@ -1,15 +1,15 @@
-var bodyParser = require('/media/data/opt/nodejs/lib/node_modules/body-parser')
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
+var bodyParser = require('../../lib/node_modules/body-parser')
+var express = require('../../lib/node_modules/express');
 //var config = require('../../config.js');
 
 //send mails
-var sendmail = require('/media/data/opt/nodejs/lib/node_modules/sendmail')({silent: true,devPort:25,devHost:'localhost'});
+var sendmail = require('../../lib/node_modules/sendmail')({silent: true,devPort:25,devHost:'localhost'});
 
 //email validator
-var validator = require('/media/data/opt/nodejs/lib/node_modules/email-validator');
+var validator = require('../../lib/node_modules/email-validator');
 
 //18byt id generator
-var uniqid = require ('/media/data/opt/nodejs/lib/node_modules/uniqid');
+var uniqid = require ('../../lib/node_modules/uniqid');
 
 //mysql model
 var pool = require('../../models/usermysql.js');
@@ -21,10 +21,10 @@ app.use(bodyParser.json());
 var router = express.Router();
 
 //load mobile operator modules
-var operator=require(../lib/operator-api');
+var operator=require(../../lib/operator-api');
 
 //load custom crypto module
-var decCrypto = require('../lib/crypto');
+var decCrypto = require('../../lib/crypto');
 
 const mobitelUrl="api.mobitel.lk";
 const dialogUrl="api.dialog.lk";

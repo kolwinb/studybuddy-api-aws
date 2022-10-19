@@ -1,5 +1,5 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var express = require('../../lib/node_modules/express');
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 var app = express();
 var fs = require("fs");
 var router = express.Router();
@@ -312,7 +312,7 @@ router.post('/setSignup',function(req,res,next) {
 										if (!callbackUserProfile[0]) {
 											console.log("profile data not found");
 											var defaultLang=1;
-											dbQuery.setInsert(dbQuery.insertProfile,["user_profile","NULL",schoolId,studentId,studentName,gradeId,avatarId,defaultLang],function(callbackProfile){
+											dbQuery.setInsert(dbQuery.insertProfile,["user_profile",0,schoolId,studentId,studentName,gradeId,avatarId,defaultLang],function(callbackProfile){
 												if (!callbackProfile){
 													dbQuery.setUpdate(dbQuery.updateProfile,["user_profile",schoolId,studentName,gradeId,avatarId,studentId],function (callbackProfileUpdate){
 														if(!callbackProfileUpdate){
@@ -719,7 +719,7 @@ router.post('/setSubscription',function(req,res,next) {
 									dbQuery.getSelect(dbQuery.whereSubscriptionStatus,[planId,gradeId,studentId],function(callbackPeriod){
 										if (!callbackPeriod[0]){
 											var dateTime=new Date();
-											dbQuery.setInsert(dbQuery.insertSubscription,["NULL",studentId,planId,gradeId,dateTime],function(callbackSubscription){
+											dbQuery.setInsert(dbQuery.insertSubscription,[0,studentId,planId,gradeId,dateTime],function(callbackSubscription){
 												if (!callbackSubscription){
 													res.send(JSON.parse(status.server()));
 												} else {

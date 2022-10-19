@@ -1,4 +1,4 @@
-const axios = require('/media/data/opt/nodejs/lib/node_modules/axios');
+const axios = require('../../lib/node_modules/axios');
 
 
 //  method: 'post',

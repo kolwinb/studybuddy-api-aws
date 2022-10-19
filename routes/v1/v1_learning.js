@@ -1,6 +1,6 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var mclient = require('/media/data/opt/nodejs/lib/node_modules/mongodb').MongoClient;
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var express = require('../../lib/node_modules/express');
+var mclient = require('../../lib/node_modules/mongodb').MongoClient;
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 
 var url = "mongodb://192.168.1.110:27017/studybuddy";
 var app = express();
@@ -124,7 +124,7 @@ router.post('/setBulkAnswer',function(req,res,next) {
 													/* validation success or fail */
 													if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
 														/* insert to student answer and get the last insert id*/
-														dbQuery.getAnswerInsertId(dbQuery.insertStudentAnswer,["NULL",studentId,questionId,optionId,started,ended],function(callbackInsertId){
+														dbQuery.getAnswerInsertId(dbQuery.insertStudentAnswer,[0,studentId,questionId,optionId,started,ended],function(callbackInsertId){
    															if(!callbackInsertId){
 																res.send(JSON.parse(status.server()));
 															} else {
@@ -228,7 +228,7 @@ router.post('/setAnswer',function(req,res,next) {
 											const dateNow = new Date();
 											//console.log("userId: "+studentId+" : StudentAnswer:QueryData Found -> oId: "+oId+" qId: "+qId+" vId : "+vId)
 											if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
-												dbQuery.setInsert(dbQuery.insertStudentAnswer,["student_answer","NULL",studentId,questionId,optionId,started,ended],function(callbackSAnswer){
+												dbQuery.setInsert(dbQuery.insertStudentAnswer,["student_answer",0,studentId,questionId,optionId,started,ended],function(callbackSAnswer){
    													if(!callbackSAnswer){
    														console.log("answer insert error");
 														res.send(JSON.parse(status.server()));
@@ -383,7 +383,7 @@ router.post('/like',function(req,res,next) {
 									};
 									dbQuery.getSelect(dbQuery.whereStudentLikeFavorite,["student_like",studentId,videoId],function(callbackLike){
 										if (!callbackLike[0]){
-											dbQuery.setInsert(dbQuery.insertStudentLikeFavorite,["student_like","NULL",studentId,videoId,1],function(callbackIlike){
+											dbQuery.setInsert(dbQuery.insertStudentLikeFavorite,["student_like",0,studentId,videoId,1],function(callbackIlike){
 												if (callbackIlike){
 													resData.like="True";
 													resData.description="like";
@@ -454,7 +454,8 @@ router.post('/setFavorite',function(req,res,next) {
 									};
 									dbQuery.getSelect(dbQuery.whereStudentLikeFavorite,["student_favorite",studentId,videoId],function(callbackFav){
 										if (!callbackFav[0]){
-											dbQuery.setInsert(dbQuery.insertStudentLikeFavorite,["student_favorite","NULL",studentId,videoId,1],function(callbackIfav){
+											//"NULL" = 0
+											dbQuery.setInsert(dbQuery.insertStudentLikeFavorite,["student_favorite",0,studentId,videoId,1],function(callbackIfav){
 												if (callbackIfav){
 													resData.favorite="True";
 													resData.description="favorite";

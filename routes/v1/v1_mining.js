@@ -1,6 +1,6 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var mclient = require('/media/data/opt/nodejs/lib/node_modules/mongodb').MongoClient;
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var express = require('../../lib/node_modules/express');
+var mclient = require('../../lib/node_modules/mongodb').MongoClient;
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 
 var url = "mongodb://192.168.1.110:27017/studybuddy";
 var app = express();
@@ -236,8 +236,7 @@ router.post('/setMcqAnswer',function(req,res,next) {
 													if ((oId == optionId && qId == questionId) && vId == videoId){ //verification with database
 														//console.log("each of option: "+optionId+" ,question: "+questionId+", lessons: "+videoId+" has been validated");
 														/* insert to student answer and get the last insert id*/
-														
-														dbQuery.getAnswerInsertId(dbQuery.insertMiningMcqAnswer,["NULL",studentId,stageId,questionId,optionId,started,ended],function(callbackInsertId){
+														dbQuery.getAnswerInsertId(dbQuery.insertMiningMcqAnswer,[0,studentId,stageId,questionId,optionId,started,ended],function(callbackInsertId){
    															if(!callbackInsertId){
 																res.send(JSON.parse(status.server()));
 															} else {
@@ -370,7 +369,7 @@ router.post('/setIqAnswer',function(req,res,next) {
 														//console.log("each of option: "+optionId+" ,question: "+questionId+", has been validated");
 														/* insert to student answer and get the last insert id*/
 														
-														dbQuery.getAnswerInsertId(dbQuery.insertMiningIqAnswer,["NULL",studentId,questionId,optionId,started,ended],function(callbackInsertId){
+														dbQuery.getAnswerInsertId(dbQuery.insertMiningIqAnswer,[0,studentId,questionId,optionId,started,ended],function(callbackInsertId){
    															if(!callbackInsertId){
 																res.send(JSON.parse(status.server()));
 															} else {

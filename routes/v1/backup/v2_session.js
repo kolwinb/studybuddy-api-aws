@@ -1,10 +1,10 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-//var mclient = require('/media/data/opt/nodejs/lib/node_modules/mongodb').MongoClient;
-//var Server = require('/media/data/opt/nodejs/lib/node_modules/mongodb').Server;
-//var bodyParser = require('/media/data/opt/nodejs/lib/node_modules/body-parser');
-//var morgan = require('/media/data/opt/nodejs/lib/node_modules/morgan');
-//var mongoose = require('/media/data/opt/nodejs/lib/node_modules/mongoose');
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var express = require('../../lib/node_modules/express');
+//var mclient = require('../../lib/node_modules/mongodb').MongoClient;
+//var Server = require('../../lib/node_modules/mongodb').Server;
+//var bodyParser = require('../../lib/node_modules/body-parser');
+//var morgan = require('../../lib/node_modules/morgan');
+//var mongoose = require('../../lib/node_modules/mongoose');
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 //var config = require('../../config.js');
 
 //mongomodel
@@ -13,7 +13,7 @@ var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
 //mysql model
 //var pool = require('../../models/usermysql.js');
 
-//var mysql = require('/media/data/opt/nodejs/lib/node_modules/mysql');
+//var mysql = require('../../lib/node_modules/mysql');
 //var con = mysql.createConnection({ host:"192.168.1.120", user:"cb", password:"ltv9201712",database: "learntv_schema"});
 var url = "mongodb://192.168.1.110:27017/learntvapi";
 var app = express();

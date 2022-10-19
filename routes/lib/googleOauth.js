@@ -17,10 +17,10 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const url = require('url');
-const opn = require('/media/data/opt/nodejs/lib/node_modules/open');
-const destroyer = require('/media/data/opt/nodejs/lib/node_modules/server-destroy');
+const opn = require('../../lib/node_modules/open');
+const destroyer = require('../../lib/node_modules/server-destroy');
 
-const {google} = require('/media/data/opt/nodejs/lib/node_modules/googleapis');
+const {google} = require('../../lib/node_modules/googleapis');
 const people = google.people('v1');
 
 /**

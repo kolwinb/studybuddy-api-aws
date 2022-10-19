@@ -1,5 +1,5 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var express = require('../../lib/node_modules/express');
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 
 //mysql model
 var pool = require('../../models/usermysql.js');
@@ -8,7 +8,7 @@ var app = express();
 var router = express.Router();
 
 //load custom crypto module
-var crypto = require("../lib/crypto");
+var crypto = require("../../lib/crypto");
 
 router.post('/',function(req,res){
 

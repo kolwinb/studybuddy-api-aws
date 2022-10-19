@@ -647,6 +647,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					video.short_desc as shortDesc, \
 					video.long_desc as longDesc, \
 					video.name as fileName, \
+					video.grade as gradeId, \
 					@grade := grade.grade_english as grade, \
 					@syllabus := syllabus.syllabus_english as syllabus, \
 					@subject := subject.subject_english as subject \
@@ -1283,8 +1284,8 @@ getAnswerInsertId: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
-					//throw err;
-					log.info(err);
+					throw err;
+					//log.info(err);
 				} else {
 				//log.info("sql result : "+JSON.parse(JSON.stringify(result[0])))
 				//add LAST_INSERT_ID, undefine fixed
@@ -1367,6 +1368,7 @@ getAnswerInsertId: function(query,fields,callback) {
  					const [video,question,option] = result;
  					//console.log("mcqOption :"+option[0].id);
 					var jsonVideo = video.map((mysqlObj, index) => {
+/*
 							//console.log(jsonVideo);
 							try {
 								smallList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_240p.m3u').toString().split("\n");
@@ -1404,25 +1406,41 @@ getAnswerInsertId: function(query,fields,callback) {
 							} catch (e) {
 								console.log("playlist files not found");
 							}
-/*										
-							mysqlObj.videoUrls=[{
+*/
+							mysqlObj.playlists=[{
 										"name":"small",
 										"quality":"240p",
-										"videoUrl":properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_240p.m3u'
+										"videoList":[
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-240p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_240p_100.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-240p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_240p_100.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-240p.mp4'
+												]
 										},
 										{
 										"name":"medium",
 										"quality":"360p",
-										"videoUrl":properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_360p.m3u'
-										
+										"videoList":[
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-360p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_360p_200.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-360p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_360p_200.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-360p.mp4'
+											]
 										},
-										{			
+										{
 										"name":"large",
 										"quality":"480p",
-										"videoUrl":properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_480p.m3u'
+										"videoList":[
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-480p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_480p_400.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-480p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_480p_400.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-480p.mp4'
+											]
 										}
 										]
-*/
 							//append mcq
 							varOptionData=JSON.stringify(option);
 							//console.log(varOptionData);

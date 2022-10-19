@@ -1,4 +1,5 @@
-const axios = require('/media/data/opt/nodejs/lib/node_modules/axios');
+/*
+const axios = require('../../lib/node_modules/axios');
 const varErr = require('./status');
 
 exports.api  = function (data,url,callback) {
@@ -27,12 +28,5 @@ exports.api  = function (data,url,callback) {
 		});
 
 
-/*
-		testData = {
-			"statusCode":"S1000",
-			"referenceNo":"sldkfjll234k2jl234"
-		}
-
-		return callback(testData)	
-*/
 }
+*/

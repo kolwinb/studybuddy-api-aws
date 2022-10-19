@@ -1,12 +1,9 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var express = require('../../lib/node_modules/express');
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 //var config = require('../../config.js');
 
-//send mails
-var sendmail = require('/media/data/opt/nodejs/lib/node_modules/sendmail')({silent: true,devPort:25,devHost:'localhost'});
-
 //18byt id generator
-var uniqid = require ('/media/data/opt/nodejs/lib/node_modules/uniqid');
+var uniqid = require ('../../lib/node_modules/uniqid');
 
 
 //mysql model
@@ -60,20 +57,16 @@ router.post('/mobile',function(req,res){
 					userId:callback[0].id,
 					uniqId:callback[0].uniqid
 					};
-				
 				//one hour
 				jwtToken.jwtAuth(jwtPayload,3600,function(callbackJwt){
 				//one minute
 				//jwtToken.jwtAuth(jwtPayload,60,function(callbackJwt){
 					res.send(JSON.parse(callbackJwt));
-				
 				});
 				//update lastlogin
 				dbQuery.setUpdate(dbQuery.updateLastLogin,["user",signdate,callback[0].id],function(callbackA){
-				
 				});
 			}
-		
 		});
 	}
 });

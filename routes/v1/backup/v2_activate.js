@@ -1,4 +1,4 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
+var express = require('../../lib/node_modules/express');
 //var config = require('../../config.js');
 
 var fs = require('fs');

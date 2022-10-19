@@ -11,14 +11,14 @@ const properties = require('./properties');
 
 var cert=fs.readFileSync('private.pem');           
 //custom jwt module
-var jwtModule = require('../lib/jwtToken');
-const status = require('../lib/status');
-const dbQuery = require('../lib/dbQuery');
-const scope = require('../lib/apiKeys');
+var jwtModule = require('./jwtToken');
+const status = require('./status');
+const dbQuery = require('./dbQuery');
+const scope = require('./apiKeys');
 const api_key = scope.gamingApi.apiKey;
 const api_secret = scope.gamingApi.apiSecret;
 
-const websocket = require('/media/data/opt/nodejs/lib/node_modules/ws');
+const websocket = require('../../lib/node_modules/ws');
 
 //global socket id lookup
 var lookup={};
@@ -43,7 +43,7 @@ const updateOnlineStatus = (status,socketId) => {
 			console.log("mysql error");
 			//socket.send(JSON.parse(status.server()));
 		}
-	});					
+	});
 
 }
 
@@ -63,10 +63,7 @@ const sendError = (socket,msg) => {
 
 const websocketServer = {
 	runWebsocket:function(server) {
-		
 		const wss = new websocket.Server({ server });
-		
-		
 		//var id=0;
 		//var lookup={};
 
@@ -77,12 +74,10 @@ const websocketServer = {
 					updateOnlineStatus(2,socket.id);
 					return socket.terminate();
 				}
-				
 				socket.isAlive = false;
 				socket.ping();
 			});
 		},5000);
-		
 		wss.on('close', function close(){
 			clearInterval(interval);
 		});
@@ -92,7 +87,6 @@ const websocketServer = {
 			const apiSecret = req.headers["x-api-secret"];
 			var authToken = req.headers["x-token"];
 			//console.log("apiKey :"+apiKey+", apiSecret :"+apiSecret+", x-token :"+authToken);
-			
 			if (!apiKey || !apiSecret) {
 				sendError(socket,status.wsAuth());
 			} else if ((apiKey != api_key) || (apiSecret != api_secret)) {
@@ -100,28 +94,22 @@ const websocketServer = {
 			} else if (!authToken) {
 				sendError(socket,status.wsToken());
 			} else {
-				
 				/* enginx forwarded */
 				const ip = req.headers['x-forwarded-for'].split(',')[0].trim();;
 				console.log('A actor connected '+", ip :"+ip);
-	
 				socket.isAlive = true;
 				socket.on('pong',heartbeat);
 				//const ip = req.socket.remoteAddress;
-				
 				socket.on('message', function(data){
 					//console.log('ws data :'+data);
 					let jsonData;
-					
 					try {
 						jsonData=JSON.parse(data);
 					} catch (e) {
 						sendError(socket,status.wsFormat() );
 						return;
 					}
-	
 					//handling commands
-	
 					const type = jsonData.type;
 					//const payload = jsonData.payload;
 					//console.log("wss authToken :"+authToken);
@@ -129,7 +117,7 @@ const websocketServer = {
 						if (callback) {
 							jwtModule.jwtGetUserId(authToken,function(callback) {
 								var userId=callback.userId;
-								var uniqId=callback.uniqId;			
+								var uniqId=callback.uniqId;
 								console.log("UserId : "+userId+" => jwt uniqId :"+uniqId)
 								try {
 									handleCommand[type](uniqId,jsonData,socket);
@@ -236,7 +224,7 @@ const getOnlineUsers = (client) => {
 const debitBattleCoin = (gamerId,battleId,coinAmt,dateTime) => {
 	dbQuery.getSelect(dbQuery.whereBattleCoin,[gamerId,battleId,'debit'],function(callbackCoin){
 		if (!callbackCoin[0]){
-			dbQuery.setInsert(dbQuery.insertBattleCoin,['',gamerId,battleId,'debit',coinAmt,dateTime],function(){});
+			dbQuery.setInsert(dbQuery.insertBattleCoin,[0,gamerId,battleId,'debit',coinAmt,dateTime],function(){});
 		} else {
 			sendError(lookup[gamerId],status.wsBattleCoin());
 		}
@@ -379,7 +367,7 @@ const setAnswer = (uniqId,data) => {
 		if  (!callbackBattle[0]) {
 			log.error("battleanswer table");
 		} else if (callbackBattle[0].status) {
-			dbQuery.getAnswerInsertId(dbQuery.insertBattleAnswer,['',userId,battleId,questionId,optionId,startedAt,endedAt],function(callbackInsertId){
+			dbQuery.getAnswerInsertId(dbQuery.insertBattleAnswer,[0,userId,battleId,questionId,optionId,startedAt,endedAt],function(callbackInsertId){
 				if(callbackInsertId){
 					const respJ = {
 							"type":"ANS-RESULT",
@@ -410,7 +398,7 @@ const setAnswer = (uniqId,data) => {
 			}
 		}
 	});
-}				
+}
 
 //return json object
 const gameReqFrom = (user1id,user2id,data,battleId) => {
@@ -419,7 +407,7 @@ const gameReqFrom = (user1id,user2id,data,battleId) => {
 		payload : {
 		from : user1id,
 		name : data.payload.name,
-		avatarId : data.payload.avatarId,						
+		avatarId : data.payload.avatarId,
 		battleId : battleId
 		//battleId : callbackStatus[0].id
 		}
@@ -428,8 +416,7 @@ const gameReqFrom = (user1id,user2id,data,battleId) => {
 		lookup[user2id].send(JSON.stringify(jsonData));
 	} catch(e) {
 		log.error("Before gameReq, INIT required");
-		
-	}		
+	}
 }
 
 const gameReqResp=(user1id,user2id,data,battleId)=> {
@@ -442,12 +429,12 @@ const gameReqResp=(user1id,user2id,data,battleId)=> {
 		//avatarId : data.payload.avatarId,
 		battleId : battleId
 		}
-	}										
+	}
 	try {
 		lookup[user1id].send(JSON.stringify(respJA));
 	} catch (e) {
 		log.error("INIT event required");
-	}																	
+	}
 }
 
 const battleHandler = (user1id,user2id,data,dateTime) => {
@@ -456,7 +443,7 @@ const battleHandler = (user1id,user2id,data,dateTime) => {
 		//if ((!callbackStatus[0]) || (callbackStatus[0].status != 'waiting') || (callbackStatus[0].status=='cancel' || callbackStatus[0].status=='finish'))  {
 		//if ((!callbackStatus[0]) || (callbackStatus[0].status !== 'waiting') || (callbackStatus[0].status !== 'running'))  {
 		if (!callbackStatus[0])  {
-			dbQuery.getAnswerInsertId(dbQuery.insertGameReq,['',user1id,user2id,'waiting',dateTime],function(callbackInsertId) {
+			dbQuery.getAnswerInsertId(dbQuery.insertGameReq,[0,user1id,user2id,'waiting',dateTime],function(callbackInsertId) {
 				if (!callbackInsertId){
 					console.log("insertGameReq database error");
 				} else {
@@ -483,12 +470,14 @@ const gameReq = (uniqId,data) => {
 	user1id=uniqId;
 	user2id=data.payload.to;
 	//const userId = data.payload.to;
+		//find actor A sufficient balance
 		dbQuery.getSelect(dbQuery.whereLessCoin,[user1id],function(callbackLessCoin){
 			if (!callbackLessCoin[0]) {
 				sendError(lookup[user1id],status.wsUserNotFound());
 			} else if (callbackLessCoin[0].balance < properties.gameCoinMin) {
 				sendError(lookup[user1id],status.wsLessFund());
 			} else {
+				//find actor B sufficient balance
 				dbQuery.getSelect(dbQuery.whereLessCoin,[user2id],function(callbackLessCoin){
 					if (!callbackLessCoin[0]) {
 						sendError(lookup[user1id],status.wsReqUserNotFound());
@@ -505,7 +494,6 @@ const gameReq = (uniqId,data) => {
 									log.info("ongoing session found");
 									sendError(lookup[user1id],status.wsOngoingError());
 								} else if (timeLimit < currentStamp) {
-									
 									log.info("user2id battle timeout ("+timeLimit+") : "+callbackUserB[0].id+" : "+callbackUserB[0].status);
 
 									dbQuery.setUpdate(dbQuery.updateGameRunning,['timeout',dateTime,callbackUserB[0].id], function(callbackTimeout){
@@ -516,9 +504,8 @@ const gameReq = (uniqId,data) => {
 											battleHandler(user1id,user2id,data,dateTime);
 											//sendError(lookup[user1id],status.wsOngoingError());
 											//sendError(lookup[user2id],status.wsOngoingError());
-										}	
+										}
 									});
-									
 							 	}
 
 								//if (userGameTime.getTime() 
@@ -539,7 +526,6 @@ const gameReq = (uniqId,data) => {
 										});
 									}
 								});
-							
 							}
 						});
 					}
@@ -552,7 +538,7 @@ const setBattleCoinState = (userId,battleId,dateTime) => {
 	dbQuery.getSelect(dbQuery.whereBattleCoin,[userId,battleId,'credit'],function (callbackStatus){
 		//add user1id coin to coin_pool
 		if (!callbackStatus[0]){
-			dbQuery.setInsert(dbQuery.insertBattleCoin,['',userId,battleId,'credit',-1 * properties.battleCoin,dateTime],function(callbackCoin){
+			dbQuery.setInsert(dbQuery.insertBattleCoin,[0,userId,battleId,'credit',-1 * properties.battleCoin,dateTime],function(callbackCoin){
 				if (callbackCoin){
 					console.log("Coin Pool : "+userId+" "+properties.battleCoin+" now added");
 				} else {

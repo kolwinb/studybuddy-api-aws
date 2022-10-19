@@ -1,5 +1,5 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var express = require('../../lib/node_modules/express');
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 var app = express();
 var fs = require("fs");
 var router = express.Router();
@@ -46,7 +46,7 @@ router.post('/getOtp',function(req,res,next) {
 router.post('/setOtp',function(req,res,next) {
    var apiKey = req.body.api_key;
    var apiSecret=req.body.api_secret;
-   var mobile=req.body.mobile;
+   var mobile=req.body.mobileNo;
    var otp=req.body.otp;
    
    if ((!apiKey || !apiSecret)){
@@ -81,40 +81,24 @@ router.post('/getRecoveryCode',function(req,res,next) {
    } else if ((!mobile)) {
    		res.send(JSON.parse(status.smsNoRequire()));
    } else {
-        if (rtoken) {
-			jwtModule.jwtVerify(rtoken,function(callback){
-				if (callback){
-					jwtModule.jwtGetUserId(rtoken,function(callbackU){
-						const studentId=callbackU.userId;
-						dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
-							if (!callbackUser[0]){
-								res.send(JSON.parse(status.misbehaviour()));
-							} else {
-								const registeredMobile=callbackUser[0].phone;
-								if (mobile != registeredMobile){
-                                    res.send(JSON.parse(status.mobileNotMatch()));
-								} else {
-									smsApi.apiAuth(apiKey,apiSecret,function(callback){
-										if (callback){
-											//otp sms gateway controller
-											smsApi.sendRecoveryCode(mobile,function(callback){
-												res.send(JSON.parse(callback));
-											});
-										} else {
-											res.send(JSON.parse(status.otpDecline()));
-										}
-									});								
-								}
-							}
+   		console.log("mobile recovery :"+mobile);
+		dbQuery.getSelect(dbQuery.whereMobile,["user",mobile],function(callbackUser){
+			console.log("getRecoveryCode :"+callbackUser[0]);
+			if (!callbackUser[0]) {
+				res.send(JSON.parse(status.misbehaviour()));
+			} else {
+				smsApi.apiAuth(apiKey,apiSecret,function(callback){
+					if (callback){
+						//otp sms gateway controller
+						smsApi.sendRecoveryCode(mobile,function(callback){
+							res.send(JSON.parse(callback));
 						});
-					});
-				} else {
-                    res.send(status.tokenExpired());
-				}
-			});
-		} else {
-            return res.status(403).send(JSON.parse(status.tokenNone()));
-		}
+					} else {
+						res.send(JSON.parse(status.otpDecline()));
+					}
+				});								
+			}
+		});
 	}
  });
 
@@ -131,40 +115,22 @@ router.post('/setRecoveryCode',function(req,res,next) {
    } else if ((!mobile)) {
    		res.send(JSON.parse(status.smsNoRequire()));
    } else {
-        if (rtoken) {
-			jwtModule.jwtVerify(rtoken,function(callback){
-				if (callback){
-					jwtModule.jwtGetUserId(rtoken,function(callbackU){
-						const studentId=callbackU.userId;
-						dbQuery.setUserSqlQuery(dbQuery.whereUser,["user",studentId],function(callbackUser){
-							if (!callbackUser[0]){
-								res.send(JSON.parse(status.misbehaviour()));
-							} else {
-								const registeredMobile=callbackUser[0].phone;
-								if (mobile != registeredMobile){
-                                    res.send(JSON.parse(status.mobileNotMatch()));
-								} else {
-									smsApi.apiAuth(apiKey,apiSecret,function(callback){
-										if (callback){
-											//otp sms gateway controller
-											smsApi.verifyRecoveryCode(mobile,recoveryCode,function(callback){
-												res.send(JSON.parse(callback));
-											});
-										} else {
-											res.send(JSON.parse(status.otpDecline()));
-										}
-									});								
-								}
-							}
+		dbQuery.getSelect(dbQuery.whereMobile,["user",mobile],function(callbackUser){
+			if (!callbackUser[0]){
+				res.send(JSON.parse(status.misbehaviour()));
+			} else {
+				smsApi.apiAuth(apiKey,apiSecret,function(callback){
+					if (callback){
+						//otp sms gateway controller
+						smsApi.verifyRecoveryCode(mobile,recoveryCode,function(callback){
+							res.send(JSON.parse(callback));
 						});
-					});
-				} else {
-                    res.send(status.tokenExpired());
-				}
-			});
-		} else {
-            return res.status(403).send(JSON.parse(status.tokenNone()));
-		}
+					} else {
+						res.send(JSON.parse(status.otpDecline()));
+					}
+				});
+			}
+		});
 	}
  });
 

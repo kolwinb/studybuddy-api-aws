@@ -1,5 +1,5 @@
 //this class verify jwt token and issue when request
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 var fs = require("fs");
 
 var cert = fs.readFileSync('private.pem');

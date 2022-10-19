@@ -1,19 +1,13 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
+var express = require('../../lib/node_modules/express');
 //var config = require('../../config.js');
 
-//send mails
-var sendmail = require('/media/data/opt/nodejs/lib/node_modules/sendmail')({silent: true,devPort:25,devHost:'localhost'});
-
-//email validator
-var validator = require('/media/data/opt/nodejs/lib/node_modules/email-validator');
-
 //18byt id generator
-var uniqid = require ('/media/data/opt/nodejs/lib/node_modules/uniqid');
+var uniqid = require ('../../lib/node_modules/uniqid');
 
 //mysql model
 var pool = require('../../models/usermysql.js');
 
-const referralGenerator=require('/media/data/opt/nodejs/lib/node_modules/referral-code-generator');
+const referralGenerator=require('../../lib/node_modules/referral-code-generator');
 
 var app = express();
 var router = express.Router();
@@ -58,7 +52,7 @@ router.post('/',function(req,res){
 					} else	if (callbackVerify[0].is_verify == 1){
 						const referralCode=referralGenerator.alphaNumeric('uppercase',4,1);
 						log.info("referral code generated : "+referralCode);
-						dbQuery.setInsert(dbQuery.insertUser,["user","",password,"",mobileNo,signdate,signdate,valrand,1,'NULL',3,referralCode,deviceId],function(callbackAdd){
+						dbQuery.setInsert(dbQuery.insertUser,["user","",password,"",mobileNo,signdate,signdate,valrand,1,0,3,referralCode,deviceId],function(callbackAdd){
 							if (!callbackAdd){
 								log.info("user insert error ");
 								res.send(JSON.parse(status.server()));
@@ -84,7 +78,7 @@ router.post('/',function(req,res){
 											log.info("referrerId :"+referrerId+", referee_id : "+refereeId);
 											dbQuery.getSelect(dbQuery.whereAffiliate,[referrerId,refereeId],function(callbackAffiliate){
 												if (!callbackAffiliate[0]){
-													dbQuery.setInsert(dbQuery.insertAffiliate,['NULL',referrerId,refereeId,signdate],function(callbackAff){
+													dbQuery.setInsert(dbQuery.insertAffiliate,[0,referrerId,refereeId,signdate],function(callbackAff){
 														if(callbackAff){
 															content=JSON.stringify({"description":"Mobile User has been registered with referral code."});
 															res.send(JSON.parse(status.stateSuccess(content)));

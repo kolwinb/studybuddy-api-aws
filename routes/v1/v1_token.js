@@ -1,5 +1,5 @@
-var express = require('/media/data/opt/nodejs/lib/node_modules/express');
-var jwt = require('/media/data/opt/nodejs/lib/node_modules/jsonwebtoken');
+var express = require('../../lib/node_modules/express');
+var jwt = require('../../lib/node_modules/jsonwebtoken');
 
 //mysql model
 var pool = require('../../models/usermysql.js');
@@ -47,7 +47,7 @@ router.post('/',function(req,res){
 								vod_id:var_vodId
 								},null,{algorithm:'none'});
 							
-							con.query("INSERT INTO ?? (id,token,vod_id) VALUES (?,?,?)",["token","NULL",var_token,var_vodId],function(err,result){
+							con.query("INSERT INTO ?? (id,token,vod_id) VALUES (?,?,?)",["token",0,var_token,var_vodId],function(err,result){
 								if (err) {
 									console.log(err);
 									res.json(varErr.server);

@@ -11,14 +11,14 @@ const properties = require('./properties');
 
 var cert=fs.readFileSync('private.pem');           
 //custom jwt module
-var jwtModule = require('../lib/jwtToken');
-const status = require('../lib/status');
-const dbQuery = require('../lib/dbQuery');
-const scope = require('../lib/apiKeys');
+var jwtModule = require('../../lib/jwtToken');
+const status = require('../../lib/status');
+const dbQuery = require('../../lib/dbQuery');
+const scope = require('../../lib/apiKeys');
 const api_key = scope.gamingApi.apiKey;
 const api_secret = scope.gamingApi.apiSecret;
 
-const websocket = require('/media/data/opt/nodejs/lib/node_modules/ws');
+const websocket = require('../../lib/node_modules/ws');
 
 //global socket id lookup
 var lookup={};

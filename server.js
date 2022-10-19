@@ -1,5 +1,5 @@
-const express = require('/media/data/opt/nodejs/lib/node_modules/express');
-const morgan = require('/media/data/opt/nodejs/lib/node_modules/morgan');
+const express = require('./lib/node_modules/express');
+const morgan = require('./lib/node_modules/morgan');
 const config = require('./config.js');
 //var cors = require('/media/data/opt/nodejs/lib/node_modules/cors'); //import cross-origin-resource-sharing
 //url mapping
@@ -34,9 +34,10 @@ app.use(morgan('dev'));
 //calling to request handler (route)
 
 //socket.io client
-app.get('/studybuddy/socketio',function(req,res){
-	res.sendFile('/home/data/opt/nodejs/studybuddy/template/socketioclient.html');
-});
+//app.get('/studybuddy/socketio',function(req,res){
+//	res.sendFile('/home/data/opt/nodejs/studybuddy/template/socketioclient.html');
+//});
+app.use('/studybuddy/v1',require('./routes/v1/v1_info'));
 
 app.get('/studybuddy/test',function(res,res){
 	res.send('<h1>hello world</h1>');
@@ -82,7 +83,6 @@ app.use('/studybuddy/v1/test_encrypt_token_request',require('./routes/v1/test_en
 
 
 app.use('/studybuddy/v1/token',require('./routes/v1/v1_token'));
-app.use('/studybuddy/v1/redeem_subscribe',require('./routes/v1/v1_redeem_subscribe'));
 app.use('/studybuddy/v1/subscription',require('./routes/v1/v1_subscription'));
 //app.use('/studybuddy/v1/subscribe_status',require('./routes/v1/v1_subscribe_status'));
 app.use('/studybuddy/v1/register',require('./routes/v1/v1_register'));
@@ -90,7 +90,6 @@ app.use('/studybuddy/v1/verify',require('./routes/v1/v1_activate'));
 app.use('/studybuddy/v1/authenticate',require('./routes/v1/v1_auth'));
 app.use('/studybuddy/v1/session',require('./routes/v1/v1_session'));
 app.use('/studybuddy/v1/vod',require('./routes/v1/v1_vod'));
-app.use('/studybuddy/v1/ad',require('./routes/v1/v1_preroll')); //advertisment without authentication
 
 wsHandler.runWebsocket(server);
 
