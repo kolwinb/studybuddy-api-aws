@@ -137,8 +137,6 @@ const websocketServer = {
 									userId:userId,
 									uniqId:uniqId
 								}
-								
-								
 								jwtModule.jwtAuth(jwtPayload,60,function(callbackToken){
 									resp=JSON.parse(callbackToken);
 									const respJA = {
@@ -151,26 +149,24 @@ const websocketServer = {
 									//errorState.data.token=callbackToken;
 									authToken=resp.data.token; //assign root token
 									//sendError(socket,status.wsTokenVerification());
-									socket.send(JSON.stringify(respJA));			
+									socket.send(JSON.stringify(respJA));
 								});
 							});
-						*/	
+						*/
 							sendError(socket,status.wsTokenVerification());
 							//socket.send(JSON.stringify(tokenError));
-						}								
+						}
 					});
 					console.log('socketId : '+socket.id+', message : '+ data);
 					//users[socket.id]=1;
 					//toUserWebSocket = lookup[22];
 					//toUserWebSocket.send("hello from 22");
-					
 				});
 
 
 				socket.on('open',function(data){
 					console.log('open data'+data);
 				});
-			
 				//send online user list for every client
 				console.log("ws.socket._handle.fd :"+socket._socket._handle.fd);
 				//console.log("ws._ultron.id :"+socket._ultron.id);
@@ -178,20 +174,25 @@ const websocketServer = {
 					wss.clients.forEach((client) => {
 						//only socket equals for api authenticated / client != socket every client except api authentication
 						if (client == socket && client.readyState === websocket.OPEN) {
-							//console.log("client id :"+client.id);
-							getOnlineUsers(client);
-							
+							//console.log("Online Users List : client id : "+client.id+ " filter : "+client.filter);
+							if (!client.filter){
+								getOnlineAllUsers(client);
+							} else if (client.filter == 'SCHOOL'){
+								getOnlineSchoolUsers(client);
+							} else if (client.filter == 'DISTRICT'){
+								getOnlineDistrictUsers(client);
+							} else {
+								getOnlineAllUsers(client);
+							}
 							//client.send("test sending");
 						}
-					});				
-				},10000);									
+					});
+				},10000);
 
 				//socket.send('studybuddy online chat');
-				
 				socket.on('error',(error) => {
 					console.log('socket error'+error);
 				});
-				
 				socket.on('close', (close) => {
 					console.log('socketId : '+socket.id+' connection has been disconnected by user');
 					//id--;
@@ -208,11 +209,39 @@ const websocketServer = {
 
 
 
-const getOnlineUsers = (client) => {
-	dbQuery.getSelectJson(dbQuery.whereOnlineUsers,[client.id,client.id],function(callbackOnline){
+const getOnlineAllUsers = (client) => {
+	dbQuery.getSelectJson(dbQuery.whereOnlineUsers,[client.id,client.id,client.id],function(callbackOnline){
 		//console.log("callbackOnline :"+callbackOnline);
 		if (callbackOnline[0]){
 			//client.send("clients socket id "+socket.id+", sql uniqid "+callbackOnline[0].gameId);
+			client.send(status.sendWsData("GET-ONLINE-USERS",callbackOnline));
+		} else {
+			//client.send(callbackOnline);
+			console.log('server error');
+		}
+	});
+}
+
+const getOnlineDistrictUsers = (client) => {
+	dbQuery.getSelectJson(dbQuery.whereOnlineDistrictUsers,[client.id,client.id,client.id,client.id],function(callbackOnline){
+		//console.log("callbackOnline :"+callbackOnline);
+		if (callbackOnline[0]){
+			//client.send("clients socket id "+socket.id+", sql uniqid "+callbackOnline[0].gameId);
+			//client.send(status.sendWsData("GET-ONLINE-DISTRICTUSERS",callbackOnline));
+			client.send(status.sendWsData("GET-ONLINE-USERS",callbackOnline));
+		} else {
+			//client.send(callbackOnline);
+			console.log('server error');
+		}
+	});
+}
+
+const getOnlineSchoolUsers = (client) => {
+	dbQuery.getSelectJson(dbQuery.whereOnlineSchoolUsers,[client.id,client.id,client.id,client.id],function(callbackOnline){
+		//console.log("callbackOnline :"+callbackOnline);
+		if (callbackOnline[0]){
+			//client.send("clients socket id "+socket.id+", sql uniqid "+callbackOnline[0].gameId);
+			//client.send(status.sendWsData("GET-ONLINE-SCHOOLUSERS",callbackOnline));
 			client.send(status.sendWsData("GET-ONLINE-USERS",callbackOnline));
 		} else {
 			//client.send(callbackOnline);
@@ -543,7 +572,7 @@ const setBattleCoinState = (userId,battleId,dateTime) => {
 					console.log("Coin Pool : "+userId+" "+properties.battleCoin+" now added");
 				} else {
 					console.log("coin pool insert error");
-				}						
+				}
 			});
 		} else {
 					console.log("Coin Pool : "+userId+" "+properties.battleCoin+" previously added");
@@ -584,7 +613,6 @@ const gameAccept = (uniqId,data) => {
 					lookup[user1id].send(JSON.stringify(respJ));
 					var gameRowLimit=Number(properties.battleQuestionLimit) * parseInt(properties.battleQuestionThreshold);
 					console.log("gameRowLimit: "+gameRowLimit);
-					
 					//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMcq){
 					//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,7],function(callbackMcq){
 					//dbQuery.getMiningMcqStage9List(dbQuery.whereChallengeRandList,[gradeId,gradeId],function(callbackMcq){
@@ -603,20 +631,16 @@ const gameAccept = (uniqId,data) => {
 								}
 							lookup[user1id].send(JSON.stringify(respMcq));
 							lookup[user2id].send(JSON.stringify(respMcq));
-							
-							
 						}
 					});
 					setBattleCoinState(user1id,battleId,dateTime);
-					setBattleCoinState(user2id,battleId,dateTime);			
-					
+					setBattleCoinState(user2id,battleId,dateTime);
 				}
 			});
 		} else {
 			sendError(lookup[user2id],status.wsBattleNotFound());
 		}
 	});
-		
 }
 
 //battle cancel and game cancel
@@ -655,7 +679,7 @@ const gameRespFrom = (user1id,user2id,data,battleId) => {
 		lookup[user2id].send(JSON.stringify(respJ));
 	} catch (e) {
 		log.error("INIT event required");
-	}									
+	}
 }
 
 
@@ -722,10 +746,17 @@ const gameCancel = (uniqId,data) => {
 const initOnline = (uniqId,data,socket) => {
 				socket.id=uniqId;
 				lookup[socket.id]=socket;
+				lookup[socket.id].filter='ALL';
 				lookup[socket.id].send('studybuddy websocket server V1');
 				console.log("initOnline : uniqId "+uniqId+" data :"+data);
 				//update online status
 				updateOnlineStatus('online',socket.id);
+}
+
+const userFilter = (uniqId,data,socket) => {
+				//console.log("userfilter evet occured  : "+data.payload.filter);
+				lookup[uniqId].filter=data.payload.filter;
+				//console.log("lookup socket array : "+lookup[uniqId].filter)
 }
 
 /*
@@ -753,9 +784,8 @@ const handleCommand = {
 	'BATTLE-CANCEL' : battleCancel,
 	'SET-ANS': setAnswer,
 	'GAME-END': gameEnd,
-//	'SET-TOKEN':getGameToken,
-}				
-
+	'USER-FILTER':userFilter,
+}
 
 module.exports = websocketServer;
 

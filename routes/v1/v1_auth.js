@@ -29,18 +29,16 @@ const status=require('../lib/status');
 const scope = require('../lib/apiKeys');
 const apiKey=scope.signIn.apiKey;
 const apiSecret=scope.signIn.apiSecret;
- 
+
 router.post('/mobile',function(req,res){
     var signdate = new Date();
-	log.info("sign in : "+signdate.toLocaleString());    
-	//log.info("sign in : "+signdate.getTime());    
+	log.info("sign in : "+signdate.toLocaleString());
+	//log.info("sign in : "+signdate.getTime());
 	const mobile=req.body.mobileNo;
 	const passwd=req.body.password;
 	api_key=req.body.api_key;
 	api_secret=req.body.api_secret;
-	
 	//log.info("api_key :"+api_key+", api_secret :"+api_secret+", mobile :"+mobile+", password "+passwd);
-	
 	if ((apiKey != api_key) || (apiSecret != api_secret)){
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((!mobile) || (!passwd)){
@@ -52,16 +50,24 @@ router.post('/mobile',function(req,res){
 			} else if (callback[0].is_active==0){
 				res.send(JSON.parse(status.userNotActivated()));
 			} else {
-				//(email,expSeconds,response)
-				jwtPayload={ 
-					userId:callback[0].id,
-					uniqId:callback[0].uniqid
-					};
-				//one hour
-				jwtToken.jwtAuth(jwtPayload,3600,function(callbackJwt){
-				//one minute
-				//jwtToken.jwtAuth(jwtPayload,60,function(callbackJwt){
-					res.send(JSON.parse(callbackJwt));
+
+				dbQuery.getSelect(dbQuery.whereOnlineStatus,[callback[0].id],function (callbackOnlineStatus){
+					if (!callbackOnlineStatus[0]){
+						res.send(JSON.parse(status.server()));
+					} else if (callbackOnlineStatus[0].status == "online"){
+						res.send(JSON.parse(status.notAllowLogin()));
+					} else if (callbackOnlineStatus[0].status == "offline"){
+						//(email,expSeconds,response)
+						jwtPayload={
+							userId:callback[0].id,
+							uniqId:callback[0].uniqid
+							};						//one hour
+						jwtToken.jwtAuth(jwtPayload,3600,function(callbackJwt){
+						//one minute
+						//jwtToken.jwtAuth(jwtPayload,60,function(callbackJwt){
+							res.send(JSON.parse(callbackJwt));
+						});
+					}
 				});
 				//update lastlogin
 				dbQuery.setUpdate(dbQuery.updateLastLogin,["user",signdate,callback[0].id],function(callbackA){

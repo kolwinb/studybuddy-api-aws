@@ -16,9 +16,9 @@ var getConnection = function(callback) {
 	 		throw err;
 //  			log.error("Mysql Connection Error");
   		} else {
-  			callback(connection);                                                                       
+  			callback(connection);
   		}
-  	});                 
+  	});
   };
 
 function getRewards(){
@@ -1009,6 +1009,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	//whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
 	//whereEmailPasswd: "SELECT * FROM ?? WHERE email = ? and password = ?",
 	wherePhonePasswd: "SELECT * FROM ?? WHERE phone = ? and password = ?",
+	whereOnlineStatus: "SELECT status FROM user_profile WHERE user_id=?",
 	/* getGradeList */
 	selectGrade: "SELECT id,grade_english as nameE,\
 					grade_sinhala as nameS FROM ??",
@@ -1069,20 +1070,106 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
 						WHERE video.grade=? AND video.subject_id=? ORDER BY video.id LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
-	whereOnlineUsers: "SELECT \
+	/* all users under grade */
+	whereOnlineUsers: " \
+						SELECT \
 								(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
 								u.uniqid as gamerId, \
 								up.avatar_id as avatarId, \
 								up.grade_id as gradeId, \
 								u.phone as mobileNo, \
-								up.name as name \
+								up.name as name, \
+								up.school_id as schoolId, \
+								school.district_id as districtId \
 						FROM user_profile as up \
 						INNER JOIN user as u ON u.id = up.user_id \
-						WHERE u.uniqid != ? AND up.status='online' AND up.grade_id=( \
+						INNER JOIN school ON school.id=up.school_id \
+						WHERE (u.uniqid != ? AND up.status='online') AND (up.grade_id=( \
 										SELECT grade_id \
 										FROM user_profile AS upro \
 										INNER JOIN user as usr ON usr.id = upro.user_id \
-										WHERE usr.uniqid=?)",
+										WHERE usr.uniqid= ? ) \
+								AND u.role_id=( \
+										SELECT uer.role_id \
+										FROM user as uer \
+										WHERE uer.uniqid = ? ) \
+								) \
+						",
+	/* grade 8 school vise users */
+	whereOnlineSchoolUsers: " \
+						SELECT \
+								(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
+								u.uniqid as gamerId, \
+								up.avatar_id as avatarId, \
+								up.grade_id as gradeId, \
+								u.phone as mobileNo, \
+								up.name as name, \
+								up.school_id as schoolId, \
+								school.district_id as districtId \
+						FROM user_profile as up \
+						INNER JOIN user as u ON u.id = up.user_id \
+						INNER JOIN school ON school.id=up.school_id \
+						WHERE ((u.uniqid != ? AND up.status='online') AND (up.grade_id=( \
+										SELECT grade_id \
+										FROM user_profile AS upro \
+										INNER JOIN user as usr ON usr.id = upro.user_id \
+										WHERE usr.uniqid= ? ) \
+								AND u.role_id=( \
+										SELECT uer.role_id \
+										FROM user as uer \
+										WHERE uer.uniqid = ? ) \
+								)) \
+								AND up.school_id = ( \
+										SELECT uprf.school_id \
+										FROM user as ur \
+										INNER JOIN user_profile as uprf ON uprf.user_id=ur.id \
+										WHERE ur.uniqid = ? \
+										) \
+						",
+	/*  grade 8 Ditrict vise users */
+	whereOnlineDistrictUsers: " \
+						SELECT \
+								(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
+								u.uniqid as gamerId, \
+								up.avatar_id as avatarId, \
+								up.grade_id as gradeId, \
+								u.phone as mobileNo, \
+								up.name as name, \
+								up.school_id as schoolId, \
+								school.district_id as districtId \
+						FROM user_profile as up \
+						INNER JOIN user as u ON u.id = up.user_id \
+						INNER JOIN school ON school.id=up.school_id \
+						WHERE \
+								( \
+								u.uniqid != ? \
+								AND up.status='online' \
+								) \
+								AND \
+								( \
+								up.grade_id=( \
+										SELECT grade_id \
+										FROM user_profile AS upro \
+										INNER JOIN user as usr ON usr.id = upro.user_id \
+										WHERE usr.uniqid= ? ) \
+								AND u.role_id=( \
+										SELECT uer.role_id \
+										FROM user as uer \
+										WHERE uer.uniqid = ? ) \
+								) \
+								AND up.school_id IN ( \
+										SELECT sch.id \
+										FROM school as sch \
+										WHERE sch.district_id = ( \
+											SELECT dist.id \
+											FROM user as ur \
+											INNER JOIN user_profile as upr ON upr.user_id=ur.id \
+											INNER JOIN school as scoo ON scoo.id=upr.school_id \
+											INNER JOIN district as dist ON dist.id=scoo.district_id \
+											WHERE ur.uniqid= ? \
+											) \
+										) \
+						",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
 	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
@@ -1612,6 +1699,10 @@ getAnswerInsertId: function(query,fields,callback) {
 	getSelectJson: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
+				if (err){
+					throw err;
+					//console.log("internal database error");
+				}
    				if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {

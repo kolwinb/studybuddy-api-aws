@@ -7,7 +7,7 @@ function sendError(code,desc){
 		"error":{
 			"statusCode":code,
 			"description":desc
-		}	
+		}
 	}
 	return JSON.stringify(jsonData)
 }
@@ -114,6 +114,9 @@ var State ={
 	},
 	regParamErr: function(){
 		return  sendError(1010,"Parameters not match.")
+	},
+	notAllowLogin: function(){
+		return  sendError(1210,"Login from two devices are not allowed.")
 	},
 	recoveryCodeNotVerify: function(){
 		return  sendError(1209,"Recovery code verification has been failed.")

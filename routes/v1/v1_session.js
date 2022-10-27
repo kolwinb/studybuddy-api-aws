@@ -14,23 +14,34 @@ var cert=fs.readFileSync('private.pem');
 var jwtModule = require('../lib/jwtToken');
 const status = require('../lib/status');
 const log = require('../lib/log');
-
+const dbQuery = require('../lib/dbQuery');
 router.post('/',function(req,res,next) {
 
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
    if (rtoken) {
+
 		jwtModule.jwtVerify(rtoken,function(callback){
 			if (callback) {
 				contents=JSON.stringify({"description":"Token verified"});
-				res.send(JSON.parse(status.stateSuccess(contents)));
+				jwtModule.jwtGetUserId(rtoken,function(callbackUser){
+					const userId=callbackUser.userId
+					dbQuery.getSelect(dbQuery.whereOnlineStatus,[userId],function (callbackOnline){
+						if (!callbackOnline[0]) {
+							res.send(JSON.parse(status.server()));
+						} else if (callbackOnline[0].status == 'online'){
+							res.send(JSON.parse(status.notAllowLogin()));
+						} else if (callbackOnline[0].status == 'offline'){
+							res.send(JSON.parse(status.stateSuccess(contents)));
+						}
+					});
+
+				});
 			} else {
 				res.send(JSON.parse(status.tokenExpired()));
-			
 			}
 		});
-		                            
+
     } else {
-    
        res.send(JSON.parse(status.tokenNone()));
   }
 
