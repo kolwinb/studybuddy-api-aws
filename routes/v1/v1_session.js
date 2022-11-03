@@ -28,9 +28,14 @@ router.post('/',function(req,res,next) {
 					dbQuery.getSelect(dbQuery.whereOnlineStatus,[userId],function (callbackOnline){
 						if (!callbackOnline[0]) {
 							res.send(JSON.parse(status.server()));
+						/*
 						} else if (callbackOnline[0].status == 'online'){
 							res.send(JSON.parse(status.notAllowLogin()));
 						} else if (callbackOnline[0].status == 'offline'){
+							res.send(JSON.parse(status.stateSuccess(contents)));
+						*/
+						}
+						else {
 							res.send(JSON.parse(status.stateSuccess(contents)));
 						}
 					});

@@ -10,17 +10,18 @@ upass=${line#*:}
 
 
 #msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
-msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
+msql="mysql -h172.31.48.100 -u$uname -p$upass studybuddy"
 #total answered by given user
 #getvideo list
-#echo "select id,name from video" | $msql >> video.list
+rm video.list
+echo "select id,name from video" | $msql >> video.list
 
 
 #get question image list
-rm question_image.list
-echo "select image from mcq_question where image != ''" | $msql >> question_image.list
+#rm question_image.list
+#echo "select image from mcq_question where image != ''" | $msql >> question_image.list
 
 #get answer image list
-rm answer_image.list
-echo "select image from mcq_option where image != ''" | $msql >> answer_image.list
+#rm answer_image.list
+#echo "select image from mcq_option where image != ''" | $msql >> answer_image.list
 

@@ -88,7 +88,7 @@ router.post('/getIqList',function(req,res,next) {
  	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
-	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
 		res.send(JSON.parse(status.unAuthApi()));
 	} else {
    		if (rtoken) {
@@ -102,11 +102,10 @@ router.post('/getIqList',function(req,res,next) {
 								//dbQuery.getSelectJson(dbQuery.whereIqList,[levelId],function(callbackMiningIq){
 									//console.log("mcqmining :"+callbackMiningMcq);
 									res.send(JSON.parse(status.stateSuccess(callbackMiningIq)));
-								});		
-												
+								});
 						});
 					} else {
-						res.send(status.tokenExpired());         
+						res.send(status.tokenExpired());
 					}
 				});
 		} else {

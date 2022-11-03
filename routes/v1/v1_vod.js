@@ -232,11 +232,12 @@ router.post('/getLesson',function(req,res,next) {
 	const videoId=req.body.video_id;
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
-	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {                    	
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
 		res.send(JSON.parse(status.unAuthApi()));
 	} else {
    		if (rtoken) {
 				jwtModule.jwtVerify(rtoken,function(callback){
+					console.log("jwtVerification : "+callback);
 					if (callback){
  						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
@@ -255,9 +256,8 @@ router.post('/getLesson',function(req,res,next) {
 												varLesson=JSON.parse(callbackLesson)
 												//console.log("callbackUser "+callbackUser);
 												//console.log(callbackLesson);
-	       										res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson)))); 
-		
-											});	
+	       										res.send(JSON.parse(status.stateSuccess(JSON.stringify(varLesson))));
+											});
 										}
 									});
        							}
@@ -265,9 +265,9 @@ router.post('/getLesson',function(req,res,next) {
  						});
 
 					} else {
-						res.send(JSON.parse(status.tokenExpired()));         
-					}      
-				}); 
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+				});
     	} else {
        		return res.status(403).send(JSON.parse(status.tokenNone()));
   		}

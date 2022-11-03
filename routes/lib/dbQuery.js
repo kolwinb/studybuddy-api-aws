@@ -77,7 +77,12 @@ return " \
 		SELECT IFNULL(SUM(coin_pool.coin),0) \
 		FROM coin_pool \
 		WHERE coin_pool.user_id = user.uniqid \
-	) as battleRewards \
+	) as battleRewards, \
+	( \
+		SELECT COUNT(id) \
+		FROM user_affiliate as useraff \
+		WHERE useraff.referrer_id = user.id \
+	) as referralRewards \
 	"
 }
 
@@ -396,6 +401,7 @@ whereIqList:"SELECT \
 			FROM iq_question \
 			INNER JOIN iq_option ON iq_option.question_id=iq_question.id \
 			WHERE level = ? \
+			LIMIT 40 /* 1 * 4 = 4;4*10=40 */ \
 			;",
 /* MCQMining  stage 1 to 8*/
 whereMiningMcqList:"SELECT \
@@ -425,8 +431,8 @@ whereMiningMcqList:"SELECT \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
-			LIMIT 60 /* LIMIT 20 */  /* LIMIT 12 */ \
-			;",			
+			LIMIT 40 /*4*10=40*/ \
+			;",
 /* MCQMining  stage 9*/
 whereMiningMcqStage9List:" \
 			SELECT \
@@ -456,6 +462,7 @@ whereMiningMcqStage9List:" \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
+			LIMIT 64 /*6.4*10=64*/ \
 			;",
 /* Random stage > 9*/
 whereMiningMcqRandList:" \
@@ -490,6 +497,7 @@ whereMiningMcqRandList:" \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
 			WHERE video.grade=? \
+			LIMIT 64 /*6.4*10=64*/ \
 			;",
 whereMiningGameRandList:" \
 			SELECT \
@@ -524,7 +532,7 @@ whereMiningGameRandList:" \
 			INNER JOIN grade ON grade.id=video.grade \
 			WHERE video.grade=? \
 			LIMIT ? \
-			;",			
+			;",
 /* gaming rand */
 whereChallengeRandList:" \
 			SELECT \
@@ -757,7 +765,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					user_profile.grade_id as gradeId, \
 					user_profile.avatar_id as avatarId, \
 					user_profile.school_id as schoolId, \
-					user.referral_code as referralCode, \
+					@referral_code := user.referral_code as referralCode, \
+					@referralLink := CONCAT('https://learntv.lk/r/',@referral_code) as referralLink, \
 					user_profile.avatar_id as avatarId, \
 					user_profile.address as address, \
 					user_profile.favorite_subject as favoriteSubject, \
@@ -893,7 +902,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						GROUP BY student_answer.user_id \
 						/* ORDER BY correctAnswers DESC */ \
 						ORDER BY coins DESC \
-						LIMIT 20;",
+						LIMIT "+escape(properties.leaderboardLimit)+";",
 	whereStudentLikeFavorite: "SELECT * FROM ?? WHERE user_id = ? and video_id = ?",
 	whereStudentAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ?",
 	whereMiningAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ? AND stage_id=?",
