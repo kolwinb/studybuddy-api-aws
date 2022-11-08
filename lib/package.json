@@ -6,6 +6,7 @@
     "mongodb": "^4.10.0",
     "morgan": "^1.10.0",
     "mysql": "^2.18.1",
+    "puppeteer": "^19.2.1",
     "referral-code-generator": "^1.0.8",
     "request": "^2.88.2",
     "uniqid": "^5.4.0",

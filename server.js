@@ -43,6 +43,9 @@ app.get('/studybuddy/test',function(res,res){
 	res.send('<h1>hello world</h1>');
 });
 
+//pdfweeklyreport
+app.use('/studybuddy/v1/student/learning/pdfWeeklyReport', require('./routes/v1/v1_pdfReport'));
+
 //mcq mining and iq mining
 app.use('/studybuddy/v1/student/mining', require('./routes/v1/v1_mining'));
 

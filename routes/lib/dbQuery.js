@@ -385,7 +385,6 @@ whereIqLevelList:"SELECT \
 						GROUP BY level \
 					) AS iq \
 					ORDER BY iq.id ASC;",
-					
 whereIqList:"SELECT \
 			iq_question.level as levelId, \
 			iq_question.id as questionId, \
@@ -407,14 +406,20 @@ whereIqList:"SELECT \
 whereMiningMcqList:"SELECT \
 			video.id as lessonId, \
 			mcq_question.id as questionId, \
-			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as optionImage, \
+			(CASE WHEN mcq_question.heading ='' \
+				THEN null \
+			END) as heading, \
+			(CASE WHEN mcq_question.image = '' \
+				THEN null \
+			END) as questionImage, \
+			(CASE WHEN mcq_option.image = '' \
+				THEN null \
+			END) as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -438,14 +443,20 @@ whereMiningMcqStage9List:" \
 			SELECT \
 			video.id as lessonId, \
 			mcq_question.id as questionId, \
-			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as optionImage, \
+			(CASE WHEN mcq_question.heading ='' \
+				THEN null \
+			END) as heading, \
+			(CASE WHEN mcq_question.image = '' \
+				THEN null \
+			END) as questionImage, \
+			(CASE WHEN mcq_option.image = '' \
+				THEN null \
+			END) as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -469,14 +480,20 @@ whereMiningMcqRandList:" \
 			SELECT \
 			video.id as lessonId, \
 			mcq_question.id as questionId, \
-			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as optionImage, \
+			(CASE WHEN mcq_question.heading ='' \
+				THEN null \
+			END) as heading, \
+			(CASE WHEN mcq_question.image = '' \
+				THEN null \
+			END) as questionImage, \
+			(CASE WHEN mcq_option.image = '' \
+				THEN null \
+			END) as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -503,14 +520,20 @@ whereMiningGameRandList:" \
 			SELECT \
 			video.id as lessonId, \
 			mcq_question.id as questionId, \
-			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as optionImage, \
+			(CASE WHEN mcq_question.heading ='' \
+				THEN null \
+			END) as heading, \
+			(CASE WHEN mcq_question.image = '' \
+				THEN null \
+			END) as questionImage, \
+			(CASE WHEN mcq_option.image = '' \
+				THEN null \
+			END) as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -533,7 +556,7 @@ whereMiningGameRandList:" \
 			WHERE video.grade=? \
 			LIMIT ? \
 			;",
-/* gaming rand */
+/*Test: gaming rand */
 whereChallengeRandList:" \
 			SELECT \
 			video.id as lessonId, \
@@ -647,9 +670,22 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						INNER JOIN video ON video.id=mcq_question.video_id \
 						INNER JOIN subject ON subject.id=video.subject_id \
 						WHERE student_answer.user_id=? AND video.subject_id IN ( SELECT id FROM subject) group by subject.id;",
-	                        
+
+	weeklyReport:"SELECT \
+					subject.subject_english as subject, \
+					COUNT(DISTINCT(video.id)) as totalLessons, \
+					DATE_FORMAT(started,'%a') AS dayName \
+					/* DATE_FORMAT(started,'%Y-%m-%d') AS dayName */ \
+					FROM student_answer \
+					INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
+					INNER JOIN video ON video.id=mcq_question.video_id \
+					INNER JOIN subject ON subject.id=video.subject_id \
+					WHERE user_id=? AND started >= (NOW() - INTERVAL 7 DAY) \
+					/* GROUP BY DATE_FORMAT(started,'%a') */ \
+					GROUP BY DATE_FORMAT(started,'%d'),video.subject_id \
+					; \
+					",
 	mcqOption:"SELECT mcq_option.id, mcq_option.option, mcq_option.image, CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect FROM mcq_option WHERE mcq_option.question_id=?",
-				 
 	videoData: "SELECT video.id as videoId, \
 					video.lesson_name as heading, \
 					video.short_desc as shortDesc, \
@@ -819,7 +855,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					INNER JOIN video ON video.id=mcq_question.video_id \
 					WHERE user_id=? AND started >= (NOW() - INTERVAL 7 DAY) \
 					/* GROUP BY DATE_FORMAT(started,'%a') */ \
-					GROUP BY DATE_FORMAT (started,'%d') \
+					GROUP BY DATE_FORMAT(started,'%d') \
 					; \
 				/* Wallet */ \
 				( \
@@ -1592,11 +1628,23 @@ getAnswerInsertId: function(query,fields,callback) {
 	 		//con.release();
  		});
 	},
-	
+	getWeeklyPdfReport: function(query,fields,callback) {
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+   				if (!result){
+   					callback(status.server());
+ 				} else {
+ 					const [dayOfLesson] = result;
+					const chartDay= getDayOfLesson(result);
+					callback(JSON.stringify(chartDay))
+				}
+			});
+			con.release();
+		});
+	},
 	getProfileInfo: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
-  				dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
    				if (!result){
    					callback(status.server());
  				} else {
@@ -1617,8 +1665,6 @@ getAnswerInsertId: function(query,fields,callback) {
     					});
     				const lengthObj = Object.keys(subscriptionDetails).length;
     				*/
-    				
-    				
     				/*			
     				if (Object.keys(subscriptionDetails).length === 0) {
     					console.log("subscription data not found");
@@ -1635,49 +1681,19 @@ getAnswerInsertId: function(query,fields,callback) {
     					});
     				 	
     				//chart of the day question
-					var dayList=[];
-					var chartDay = chartOfDay.map((mysqlObj, index) => {
-							//console.log("chartDay mysqlObj "+mysqlObj.dayName);
-							for (const dName of dayArray){
-								if (mysqlObj.dayName != dName) {
-								
-									emptyDay = {
-											"totalLessons":0,
-											"dayName":dName
-										};
-									dayList.push(emptyDay);
-									//console.log("day array not match : "+dName);
-								
-								} else {
-									dayList.push(mysqlObj);
-								}	
-							}
-							//Object.assign(mysqlObj,emptyQuestionDay);
-    						//return Object.assign({}, mysqlObj);
-    						return Object.assign({}, dayList);
-    					}); 			
+
 
 					//console.log(dayList);
 					//append empty lesson days to chart
 					//console.log("chartOfDay :"+JSON.stringify(chartOfDay));
-					if (chartOfDay.length == 0){
-						console.log("empty day chart found");
-						for (const dName of dayArray){
-							emptyDay = {
-									"totalLessons":0,
-									"dayName":dName
-								};
-							dayList.push(emptyDay);
-							//console.log("day array not match : "+dName);
-						}
-														
-					}
-					Object.assign(chartDay,dayList);
-    				
+
+					const chartDay= getDayOfLesson(chartOfDay);
+					//Object.assign({},chartDay);
+
 					const langList = languageData.map((mysqlObj, index) => {
 						return Object.assign({}, mysqlObj);
 					});
-					 					
+
  					const jsonData={
  						personalInfo:personalData[0],
 						wallet:walletData[0],
@@ -1691,7 +1707,6 @@ getAnswerInsertId: function(query,fields,callback) {
 // 						subscribedDetails:subscriptionDetails
 // 						subscribedDetails:Object.assign(subscriptionDetails,planTrialData)
 // 						subscribedDetails:subscriptionDetails[1]['']=planTrialData
- 						
  					}
 					var jsonResults = result.map((mysqlObj, index) => {
     						return Object.assign({}, mysqlObj);
@@ -1703,7 +1718,6 @@ getAnswerInsertId: function(query,fields,callback) {
 		con.release();
 	});
 	},
-	
 	//query any table
 	getSelectJson: function(query,fields,callback) {
 		getConnection(function(con) {
@@ -2200,5 +2214,42 @@ getIqList: function(query,fields,callback) {
 	
 }
 
+const getDayOfLesson = (chartOfDay) => {
+	dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+	var dayList=[];
+	if (chartOfDay.length == 0){
+		console.log("empty day chart found");
+		for (const dName of dayArray){
+			emptyDay = {
+					"totalLessons":0,
+					"dayName":dName
+				};
+			dayList.push(emptyDay);
+			//console.log("day array not match : "+dName);
+		}
+	return dayList;
+	} else {
+		var chartDay = chartOfDay.map((mysqlObj, index) => {
+				//console.log("chartDay mysqlObj "+mysqlObj.dayName);
+				for (const dName of dayArray){
+					if (mysqlObj.dayName != dName) {
+						emptyDay = {
+								"totalLessons":0,
+								"dayName":dName
+							};
+						dayList.push(emptyDay);
+						//console.log("day array not match : "+dName);
+					} else {
+						dayList.push(mysqlObj);
+					}
+				}
+				//return Object.assign({}, dayList);
+				//Object.assign(mysqlObj,emptyQuestionDay);
+				//return Object.assign({}, mysqlObj);
+			});
+	//return Object.assign(chartDay,dayList);
+	return dayList;
+	}
+}
 
-module.exports = dbStatements;                                    
+module.exports = dbStatements;

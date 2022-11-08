@@ -16,9 +16,9 @@ var getConnection = function(callback) {
 	 		throw err;
 //  			log.error("Mysql Connection Error");
   		} else {
-  			callback(connection);                                                                       
+  			callback(connection);
   		}
-  	});                 
+  	});
   };
 
 function getRewards(){
@@ -77,7 +77,12 @@ return " \
 		SELECT IFNULL(SUM(coin_pool.coin),0) \
 		FROM coin_pool \
 		WHERE coin_pool.user_id = user.uniqid \
-	) as battleRewards \
+	) as battleRewards, \
+	( \
+		SELECT COUNT(id) \
+		FROM user_affiliate as useraff \
+		WHERE useraff.referrer_id = user.id \
+	) as referralRewards \
 	"
 }
 
@@ -396,6 +401,7 @@ whereIqList:"SELECT \
 			FROM iq_question \
 			INNER JOIN iq_option ON iq_option.question_id=iq_question.id \
 			WHERE level = ? \
+			LIMIT 40 /* 1 * 4 = 4;4*10=40 */ \
 			;",
 /* MCQMining  stage 1 to 8*/
 whereMiningMcqList:"SELECT \
@@ -403,12 +409,12 @@ whereMiningMcqList:"SELECT \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as image, \
+			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as image, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -425,8 +431,8 @@ whereMiningMcqList:"SELECT \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
-			/* LIMIT 20 */ /* LIMIT 12 */ \
-			;",			
+			LIMIT 40 /*4*10=40*/ \
+			;",
 /* MCQMining  stage 9*/
 whereMiningMcqStage9List:" \
 			SELECT \
@@ -439,7 +445,7 @@ whereMiningMcqStage9List:" \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as answerImage, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -456,6 +462,7 @@ whereMiningMcqStage9List:" \
 			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
+			LIMIT 64 /*6.4*10=64*/ \
 			;",
 /* Random stage > 9*/
 whereMiningMcqRandList:" \
@@ -464,12 +471,12 @@ whereMiningMcqRandList:" \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as QuestionImage, \
+			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as answerImage, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -490,7 +497,41 @@ whereMiningMcqRandList:" \
 			INNER JOIN subject ON subject.id=video.subject_id \
 			INNER JOIN grade ON grade.id=video.grade \
 			WHERE video.grade=? \
-			LIMIT 4 \
+			LIMIT 64 /*6.4*10=64*/ \
+			;",
+whereMiningGameRandList:" \
+			SELECT \
+			video.id as lessonId, \
+			mcq_question.id as questionId, \
+			mcq_question.heading as heading, \
+			mcq_question.question as question, \
+			mcq_question.image as questionImage, \
+			subject.subject_english as subject, \
+			grade.grade_english as grade, \
+			mcq_option.id as optionId, \
+			mcq_option.option as answer, \
+			mcq_option.image as optionImage, \
+			( \
+				CASE WHEN mcq_option.state = 1 \
+					THEN 'True' \
+					ELSE 'False' \
+				END \
+			) as isCorrect \
+			FROM ( \
+					SELECT \
+					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
+					FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId \
+					FROM video \
+					WHERE grade=? AND lesson <> 0 \
+					GROUP BY subject_id \
+					) AS randVideo \
+			INNER JOIN video ON video.id=randVideo.randId \
+			INNER JOIN mcq_question ON mcq_question.video_id=video.id \
+			INNER JOIN mcq_option ON mcq_option.question_id=mcq_question.id \
+			INNER JOIN subject ON subject.id=video.subject_id \
+			INNER JOIN grade ON grade.id=video.grade \
+			WHERE video.grade=? \
+			LIMIT ? \
 			;",
 /* gaming rand */
 whereChallengeRandList:" \
@@ -499,12 +540,12 @@ whereChallengeRandList:" \
 			mcq_question.id as questionId, \
 			mcq_question.heading as heading, \
 			mcq_question.question as question, \
-			mcq_question.image as QuestionImage, \
+			mcq_question.image as questionImage, \
 			subject.subject_english as subject, \
 			grade.grade_english as grade, \
 			mcq_option.id as optionId, \
 			mcq_option.option as answer, \
-			mcq_option.image as answerImage, \
+			mcq_option.image as optionImage, \
 			( \
 				CASE WHEN mcq_option.state = 1 \
 					THEN 'True' \
@@ -531,7 +572,7 @@ whereChallengeRandList:" \
 			iqq.id as questionId, \
 			@heading := 'NULL' as heading, \
 			iqq.question as question, \
-			@Qimage := 'NULL' as QuestionImage, \
+			@Qimage := 'NULL' as questionImage, \
 			@grade := 'IQ' as grade, \
 			iqq.level as subject, \
 			iqo.id as optionId, \
@@ -606,14 +647,28 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						INNER JOIN video ON video.id=mcq_question.video_id \
 						INNER JOIN subject ON subject.id=video.subject_id \
 						WHERE student_answer.user_id=? AND video.subject_id IN ( SELECT id FROM subject) group by subject.id;",
-	                        
+
+	weeklyReport:"SELECT \
+					subject.subject_english as subjepct, \
+					COUNT(DISTINCT(video.id)) as totalLessons, \
+					DATE_FORMAT(started,'%a') AS dayName \
+					/* DATE_FORMAT(started,'%Y-%m-%d') AS dayName */ \
+					FROM student_answer \
+					INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
+					INNER JOIN video ON video.id=mcq_question.video_id \
+					INNER JOIN subject ON subject.id=video.subject_id \
+					WHERE user_id=? AND started >= (NOW() - INTERVAL 7 DAY) \
+					/* GROUP BY DATE_FORMAT(started,'%a') */ \
+					GROUP BY DATE_FORMAT(started,'%d'),video.subject_id \
+					; \
+					",
 	mcqOption:"SELECT mcq_option.id, mcq_option.option, mcq_option.image, CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect FROM mcq_option WHERE mcq_option.question_id=?",
-				 
 	videoData: "SELECT video.id as videoId, \
 					video.lesson_name as heading, \
 					video.short_desc as shortDesc, \
 					video.long_desc as longDesc, \
 					video.name as fileName, \
+					video.grade as gradeId, \
 					@grade := grade.grade_english as grade, \
 					@syllabus := syllabus.syllabus_english as syllabus, \
 					@subject := subject.subject_english as subject \
@@ -633,7 +688,10 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					WHERE mcq_question.video_id=?; \
 					SELECT mcq_option.id, \
 					mcq_option.option, \
-					mcq_option.image, \
+					(CASE WHEN mcq_option.image != '' \
+						THEN CONCAT('"+properties.vodUrl+"','/',@grade,'/',@syllabus,'/',@subject,'/mcq/',mcq_option.image) \
+						ELSE 'null' \
+					END) as image, \
 					CASE WHEN mcq_option.state=1 THEN 'True' ELSE 'False' END AS isCorrect \
 					FROM mcq_option \
 					INNER JOIN mcq_question ON mcq_question.id=mcq_option.question_id \
@@ -720,7 +778,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					user_profile.grade_id as gradeId, \
 					user_profile.avatar_id as avatarId, \
 					user_profile.school_id as schoolId, \
-					user.referral_code as referralCode, \
+					@referral_code := user.referral_code as referralCode, \
+					@referralLink := CONCAT('https://learntv.lk/r/',@referral_code) as referralLink, \
 					user_profile.avatar_id as avatarId, \
 					user_profile.address as address, \
 					user_profile.favorite_subject as favoriteSubject, \
@@ -765,13 +824,16 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					( SELECT id FROM subject) GROUP By video.subject_id; \
 				/* chart of total lesson by last 7 day */ \
 				SELECT \
-					COUNT(DISTINCT(video.id)) AS totalLessons, \
+					COUNT(DISTINCT(video.id)) as totalLessons, \
 					DATE_FORMAT(started,'%a') AS dayName \
+					/* DATE_FORMAT(started,'%Y-%m-%d') AS dayName */ \
 					FROM student_answer \
 					INNER JOIN mcq_question ON mcq_question.id=student_answer.question_id \
 					INNER JOIN video ON video.id=mcq_question.video_id \
-					WHERE user_id=? AND NOW() <= DATE_ADD(student_answer.started,INTERVAL 7 DAY)  \
-					GROUP BY DATE_FORMAT(started,'%a'); \
+					WHERE user_id=? AND started >= (NOW() - INTERVAL 7 DAY) \
+					/* GROUP BY DATE_FORMAT(started,'%a') */ \
+					GROUP BY DATE_FORMAT(started,'%d') \
+					; \
 				/* Wallet */ \
 				( \
 					SELECT \
@@ -853,7 +915,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						GROUP BY student_answer.user_id \
 						/* ORDER BY correctAnswers DESC */ \
 						ORDER BY coins DESC \
-						LIMIT 20;",
+						LIMIT "+escape(properties.leaderboardLimit)+";",
 	whereStudentLikeFavorite: "SELECT * FROM ?? WHERE user_id = ? and video_id = ?",
 	whereStudentAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ?",
 	whereMiningAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ? AND stage_id=?",
@@ -969,6 +1031,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	//whereEmailOrPhone: "SELECT * FROM ?? WHERE email = ? OR phone = ?",
 	//whereEmailPasswd: "SELECT * FROM ?? WHERE email = ? and password = ?",
 	wherePhonePasswd: "SELECT * FROM ?? WHERE phone = ? and password = ?",
+	whereOnlineStatus: "SELECT status FROM user_profile WHERE user_id=?",
 	/* getGradeList */
 	selectGrade: "SELECT id,grade_english as nameE,\
 					grade_sinhala as nameS FROM ??",
@@ -988,6 +1051,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					WHERE grade_subject.grade_id=?",
 	selectLessonList: "SELECT video.id as id, \
 						video.grade as grade, \
+						grade.grade_english as gradeName, \
 						CONCAT(video.term,' වන වාරය') as termS, \
 						video.episode as episode, \
 						video.lesson_name as heading, \
@@ -1024,23 +1088,110 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
  								WHERE mcq_question.video_id=video.id) as totalQuestions \
 						FROM video \
 						INNER JOIN subject ON subject.id=video.subject_id \
+						INNER JOIN grade on grade.id=video.grade \
 						INNER JOIN syllabus ON syllabus.id=video.syllabus \
 						WHERE video.grade=? AND video.subject_id=? ORDER BY video.id LIMIT ?; \
 						SELECT student_favorite.video_id FROM student_favorite WHERE student_favorite.user_id=?;",
-	whereOnlineUsers: "SELECT \
+	/* all users under grade */
+	whereOnlineUsers: " \
+						SELECT \
 								(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
 								u.uniqid as gamerId, \
 								up.avatar_id as avatarId, \
 								up.grade_id as gradeId, \
 								u.phone as mobileNo, \
-								up.name as name \
+								up.name as name, \
+								up.school_id as schoolId, \
+								school.district_id as districtId \
 						FROM user_profile as up \
 						INNER JOIN user as u ON u.id = up.user_id \
-						WHERE u.uniqid != ? AND up.status='online' AND up.grade_id=( \
+						INNER JOIN school ON school.id=up.school_id \
+						WHERE (u.uniqid != ? AND up.status='online') AND (up.grade_id=( \
 										SELECT grade_id \
 										FROM user_profile AS upro \
 										INNER JOIN user as usr ON usr.id = upro.user_id \
-										WHERE usr.uniqid=?)",
+										WHERE usr.uniqid= ? ) \
+								AND u.role_id=( \
+										SELECT uer.role_id \
+										FROM user as uer \
+										WHERE uer.uniqid = ? ) \
+								) \
+						",
+	/* grade 8 school vise users */
+	whereOnlineSchoolUsers: " \
+						SELECT \
+								(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
+								u.uniqid as gamerId, \
+								up.avatar_id as avatarId, \
+								up.grade_id as gradeId, \
+								u.phone as mobileNo, \
+								up.name as name, \
+								up.school_id as schoolId, \
+								school.district_id as districtId \
+						FROM user_profile as up \
+						INNER JOIN user as u ON u.id = up.user_id \
+						INNER JOIN school ON school.id=up.school_id \
+						WHERE ((u.uniqid != ? AND up.status='online') AND (up.grade_id=( \
+										SELECT grade_id \
+										FROM user_profile AS upro \
+										INNER JOIN user as usr ON usr.id = upro.user_id \
+										WHERE usr.uniqid= ? ) \
+								AND u.role_id=( \
+										SELECT uer.role_id \
+										FROM user as uer \
+										WHERE uer.uniqid = ? ) \
+								)) \
+								AND up.school_id = ( \
+										SELECT uprf.school_id \
+										FROM user as ur \
+										INNER JOIN user_profile as uprf ON uprf.user_id=ur.id \
+										WHERE ur.uniqid = ? \
+										) \
+						",
+	/*  grade 8 Ditrict vise users */
+	whereOnlineDistrictUsers: " \
+						SELECT \
+								(SELECT SUM("+getRewards()+") FROM user WHERE user.id=u.id) as balance, \
+								u.uniqid as gamerId, \
+								up.avatar_id as avatarId, \
+								up.grade_id as gradeId, \
+								u.phone as mobileNo, \
+								up.name as name, \
+								up.school_id as schoolId, \
+								school.district_id as districtId \
+						FROM user_profile as up \
+						INNER JOIN user as u ON u.id = up.user_id \
+						INNER JOIN school ON school.id=up.school_id \
+						WHERE \
+								( \
+								u.uniqid != ? \
+								AND up.status='online' \
+								) \
+								AND \
+								( \
+								up.grade_id=( \
+										SELECT grade_id \
+										FROM user_profile AS upro \
+										INNER JOIN user as usr ON usr.id = upro.user_id \
+										WHERE usr.uniqid= ? ) \
+								AND u.role_id=( \
+										SELECT uer.role_id \
+										FROM user as uer \
+										WHERE uer.uniqid = ? ) \
+								) \
+								AND up.school_id IN ( \
+										SELECT sch.id \
+										FROM school as sch \
+										WHERE sch.district_id = ( \
+											SELECT dist.id \
+											FROM user as ur \
+											INNER JOIN user_profile as upr ON upr.user_id=ur.id \
+											INNER JOIN school as scoo ON scoo.id=upr.school_id \
+											INNER JOIN district as dist ON dist.id=scoo.district_id \
+											WHERE ur.uniqid= ? \
+											) \
+										) \
+						",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
 	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
@@ -1052,15 +1203,26 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	/* find game5r request exist */
 	whereBattleGameReq:"SELECT id,status FROM battle_pool WHERE id=?;",
-	whereGameReq:"SELECT id,status FROM battle_pool WHERE user1id=? AND user2id=? AND status=?;",
-	whereBattleStatus:"SELECT status FROM battle_pool WHERE id=? AND status='running';",
+	whereGameRunning:"SELECT ( \
+						CASE WHEN user1id IS NULL \
+							THEN 'False' \
+							ELSE 'True' \
+						END) as user1idState, \
+						CASE WHEN user2id IS NULL \
+							THEN 'False' \
+							ELSE 'True' \
+						END) as user2idState \
+						 FROM battle_pool WHERE (user1id=? OR user2id=?) AND status='running';",
+	whereUserBStatus:"SELECT id,status,datetime FROM battle_pool WHERE (user1id=? OR user2id=?) AND status LIKE 'running';",
+	whereGameReq:"SELECT id,status FROM battle_pool WHERE (user1id=? AND user2id=?) AND status=?;",
+	whereBattleStatus:"SELECT status,datetime FROM battle_pool WHERE id=? AND status='running';",
 	
 	whereBattleEnd:" \
 					SELECT \
 					user.uniqid AS gamerId, \
 					up.name, \
 					up.avatar_id, \
-					bp.datetime as battleStartedAt, \
+					DATE_FORMAT(bp.datetime,'%Y-%m-%d %H:%m:%s') as battleStartedAt, \
 					(CASE WHEN ba.id IS NOT NULL \
 						THEN 'True' \
 						ELSE 'False' \
@@ -1155,6 +1317,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 
 	updateGameStatus:"UPDATE battle_pool SET status=? WHERE id=?;",
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ? AND id=?;",
+	updateGameRunning:"UPDATE battle_pool SET status=?,datetime=? WHERE id=?;",
 	updateOnlineDefault:"UPDATE user_profile SET status = ?",
 	//updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id= ?",
 	updateOnlineStatus:"UPDATE user_profile SET status = ? WHERE user_id = (SELECT id FROM user WHERE uniqId= ?)",
@@ -1170,7 +1333,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	updateIsVerify:"UPDATE ?? SET is_verify=?, created=? WHERE mobile=?",
 	updateOauth:"UPDATE ?? SET token=?, updated=? WHERE user_id=?",
 	updateLastLogin:"UPDATE ?? SET last_login=? WHERE id = ?",
-	updateProfile:"UPDATE ?? SET school_id=?,student_name=?,student_grade=?,avatar_id=? WHERE student_id=?",
+	updateProfile:"UPDATE ?? SET school_id=?,name=?,grade_id=?,avatar_id=? WHERE user_id=?",
 	updateAccountDetail:"UPDATE user_profile SET \
 			name=?, \
 			grade_id=?, \
@@ -1230,8 +1393,8 @@ getAnswerInsertId: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
-					//throw err;
-					log.info(err);
+					throw err;
+					//log.info(err);
 				} else {
 				//log.info("sql result : "+JSON.parse(JSON.stringify(result[0])))
 				//add LAST_INSERT_ID, undefine fixed
@@ -1314,6 +1477,7 @@ getAnswerInsertId: function(query,fields,callback) {
  					const [video,question,option] = result;
  					//console.log("mcqOption :"+option[0].id);
 					var jsonVideo = video.map((mysqlObj, index) => {
+/*
 							//console.log(jsonVideo);
 							try {
 								smallList=fs.readFileSync(properties.fileBasePath+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_240p.m3u').toString().split("\n");
@@ -1351,25 +1515,41 @@ getAnswerInsertId: function(query,fields,callback) {
 							} catch (e) {
 								console.log("playlist files not found");
 							}
-/*										
-							mysqlObj.videoUrls=[{
+*/
+							mysqlObj.playlists=[{
 										"name":"small",
 										"quality":"240p",
-										"videoUrl":properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_240p.m3u'
+										"videoList":[
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-240p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_240p_100.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-240p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_240p_100.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-240p.mp4'
+												]
 										},
 										{
 										"name":"medium",
 										"quality":"360p",
-										"videoUrl":properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_360p.m3u'
-										
+										"videoList":[
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-360p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_360p_200.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-360p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_360p_200.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-360p.mp4'
+											]
 										},
-										{			
+										{
 										"name":"large",
 										"quality":"480p",
-										"videoUrl":properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/playlist/'+mysqlObj.fileName+'_480p.m3u'
+										"videoList":[
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-480p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_480p_400.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-480p.mp4',
+											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_480p_400.mp4',
+											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-480p.mp4'
+											]
 										}
 										]
-*/
 							//append mcq
 							varOptionData=JSON.stringify(option);
 							//console.log(varOptionData);
@@ -1429,6 +1609,7 @@ getAnswerInsertId: function(query,fields,callback) {
 	getProfileInfo: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
+  				dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
    				if (!result){
    					callback(status.server());
  				} else {
@@ -1466,9 +1647,45 @@ getAnswerInsertId: function(query,fields,callback) {
     						return Object.assign({}, mysqlObj);
     					});
     				 	
-					const chartDay = chartOfDay.map((mysqlObj, index) => {
-    						return Object.assign({}, mysqlObj);
+    				//chart of the day question
+					var dayList=[];
+					var chartDay = chartOfDay.map((mysqlObj, index) => {
+							//console.log("chartDay mysqlObj "+mysqlObj.dayName);
+							for (const dName of dayArray){
+								if (mysqlObj.dayName != dName) {
+								
+									emptyDay = {
+											"totalLessons":0,
+											"dayName":dName
+										};
+									dayList.push(emptyDay);
+									//console.log("day array not match : "+dName);
+								
+								} else {
+									dayList.push(mysqlObj);
+								}	
+							}
+							//Object.assign(mysqlObj,emptyQuestionDay);
+    						//return Object.assign({}, mysqlObj);
+    						return Object.assign({}, dayList);
     					}); 			
+
+					//console.log(dayList);
+					//append empty lesson days to chart
+					//console.log("chartOfDay :"+JSON.stringify(chartOfDay));
+					if (chartOfDay.length == 0){
+						console.log("empty day chart found");
+						for (const dName of dayArray){
+							emptyDay = {
+									"totalLessons":0,
+									"dayName":dName
+								};
+							dayList.push(emptyDay);
+							//console.log("day array not match : "+dName);
+						}
+														
+					}
+					Object.assign(chartDay,dayList);
     				
 					const langList = languageData.map((mysqlObj, index) => {
 						return Object.assign({}, mysqlObj);
@@ -1499,11 +1716,15 @@ getAnswerInsertId: function(query,fields,callback) {
 		con.release();
 	});
 	},
-	
+
 	//query any table
 	getSelectJson: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
+				if (err){
+					throw err;
+					//console.log("internal database error");
+				}
    				if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
@@ -1654,7 +1875,7 @@ getAnswerInsertId: function(query,fields,callback) {
 						var optionData={
 							"optionId":mysqlObj.optionId,
 							"option":mysqlObj.answer,
-							"image":mysqlObj.image,
+							"image":mysqlObj.optionImage,
 							"isCorrect":mysqlObj.isCorrect
 						}
 						//each option object put into array
@@ -1674,7 +1895,7 @@ getAnswerInsertId: function(query,fields,callback) {
 									"questionId":mysqlObj.questionId,
 									"heading":mysqlObj.heading,
 									"question":mysqlObj.question,
-									"image":mysqlObj.image,
+									"image":mysqlObj.questionImage,
 									"options":options
 								}
 								//console.log("qcount < 3 :"+qCount+" : "+question.questionId);
@@ -1698,6 +1919,7 @@ getAnswerInsertId: function(query,fields,callback) {
 						return Object.assign({}, mysqlObj);
 					});
 					
+					//console.log("stage9List mcqs: "+JSON.stringify(mcqList));
 					callback(JSON.stringify(mcqList)); 		
 
 				}
@@ -1759,7 +1981,7 @@ getAnswerInsertId: function(query,fields,callback) {
 						var optionData={
 							"optionId":mysqlObj.optionId,
 							"option":mysqlObj.answer,
-							"image":mysqlObj.image,
+							"image":mysqlObj.optionImage,
 							"isCorrect":mysqlObj.isCorrect
 						}
 						//each option object put into array
@@ -1779,7 +2001,7 @@ getAnswerInsertId: function(query,fields,callback) {
 									"questionId":mysqlObj.questionId,
 									"heading":mysqlObj.heading,
 									"question":mysqlObj.question,
-									"image":mysqlObj.image,
+									"image":mysqlObj.questionImage,
 									"options":options
 								}
 								//console.log("qcount < 3 :"+qCount+" : "+question.questionId);
@@ -1831,7 +2053,7 @@ getMiningMcqList: function(query,fields,callback) {
 						var optionData={
 							"optionId":mysqlObj.optionId,
 							"option":mysqlObj.answer,
-							"image":mysqlObj.image,
+							"image":mysqlObj.optionImage,
 							"isCorrect":mysqlObj.isCorrect
 						}
 						//each option object put into array
@@ -1847,7 +2069,7 @@ getMiningMcqList: function(query,fields,callback) {
 								"questionId":mysqlObj.questionId,
 								"heading":mysqlObj.heading,
 								"question":mysqlObj.question,
-								"image":mysqlObj.image,
+								"image":mysqlObj.questionImage,
 								"options":options
 							}
 							//console.log("option id: "+mysqlObj.optionId);
@@ -1938,7 +2160,8 @@ getIqList: function(query,fields,callback) {
  					const [video,favorite] = result
 					var jsonResults = video.map((mysqlObj, index) => {
 							mysqlObj.type="directory";
-							mysqlObj.thumb=properties.vodUrl+'/grade-0'+mysqlObj.grade+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.png';
+							//mysqlObj.thumb=properties.vodUrl+'/grade-0'+mysqlObj.grade+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.png';
+							mysqlObj.thumb=properties.vodUrl+'/'+mysqlObj.gradeName+'/'+mysqlObj.syllabusE+'/'+mysqlObj.subjectE+'/thumb/'+mysqlObj.fileName+'.png';
 							/*
 							mysqlObj.favorite=favorite.map((favoriteObj,index) => {
 								if (mysqlObj.id == favoriteObj.video_id){

@@ -1,7 +1,6 @@
 var express = require('../../lib/node_modules/express');
 var jwt = require('../../lib/node_modules/jsonwebtoken');
 
-var url = "mongodb://192.168.1.110:27017/learntvapi";
 var app = express();
 var fs = require("fs");
 var router = express.Router();
@@ -10,8 +9,7 @@ var router = express.Router();
 var cert=fs.readFileSync('private.pem');
 
 //htmltopdf
-var pdf = require("pdf-creator-node");
-var html = fs.readFileSync("template.html", "utf8");
+var puppeteer = require("../../lib/node_modules/puppeteer");
 
 //custom jwt module
 var jwtModule = require('../lib/jwtToken');
@@ -20,85 +18,163 @@ const log = require('../lib/log');
 const dbQuery = require('../lib/dbQuery');
 const properties = require('../lib/properties');
 
+//api keys
+const scope = require('../lib/apiKeys');
+const api_key = scope.learningApi.apiKey;
+const api_secret = scope.learningApi.apiSecret;
 
-//pdf page settings
-var options = {
-        format: "A4",
-        orientation: "portrait",
-        border: "10mm",
-        header: {
-            height: "45mm",
-            contents: '<div style="text-align: center;">Weekly Report</div>'
-        },
-        footer: {
-            height: "28mm",
-            contents: {
-                first: 'Cover page',
-                2: 'Second page', // Any page number is working. 1-based index
-                default: '<span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>', // fallback value
-                last: 'Last Page'
-            }
-        }
-    };
-
+//get current path
+//console.log(process.cwd());
 
 router.post('/',function(req,res,next) {
-
    var rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
-   if (rtoken) {
+    const apiKey = req.body.api_key;
+    const apiSecret=req.body.api_secret;
 
-		jwtModule.jwtVerify(rtoken,function(callback){
-			if (callback) {
-				jwtModule.jwtGetUserId(rtoken,function(callbackUser){
-					const userId=callbackUser.userId
-					dbQuery.getSelect(dbQuery.whereOnlineStatus,[userId],function (callbackOnline){
-						if (!callbackOnline[0]) {
-							res.send(JSON.parse(status.server()));
-						/*
-						} else if (callbackOnline[0].status == 'online'){
-							res.send(JSON.parse(status.notAllowLogin()));
-						} else if (callbackOnline[0].status == 'offline'){
-							res.send(JSON.parse(status.stateSuccess(contents)));
-						*/
-						} else {
-							var users = [
-							  {
-							    name: "Shyam",
-							    age: "26",
-							  },
-							  {
-							    name: "Navjot",
-							    age: "26",
-							  },
-							  {
-							    name: "Vitthal",
-							    age: "26",
-							  },
-							];
-							var document = {
-							  html: html,
-							  data: {
-							    users: users,
-							  },
-							  path: "./output.pdf",
-							  type: "",
-							};
+    if ((!apiKey || !apiSecret)){
+        res.send(JSON.parse(status.unAuthApi()));
+    } else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+        res.send(JSON.parse(status.unAuthApi()));
+   	} else {
+	   if (rtoken) {
 
-							contents=JSON.stringify({"downloadUrl":});
-							res.send(JSON.parse(status.stateSuccess(contents)));
-						}
+			jwtModule.jwtVerify(rtoken,function(callback){
+				if (callback) {
+					jwtModule.jwtGetUserId(rtoken,function(callbackUser){
+						const userId=callbackUser.userId
+						const userUniqId=callbackUser.uniqId
+						dbQuery.getSelect(dbQuery.whereOnlineStatus,[userId],function (callbackOnline){
+							//if (!callbackOnline[0]) {
+							if (!callbackOnline[0]) {
+								res.send(JSON.parse(status.server()));
+							/*
+							} else if (callbackOnline[0].status == 'online'){
+								res.send(JSON.parse(status.notAllowLogin()));
+							} else if (callbackOnline[0].status == 'offline'){
+								res.send(JSON.parse(status.stateSuccess(contents)));
+							*/
+							} else {
+								/* create html */
+								//var htmlPath = 'routes/templates/'+userUniqId+'.html';
+								var htmlPath = '/data/pdfReports/'+userUniqId+'.html';
+								var pdfPath = '/data/pdfReports/'+userUniqId+'.pdf';
+								try {
+									if (doesFileExist(htmlPath)){
+										console.log(htmlPath+" deleted");
+										fs.unlinkSync(htmlPath);
+									}
+									dbQuery.getWeeklyPdfReport(dbQuery.weeklyReport,[userId],function (callbackReport){
+										if (callbackReport){
+											console.log("pdfCreation: "+callbackReport);
+											const rows = JSON.parse(callbackReport).map(createRow).join('');
+											//console.log("rows :"+rows);
+											const table = createTable(rows);
+											const html = createHtml(table);
+											fs.writeFileSync(htmlPath,html);
+											console.log("Successfully created an html page");
+
+											(async () => {
+											  const browser = await puppeteer.launch();
+
+											  // Create a new page
+											  const page = await browser.newPage();
+
+											  //Get HTML content from HTML file
+											  const html = fs.readFileSync(htmlPath, 'utf-8');
+											  await page.setContent(html, { waitUntil: 'domcontentloaded' });
+
+											  // To reflect CSS used for screens instead of print
+											  await page.emulateMediaType('screen');
+
+											  // Downlaod the PDF
+											  const pdf = await page.pdf({
+											    //path: '/data/pdfReports/'+userUniqId+'.pdf',
+											    path: pdfPath,
+											    margin: { top: '100px', right: '50px', bottom: '100px', left: '50px' },
+											    printBackground: true,
+											    format: 'A4',
+											  });
+											  // Close the browser instance
+											  await browser.close();
+												//res.setHeader("Content-Type", "text/pdf");
+												//res.send(pdf);
+											})();
+										}
+									});
+
+								} catch (e) {
+									console.log("Error generating html file",e);
+								}
+								// Create a browser instance
+
+
+								try {
+									//var pdfData =fs.readFileSync('/data/pdfReports/'+userUniqId+'.pdf');
+									var pdfData =fs.readFileSync(pdfPath);
+								} catch(e) {
+									console.log(userUniqId+".pdf Weekly report pdf not found in directory");
+								}
+								//contents=JSON.stringify({"downloadUrl":});
+								res.setHeader("Content-Type", "application/pdf");
+								res.send(pdfData);
+								//res.send(JSON.parse(status.stateSuccess(contents)));
+
+							}
+						});
+
 					});
+				} else {
+					res.send(JSON.parse(status.tokenExpired()));
+				}
+			});
 
-				});
-			} else {
-				res.send(JSON.parse(status.tokenExpired()));
-			}
-		});
-
-    } else {
-       res.send(JSON.parse(status.tokenNone()));
-  }
+	    } else {
+	       res.send(JSON.parse(status.tokenNone()));
+	 }
+   }
 
  });
+
+const createTable = (rows) => `
+<table border="10">
+	<tr>
+		<th>Subjects</th>
+		<th>Sunday</th>
+		<th>Monday</th>
+		<th>Tuesday</th>
+		<th>Wednsday</th>
+		<th>Thursday</th>
+		<th>Friday</th>
+		<th>Saturday</th>
+	</tr>
+	${rows}
+</table>
+`;
+
+//${items.}
+const createRow = (items) => `
+<tr>
+	<td>${items.subject}</td>
+	<td>${items.totalLessons}</td>
+</tr>
+`;
+
+const createHtml = (table) => `
+<html>
+	<body>
+		${table}
+	</body>
+</html>
+
+`;
+
+const doesFileExist = (filePath) => {
+	try {
+		fs.statSync(filePath);
+		return true;
+	} catch(e) {
+		return false;
+	}
+};
 
 module.exports = router
