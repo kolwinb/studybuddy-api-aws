@@ -44,6 +44,9 @@ app.get('/studybuddy/test',function(res,res){
 });
 
 //pdfweeklyreport
+//app.use('/studybuddy/v1/payhere/callback', require('./routes/v1/v1_payhere'));
+
+//pdfweeklyreport
 app.use('/studybuddy/v1/student/learning/pdfWeeklyReport', require('./routes/v1/v1_pdfReport'));
 
 //mcq mining and iq mining

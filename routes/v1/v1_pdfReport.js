@@ -65,13 +65,22 @@ router.post('/',function(req,res,next) {
 									}
 									dbQuery.getWeeklyPdfReport(dbQuery.weeklyReport,[userId],function (callbackReport){
 										if (callbackReport){
-											console.log("pdfCreation: "+callbackReport);
+											//console.log("pdfCreation: "+callbackReport);
 											const rows = JSON.parse(callbackReport).map(createRow).join('');
-											//console.log("rows :"+rows);
 											const table = createTable(rows);
-											const html = createHtml(table);
-											fs.writeFileSync(htmlPath,html);
-											console.log("Successfully created an html page");
+											//console.log("rows :"+rows);
+											dbQuery.getReportInfo(dbQuery.profileInfo,[userId,userId],function(callbackInfo){
+												const reportData = JSON.parse(callbackInfo);
+												const dateToday = new Date();
+												if (reportData){
+													//console.log(reportData.personalInfo);
+													//console.log(reportData.activityList);
+													const html = createHtml(table,reportData.personalInfo,reportData.activityList,dateToday.getFullYear()+"-"+(dateToday.getMonth()+1)+"-"+dateToday.getDate());
+													fs.writeFileSync(htmlPath,html);
+													console.log("Successfully created an html page");
+												}
+											});
+
 
 											(async () => {
 											  const browser = await puppeteer.launch();
@@ -98,6 +107,7 @@ router.post('/',function(req,res,next) {
 											  await browser.close();
 												//res.setHeader("Content-Type", "text/pdf");
 												//res.send(pdf);
+												//res.send(callbackReport);
 											})();
 										}
 									});
@@ -117,6 +127,7 @@ router.post('/',function(req,res,next) {
 								//contents=JSON.stringify({"downloadUrl":});
 								res.setHeader("Content-Type", "application/pdf");
 								res.send(pdfData);
+								//res.send("done");
 								//res.send(JSON.parse(status.stateSuccess(contents)));
 
 							}
@@ -136,7 +147,7 @@ router.post('/',function(req,res,next) {
  });
 
 const createTable = (rows) => `
-<table border="10">
+<table border="1">
 	<tr>
 		<th>Subjects</th>
 		<th>Sunday</th>
@@ -155,13 +166,38 @@ const createTable = (rows) => `
 const createRow = (items) => `
 <tr>
 	<td>${items.subject}</td>
-	<td>${items.totalLessons}</td>
+	<td style="text-align:center">${items.results[0].totalLessons}</td>
+	<td style="text-align:center">${items.results[1].totalLessons}</td>
+	<td style="text-align:center">${items.results[2].totalLessons}</td>
+	<td>${items.results[3].totalLessons}</td>
+	<td>${items.results[4].totalLessons}</td>
+	<td>${items.results[5].totalLessons}</td>
+	<td>${items.results[6].totalLessons}</td>
 </tr>
 `;
 
-const createHtml = (table) => `
+const createHtml = (table,info,activity,dateNow) => `
 <html>
+	<head>
+	<style>
+		table {
+		  border-collapse: collapse;
+		}
+
+		th,td {
+			padding:10px;
+			text-align:center;
+		}
+	</style>
+	</head>
 	<body>
+		<center><h2>Study Buddy - Weekly Report</h2></center>
+		<p>Name : ${info.studentName}</p>
+		<p>Grade : ${info.studentGrade}</p>
+		<p>School : ${info.school}</p>
+		<p>Date : ${dateNow}</p>
+		<p>Completed Lessons : ${activity.totalLessons}</p>
+		<p>Correct Answers : ${activity.correctAnswers}</p>
 		${table}
 	</body>
 </html>

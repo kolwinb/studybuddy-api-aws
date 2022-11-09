@@ -12,5 +12,5 @@ upass=${line#*:}
 #mysql -h192.168.1.120 -u$uname -p$upass studybuddy < school.sql
 #mysql -h192.168.1.120 -u$uname -p$upass studybuddy < country.sql
 #mysql -h192.168.1.120 -u$uname -p$upass studybuddy < token.sql
-mysql -h192.168.1.120 -u$uname -p$upass studybuddy < $1
+mysql -h172.31.48.100 -u$uname -p$upass studybuddy < $1
 fi

@@ -10,6 +10,9 @@ var log = require('./log');
 
 const properties = require('./properties');
 
+const dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+
 var getConnection = function(callback) {
 	pool.getConnection(function(err, connection) {
 		if(err){
@@ -671,7 +674,13 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						INNER JOIN subject ON subject.id=video.subject_id \
 						WHERE student_answer.user_id=? AND video.subject_id IN ( SELECT id FROM subject) group by subject.id;",
 
-	weeklyReport:"SELECT \
+	weeklyReport:" \
+					SELECT subject.subject_english as subject \
+					FROM grade_subject grs \
+					LEFT JOIN subject ON subject.id=grs.subject_id \
+					WHERE grs.grade_id=6 \
+					; \
+					SELECT \
 					subject.subject_english as subject, \
 					COUNT(DISTINCT(video.id)) as totalLessons, \
 					DATE_FORMAT(started,'%a') AS dayName \
@@ -1616,12 +1625,10 @@ getAnswerInsertId: function(query,fields,callback) {
    				if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
-					
  					resultOption=result.map((optionObj,index)=> {
 							//console.log(optionObj.option);
 							return 	Object.assign({},optionObj);
 	 					})
-	 				
 	 				setQuestionOption(resultOption);
  				}
  			});
@@ -1634,9 +1641,53 @@ getAnswerInsertId: function(query,fields,callback) {
    				if (!result){
    					callback(status.server());
  				} else {
- 					const [dayOfLesson] = result;
-					const chartDay= getDayOfLesson(result);
-					callback(JSON.stringify(chartDay))
+ 					const [gradeSubject,dayOfLesson] = result;
+                    //get student works from past 7 days
+					//loop each grade subject
+					const chartDay= getDayOfLesson(dayOfLesson);
+					//console.log("dayOfLesson : "+JSON.stringify(dayOfLesson));
+					//var lessonTag = false;
+					var weeklyReport=[];
+ 					const arrSubject = gradeSubject.map((mysqlObj,index ) => {
+
+						var listDayResult = [];
+ 						//make list of each subject
+	 						//console.log("chartDay :"+chartDay[0].dayName);
+ 						dayArray.forEach(function(dayLoop){
+							//if (lessonTag == false){
+		 						//console.log("chartDay :"+lesson.dayName);
+								var lessonResult = {
+											"totalLessons":0,
+											"dayName":dayLoop,
+			 							}
+									listDayResult.push(lessonResult)
+		 						chartDay.forEach(function(studentAnswer) {
+			 						if (mysqlObj.subject == studentAnswer.subject && studentAnswer.dayName==dayLoop) {
+			 							//console.log(studentAnswer.subject+" : "+studentAnswer.dayName+" : "+studentAnswer.totalLesson);
+			 							//remove last element of array avoiding duplication
+			 							listDayResult.pop();
+				 						var lessonResult = {
+												"totalLessons":studentAnswer.totalLessons,
+												"dayName":dayLoop,
+				 							}
+										listDayResult.push(lessonResult);
+									}
+
+	 						//lessonTag = true;
+	 						//}
+		 						});
+
+							});
+							var listResult = {
+								"subject":mysqlObj.subject,
+								"results":listDayResult
+							}
+							weeklyReport.push(listResult);
+	 					//console.log("grade subjects : "+mysqlObj.subject);
+							//return Object.assign([],mysqlObj);
+ 						});
+					//console.log("studentAnswer :"+JSON.stringify(listSubject));
+					callback(JSON.stringify(weeklyReport))
 				}
 			});
 			con.release();
@@ -1713,6 +1764,26 @@ getAnswerInsertId: function(query,fields,callback) {
     					});
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonData)); 		
+			}
+		});
+		con.release();
+	});
+	},
+	getReportInfo: function(query,fields,callback) {
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+   				if (!result){
+   					callback(status.server());
+ 				} else {
+ 					//single row
+ 					//var normalObj = Object.assign({}, results[0]);
+ 					const [activityData,personalData] = result;
+
+ 					const jsonData={
+ 						personalInfo:personalData[0],
+ 						activityList:activityData[0]
+ 					}
+					callback(JSON.stringify(jsonData));
 			}
 		});
 		con.release();
@@ -2209,13 +2280,11 @@ getIqList: function(query,fields,callback) {
   			})
   		})
   	}
-*/	
-	
-	
+*/
 }
 
 const getDayOfLesson = (chartOfDay) => {
-	dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+	//dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 	var dayList=[];
 	if (chartOfDay.length == 0){
 		console.log("empty day chart found");
