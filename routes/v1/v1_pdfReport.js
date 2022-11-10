@@ -59,10 +59,7 @@ router.post('/',function(req,res,next) {
 								var htmlPath = '/data/pdfReports/'+userUniqId+'.html';
 								var pdfPath = '/data/pdfReports/'+userUniqId+'.pdf';
 								try {
-									if (doesFileExist(htmlPath)){
-										console.log(htmlPath+" deleted");
-										fs.unlinkSync(htmlPath);
-									}
+
 									dbQuery.getWeeklyPdfReport(dbQuery.weeklyReport,[userId],function (callbackReport){
 										if (callbackReport){
 											//console.log("pdfCreation: "+callbackReport);
@@ -108,6 +105,22 @@ router.post('/',function(req,res,next) {
 												//res.setHeader("Content-Type", "text/pdf");
 												//res.send(pdf);
 												//res.send(callbackReport);
+												try {
+													//var pdfData =fs.readFileSync('/data/pdfReports/'+userUniqId+'.pdf');
+													var pdfData =fs.readFileSync(pdfPath);
+													if (doesFileExist(htmlPath)){
+														//console.log(htmlPath+" deleted");
+														fs.unlinkSync(htmlPath);
+													}
+													if (doesFileExist(pdfPath)){
+														//console.log(pdfPath+" deleted");
+														fs.unlinkSync(pdfPath);
+													}
+													res.setHeader("Content-Type", "application/pdf");
+													res.send(pdfData);
+												} catch(e) {
+													console.log(userUniqId+".pdf Weekly report pdf not found in directory");
+												}
 											})();
 										}
 									});
@@ -118,17 +131,6 @@ router.post('/',function(req,res,next) {
 								// Create a browser instance
 
 
-								try {
-									//var pdfData =fs.readFileSync('/data/pdfReports/'+userUniqId+'.pdf');
-									var pdfData =fs.readFileSync(pdfPath);
-								} catch(e) {
-									console.log(userUniqId+".pdf Weekly report pdf not found in directory");
-								}
-								//contents=JSON.stringify({"downloadUrl":});
-								res.setHeader("Content-Type", "application/pdf");
-								res.send(pdfData);
-								//res.send("done");
-								//res.send(JSON.parse(status.stateSuccess(contents)));
 
 							}
 						});

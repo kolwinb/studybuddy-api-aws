@@ -43,8 +43,8 @@ app.get('/studybuddy/test',function(res,res){
 	res.send('<h1>hello world</h1>');
 });
 
-//pdfweeklyreport
-//app.use('/studybuddy/v1/payhere/callback', require('./routes/v1/v1_payhere'));
+//payhere
+app.use('/studybuddy/v1/payhere/callback', require('./routes/v1/v1_payhere'));
 
 //pdfweeklyreport
 app.use('/studybuddy/v1/student/learning/pdfWeeklyReport', require('./routes/v1/v1_pdfReport'));

@@ -356,7 +356,7 @@ whereBulkAnswerRewards:"SELECT \
 						FROM student_answer \
 						INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
 						WHERE student_answer.id IN (?) AND mcq_option.state=1;",
-/* mining mcq */ 						
+/* mining mcq */
 whereMiningMcqRewards:"SELECT \
 							(COUNT(mcq_mining_answer.id)*?) AS coins \
 						FROM mcq_mining_answer \
@@ -1224,6 +1224,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 											) \
 										) \
 						",
+	whereOrderPaymentId:"SELECT id FROM payhere_notification WHERE order_id=? AND payment_id=?",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
 	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
@@ -1321,7 +1322,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			END) as status \
 			FROM battle_pool as bp \
 			WHERE bp.id = ?;",
-	
+
+	insertPayhereCallback:"INSERT INTO payhere_notification(id,order_id,payment_id,payhere_amount,payhere_currency,status_code,custom_1,custom_2) VALUES (?,?,?,?,?,?,?,?);",
 	insertBattleCoin:"INSERT INTO coin_pool(id,user_id,battle_id,type,coin,datetime) VALUES(?,?,?,?,?,?);",
 	insertBattleAnswer:"INSERT INTO battle_answer(id,user_id,battle_id,question_id,option_id,started,ended) VALUES(?,?,?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	insertGameReq:"INSERT INTO battle_pool(id,user1id,user2id,status,datetime) VALUES(?,?,?,?,?);SELECT LAST_INSERT_ID();",
@@ -1347,6 +1349,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
+	updatePayhere:"UPDATE payhere_notification SET status_code=? WHERE order_id=? AND payment_id=?;",
 	updateGameStatus:"UPDATE battle_pool SET status=? WHERE id=?;",
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ? AND id=?;",
 	updateGameRunning:"UPDATE battle_pool SET status=?,datetime=? WHERE id=?;",
