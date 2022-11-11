@@ -168,9 +168,9 @@ const createTable = (rows) => `
 const createRow = (items) => `
 <tr>
 	<td>${items.subject}</td>
-	<td style="text-align:center">${items.results[0].totalLessons}</td>
-	<td style="text-align:center">${items.results[1].totalLessons}</td>
-	<td style="text-align:center">${items.results[2].totalLessons}</td>
+	<td>${items.results[0].totalLessons}</td>
+	<td>${items.results[1].totalLessons}</td>
+	<td>${items.results[2].totalLessons}</td>
 	<td>${items.results[3].totalLessons}</td>
 	<td>${items.results[4].totalLessons}</td>
 	<td>${items.results[5].totalLessons}</td>

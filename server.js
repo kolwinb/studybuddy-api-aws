@@ -45,6 +45,10 @@ app.get('/studybuddy/test',function(res,res){
 
 //payhere
 app.use('/studybuddy/v1/payhere/callback', require('./routes/v1/v1_payhere'));
+//mspace
+//app.use('/studybuddy/v1/mspace/callback', require('./routes/v1/v1_mspace'));
+//dialog
+//app.use('/studybuddy/v1/ideamart/callback', require('./routes/v1/v1_ideamart'));
 
 //pdfweeklyreport
 app.use('/studybuddy/v1/student/learning/pdfWeeklyReport', require('./routes/v1/v1_pdfReport'));
