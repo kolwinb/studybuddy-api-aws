@@ -988,7 +988,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								END \
 					END) AS planStatus \
 					FROM student_subscription_grade as subP \
-					WHERE subP.plan_id =? OR subP.grade_id = ? AND subP.user_id = ?;",
+					WHERE (subP.plan_id =? AND subP.grade_id = ?) AND subP.user_id = ?;",
 		whereUserRoleLesson: "SELECT \
 					(CASE \
 						WHEN user.role_id = 1 \

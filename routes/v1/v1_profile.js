@@ -711,11 +711,11 @@ router.post('/setSubscription',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
 							//console.log(studentId);
-							dbQuery.getSelect(dbQuery.whereSubscriptionPlan,[planId],function(callbackUser){
-								console.log("where subscription plan :"+callbackUser[0].planMode);
-								if (!callbackUser[0].planMode) {
-									res.send(JSON.parse(status.invalidPlanId()));
-								} else {
+							//dbQuery.getSelect(dbQuery.whereSubscriptionPlan,[studentId,planId],function(callbackUser){
+							//	console.log("where subscription plan :"+callbackUser[0].planMode);
+							//	if (!callbackUser[0].planMode) {
+							//		res.send(JSON.parse(status.invalidPlanId()));
+							//	} else {
 									dbQuery.getSelect(dbQuery.whereSubscriptionStatus,[planId,gradeId,studentId],function(callbackPeriod){
 										if (!callbackPeriod[0]){
 											var dateTime=new Date();
@@ -734,11 +734,12 @@ router.post('/setSubscription',function(req,res,next) {
 												}
 											});
 										} else {
+											console.log("setSubscription :"+callbackPeriod[0]);
 											res.send(JSON.parse(status.subscriptionFound()));
 										}
 									});
-								}
-							});
+							//	}
+							//});
 						});
 					} else {
 						res.send(JSON.parse(status.tokenExpired()));
