@@ -698,6 +698,8 @@ router.post('/setSubscription',function(req,res,next) {
 	const apiSecret=req.body.api_secret;
 	const planId=req.body.plan_id;
 	const gradeId=req.body.grade_id;
+	const order_id=req.body.order_id;
+	const payment_id=req.body.payment_id;
 	
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));

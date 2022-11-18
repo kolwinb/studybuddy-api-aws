@@ -1323,7 +1323,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			FROM battle_pool as bp \
 			WHERE bp.id = ?;",
 
-	insertPayhereCallback:"INSERT INTO payhere_notification(id,order_id,payment_id,payhere_amount,payhere_currency,status_code,custom_1,custom_2) VALUES (?,?,?,?,?,?,?,?);",
+	insertPayhereCallback:"INSERT INTO payhere_notification(id,order_id,payment_id,payhere_amount,payhere_currency,status_code,custom_1,custom_2,md5,status_message,card_holder_name,card_no,card_expiry,date_time,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);",
 	insertBattleCoin:"INSERT INTO coin_pool(id,user_id,battle_id,type,coin,datetime) VALUES(?,?,?,?,?,?);",
 	insertBattleAnswer:"INSERT INTO battle_answer(id,user_id,battle_id,question_id,option_id,started,ended) VALUES(?,?,?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	insertGameReq:"INSERT INTO battle_pool(id,user1id,user2id,status,datetime) VALUES(?,?,?,?,?);SELECT LAST_INSERT_ID();",
