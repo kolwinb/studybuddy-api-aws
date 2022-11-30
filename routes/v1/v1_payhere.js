@@ -42,9 +42,9 @@ router.post('/',function(req,res,next) {
     const card_expiry = req.body.card_expiry;
 
 	const merchantSecret='Mzc4NzMyNTU3MDIxNDExMDg0MzYyMjY0NDgzODYzMjM4MTE3NzI0Mg==';
-	const md5MerchantSecret = toUpperCase(crypto.createHash('md5').update(merchantSecret).digest('hex'));
-	const strMd5=merchant_id+order_id+payhere_amount+payhere_currency+status_code+md5MerchantSecret;
-	const md5Local = toUpperCase(crypto.createHash('md5').update(strMd5).digest('hex'));
+	const md5MerchantSecret = crypto.createHash('md5').update(merchantSecret).digest('hex');
+	const strMd5=merchant_id+order_id+payhere_amount+payhere_currency+status_code+md5MerchantSecret.toUpperCase();
+	const md5Local = crypto.createHash('md5').update(strMd5.toUpperCase()).digest('hex').toUpperCase();
 	console.log("status_message: "+status_message);
 	console.log("md5sig : "+md5sig+", md5Local :"+md5Local);
 
@@ -53,7 +53,7 @@ router.post('/',function(req,res,next) {
 		dbQuery.getSelect(dbQuery.whereOrderPaymentId,[order_id,payment_id],function (callbackOnline){
 			//if (!callbackOnline[0]) {
 			if (!callbackOnline[0]) {
-				dbQuery.setInsert(dbQuery.insertPayhereCallback,[0,order_id,payment_id,payhere_amount,payhere_currency,status_code,custom_1,custom_2,md5sig,status_message,card_holder_name,card_no,card_expiry,varDateTime,0],function (callbackInsert){
+				dbQuery.setInsert(dbQuery.insertPayhereCallback,[0,order_id,payment_id,payhere_amount,payhere_currency,status_code,custom_1,custom_2,md5sig,status_message,card_holder_name,card_no,card_expiry,varDateTime,'inactive'],function (callbackInsert){
 					if (!callbackInsert){
 						//res.send(JSON.parse(satus.server()));
 						console.log("payhere callback : insert error");

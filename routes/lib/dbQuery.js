@@ -1501,6 +1501,7 @@ getAnswerInsertId: function(query,fields,callback) {
 	});
 	},
 
+
 	getLesson: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
@@ -1551,38 +1552,39 @@ getAnswerInsertId: function(query,fields,callback) {
 								console.log("playlist files not found");
 							}
 */
+							arrFileName=mysqlObj.fileName.split("-");
+							strName=arrFileName[0]+"-"+arrFileName[1];
+							log.info("arrFileName : "+arrFileName);
+							log.info("strName :"+strName);
+							//leading 0 problem in grade
+							varGrade=arrFileName[1]
+							if ((arrFileName[1] >= 10) || (arrFileName[0] == 'tamil')){
+								log.info("tamil and grade 10, 11 found, it has different file name without part number");
+								subName="";
+								//send filler resolution and video resolution
+								smallPlaylist=getVideoBUrl(mysqlObj,varGrade,'-240p.mp4','_240p_100.mp4');
+								mediumPlaylist=getVideoBUrl(mysqlObj,varGrade,'-360p.mp4','_360p_200.mp4');
+								largePlaylist=getVideoBUrl(mysqlObj,varGrade,'-480p.mp4','_480p_400.mp4');
+							} else {
+								log.info("files found with part number");
+								smallPlaylist=getVideoAUrl(mysqlObj,varGrade,'-240p.mp4','_240p_100.mp4');
+								mediumPlaylist=getVideoAUrl(mysqlObj,varGrade,'-360p.mp4','_360p_200.mp4');
+								largePlaylist=getVideoAUrl(mysqlObj,varGrade,'-480p.mp4','_480p_400.mp4');
+							}
 							mysqlObj.playlists=[{
 										"name":"small",
 										"quality":"240p",
-										"videoList":[
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-240p.mp4',
-											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_240p_100.mp4',
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-240p.mp4',
-											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_240p_100.mp4',
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-240p.mp4'
-												]
+										"videoList": smallPlaylist
 										},
 										{
 										"name":"medium",
 										"quality":"360p",
-										"videoList":[
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-360p.mp4',
-											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_360p_200.mp4',
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-360p.mp4',
-											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_360p_200.mp4',
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-360p.mp4'
-											]
+										"videoList": mediumPlaylist
 										},
 										{
 										"name":"large",
 										"quality":"480p",
-										"videoList":[
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-01-480p.mp4',
-											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1_480p_400.mp4',
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-02-480p.mp4',
-											properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2_480p_400.mp4',
-											properties.vodUrl+'/edu-fillers/fillers/filler-0'+mysqlObj.gradeId+'-03-480p.mp4'
-											]
+										"videoList": largePlaylist
 										}
 										]
 							//append mcq
@@ -2286,6 +2288,8 @@ getIqList: function(query,fields,callback) {
 */
 }
 
+
+
 const getDayOfLesson = (chartOfDay) => {
 	//dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 	var dayList=[];
@@ -2323,5 +2327,25 @@ const getDayOfLesson = (chartOfDay) => {
 	return dayList;
 	}
 }
+
+	//return different filename patterns
+	var getVideoAUrl = (mysqlObj,varGrade,fillerRes,lessonRes) => {
+
+	return [
+		properties.vodUrl+'/edu-fillers/fillers/filler-'+varGrade+'-01'+fillerRes,
+		properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p1'+lessonRes,
+		properties.vodUrl+'/edu-fillers/fillers/filler-'+varGrade+'-02'+fillerRes,
+		properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+'-p2'+lessonRes,
+		properties.vodUrl+'/edu-fillers/fillers/filler-'+varGrade+'-03'+fillerRes
+			]
+	}
+	var getVideoBUrl = (mysqlObj,varGrade,fillerRes,lessonRes) => {
+	return [
+		properties.vodUrl+'/edu-fillers/fillers/filler-'+varGrade+'-01'+fillerRes,
+		properties.vodUrl+'/'+mysqlObj.grade+'/'+mysqlObj.syllabus+'/'+mysqlObj.subject+'/'+mysqlObj.fileName+lessonRes,
+		properties.vodUrl+'/edu-fillers/fillers/filler-'+varGrade+'-02'+fillerRes
+			]
+	}
+
 
 module.exports = dbStatements;

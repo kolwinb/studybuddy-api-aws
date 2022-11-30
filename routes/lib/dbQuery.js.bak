@@ -356,7 +356,7 @@ whereBulkAnswerRewards:"SELECT \
 						FROM student_answer \
 						INNER JOIN mcq_option ON mcq_option.id=student_answer.option_id \
 						WHERE student_answer.id IN (?) AND mcq_option.state=1;",
-/* mining mcq */ 						
+/* mining mcq */
 whereMiningMcqRewards:"SELECT \
 							(COUNT(mcq_mining_answer.id)*?) AS coins \
 						FROM mcq_mining_answer \
@@ -988,7 +988,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 								END \
 					END) AS planStatus \
 					FROM student_subscription_grade as subP \
-					WHERE subP.plan_id =? OR subP.grade_id = ? AND subP.user_id = ?;",
+					WHERE (subP.plan_id =? AND subP.grade_id = ?) AND subP.user_id = ?;",
 		whereUserRoleLesson: "SELECT \
 					(CASE \
 						WHEN user.role_id = 1 \
@@ -1224,6 +1224,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 											) \
 										) \
 						",
+	whereOrderPaymentId:"SELECT id FROM payhere_notification WHERE order_id=? AND payment_id=?",
 	selectAll: "SELECT * FROM ??",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
 	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
@@ -1321,7 +1322,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 			END) as status \
 			FROM battle_pool as bp \
 			WHERE bp.id = ?;",
-	
+
+	insertPayhereCallback:"INSERT INTO payhere_notification(id,order_id,payment_id,payhere_amount,payhere_currency,status_code,custom_1,custom_2,md5,status_message,card_holder_name,card_no,card_expiry,date_time,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);",
 	insertBattleCoin:"INSERT INTO coin_pool(id,user_id,battle_id,type,coin,datetime) VALUES(?,?,?,?,?,?);",
 	insertBattleAnswer:"INSERT INTO battle_answer(id,user_id,battle_id,question_id,option_id,started,ended) VALUES(?,?,?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	insertGameReq:"INSERT INTO battle_pool(id,user1id,user2id,status,datetime) VALUES(?,?,?,?,?);SELECT LAST_INSERT_ID();",
@@ -1347,6 +1349,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertOtp:"INSERT INTO ??(id,otp,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
+	updatePayhere:"UPDATE payhere_notification SET status_code=? WHERE order_id=? AND payment_id=?;",
 	updateGameStatus:"UPDATE battle_pool SET status=? WHERE id=?;",
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ? AND id=?;",
 	updateGameRunning:"UPDATE battle_pool SET status=?,datetime=? WHERE id=?;",
@@ -1548,6 +1551,15 @@ getAnswerInsertId: function(query,fields,callback) {
 								console.log("playlist files not found");
 							}
 */
+							arrFileName=mysqlObj.fileName.split("-");
+							strName=arrFileName[0]+"-"+arrFileName[1];
+							log.info("arrFileName : "+arrFileName);
+							log.info("strName :"+strNme);
+							if ((arrFileName[1] >= 10) && (arrFileName[0] == 'tamil')){
+
+							} else {
+								subName="-p1";
+							}
 							mysqlObj.playlists=[{
 										"name":"small",
 										"quality":"240p",
@@ -1656,37 +1668,37 @@ getAnswerInsertId: function(query,fields,callback) {
  						dayArray.forEach(function(dayLoop){
 							//if (lessonTag == false){
 		 						//console.log("chartDay :"+lesson.dayName);
+								var lessonResult = {
+											"totalLessons":0,
+											"dayName":dayLoop,
+			 							}
+									listDayResult.push(lessonResult)
 		 						chartDay.forEach(function(studentAnswer) {
 			 						if (mysqlObj.subject == studentAnswer.subject && studentAnswer.dayName==dayLoop) {
 			 							//console.log(studentAnswer.subject+" : "+studentAnswer.dayName+" : "+studentAnswer.totalLesson);
-				 						//var lessonResult = {
-										//		"totalLesson":0,
-										//		"dayName":dayLoop,
-				 						//	}
-										listDayResult.push(studentAnswer);
+			 							//remove last element of array avoiding duplication
+			 							listDayResult.pop();
+				 						var lessonResult = {
+												"totalLessons":studentAnswer.totalLessons,
+												"dayName":dayLoop,
+				 							}
+										listDayResult.push(lessonResult);
 									}
 
 	 						//lessonTag = true;
 	 						//}
 		 						});
-								var lessonResult = {
-											"totalLesson":0,
-											"dayName":dayLoop,
-			 							}
-									listDayResult.push(lessonResult)
+
 							});
 							var listResult = {
 								"subject":mysqlObj.subject,
-								"result":listDayResult
+								"results":listDayResult
 							}
 							weeklyReport.push(listResult);
 	 					//console.log("grade subjects : "+mysqlObj.subject);
-							return Object.assign([],mysqlObj);
+							//return Object.assign([],mysqlObj);
  						});
 					//console.log("studentAnswer :"+JSON.stringify(listSubject));
-					const dayLesson = dayOfLesson.map((mysqlObj,index) => {
-
-					});
 					callback(JSON.stringify(weeklyReport))
 				}
 			});
@@ -1764,6 +1776,26 @@ getAnswerInsertId: function(query,fields,callback) {
     					});
 					//log.info(JSON.stringify(jsonResults));
 					callback(JSON.stringify(jsonData)); 		
+			}
+		});
+		con.release();
+	});
+	},
+	getReportInfo: function(query,fields,callback) {
+		getConnection(function(con) {
+			con.query(query,fields, function (err,result){
+   				if (!result){
+   					callback(status.server());
+ 				} else {
+ 					//single row
+ 					//var normalObj = Object.assign({}, results[0]);
+ 					const [activityData,personalData] = result;
+
+ 					const jsonData={
+ 						personalInfo:personalData[0],
+ 						activityList:activityData[0]
+ 					}
+					callback(JSON.stringify(jsonData));
 			}
 		});
 		con.release();
