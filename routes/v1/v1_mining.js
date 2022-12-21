@@ -97,12 +97,30 @@ router.post('/getIqList',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-								//stageId using indeed of subjectId
-								dbQuery.getIqList(dbQuery.whereIqList,[levelId],function(callbackMiningIq){
-								//dbQuery.getSelectJson(dbQuery.whereIqList,[levelId],function(callbackMiningIq){
-									//console.log("mcqmining :"+callbackMiningMcq);
-									res.send(JSON.parse(status.stateSuccess(callbackMiningIq)));
-								});
+                            //console.log("getLessonList :"+studentId);
+                            dbQuery.getSelect(dbQuery.whereUserRole,[studentId,0],function(callbackRole){
+                                console.log("whereUserRole :"+JSON.stringify(callbackRole[0]));
+                                if (!callbackRole[0]){
+                                    res.send(JSON.parse(status.server()));
+                                } else {
+                                    //console.log('roleId : '+callbackRole[0].role_id+', lessonLimit :"+callbackRole[0]>
+                                    const planLimit=callbackRole[0].planLimit;
+                                    //const planStarted=callbackRole[0].plan_started;
+                                    //switch(planLimit){
+                                    //case 0:
+                                    if (planLimit == 0){
+                                        console.log("student id :"+studentId+" plan Limit :" + planLimit);
+                                        res.send(JSON.parse(status.planExpired()));
+                                    } else {
+										//stageId using indeed of subjectId
+										dbQuery.getIqList(dbQuery.whereIqList,[levelId],function(callbackMiningIq){
+											//dbQuery.getSelectJson(dbQuery.whereIqList,[levelId],function(callbackMiningIq){
+											//console.log("mcqmining :"+callbackMiningMcq);
+											res.send(JSON.parse(status.stateSuccess(callbackMiningIq)));
+										});
+									}
+								}
+							});
 						});
 					} else {
 						res.send(status.tokenExpired());
@@ -133,25 +151,42 @@ router.post('/getMcqList',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-							if (stageId > 9) {
-								dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMiningMcq){
-									//console.log("mcqmining :"+callbackMiningMcq);
-									res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
-								});		
-							} else if (stageId == 9) {
-								//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId,syllabusId],function(callbackMiningMcq){
-								dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMiningMcq){
-									//console.log("mcqmining :"+callbackMiningMcq);
-									res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
-								});		
-							} else if (stageId < 9) {
-								//stageId using indeed of subjectId
-								//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,syllabusId,stageId],function(callbackMiningMcq){
-								dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,stageId],function(callbackMiningMcq){
-									//console.log("mcqmining :"+callbackMiningMcq);
-									res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
-								});		
-							}					
+                            dbQuery.getSelect(dbQuery.whereUserRole,[studentId,0],function(callbackRole){
+                                console.log("whereUserRole :"+JSON.stringify(callbackRole[0]));
+                                if (!callbackRole[0]){
+                                    res.send(JSON.parse(status.server()));
+                                } else {
+                                    //console.log('roleId : '+callbackRole[0].role_id+', lessonLimit :"+callbackRole[0]>
+                                    const planLimit=callbackRole[0].planLimit;
+                                    //const planStarted=callbackRole[0].plan_started;
+                                    //switch(planLimit){
+                                    //case 0:
+                                    if (planLimit == 0){
+                                        console.log("student id :"+studentId+" plan Limit :" + planLimit);
+                                        res.send(JSON.parse(status.planExpired()));
+                                    } else {
+										if (stageId > 9) {
+											dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqRandList,[gradeId,gradeId],function(callbackMiningMcq){
+												//console.log("mcqmining :"+callbackMiningMcq);
+												res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
+											});
+										} else if (stageId == 9) {
+											//dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId,syllabusId],function(callbackMiningMcq){
+											dbQuery.getMiningMcqStage9List(dbQuery.whereMiningMcqStage9List,[gradeId],function(callbackMiningMcq){
+												//console.log("mcqmining :"+callbackMiningMcq);
+												res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
+											});
+										} else if (stageId < 9) {
+											//stageId using indeed of subjectId
+											//dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,syllabusId,stageId],function(callbackMiningMcq){
+											dbQuery.getMiningMcqList(dbQuery.whereMiningMcqList,[gradeId,stageId],function(callbackMiningMcq){
+												//console.log("mcqmining :"+callbackMiningMcq);
+												res.send(JSON.parse(status.stateSuccess(callbackMiningMcq)));
+											});
+										}
+									}
+								}
+							});
 						});
 					} else {
 						res.send(status.tokenExpired());         

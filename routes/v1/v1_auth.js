@@ -38,7 +38,7 @@ router.post('/mobile',function(req,res){
 	const passwd=req.body.password;
 	api_key=req.body.api_key;
 	api_secret=req.body.api_secret;
-	//log.info("api_key :"+api_key+", api_secret :"+api_secret+", mobile :"+mobile+", password "+passwd);
+	log.info("api_key :"+api_key+", api_secret :"+api_secret+", mobile :"+mobile+", password :"+passwd);
 	if ((apiKey != api_key) || (apiSecret != api_secret)){
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((!mobile) || (!passwd)){
@@ -46,17 +46,13 @@ router.post('/mobile',function(req,res){
 	} else {
 		dbQuery.getSelect(dbQuery.wherePhonePasswd,["user",mobile,passwd],function(callback){
 			if (!callback[0]){
-				res.send(JSON.parse(status.userNotFound()));
+				res.send(JSON.parse(status.wrongUsernamePassword()));
 			} else if (callback[0].is_active==0){
 				res.send(JSON.parse(status.userNotActivated()));
 			} else {
 
 				dbQuery.getSelect(dbQuery.whereOnlineStatus,[callback[0].id],function (callbackOnlineStatus){
-					if (!callbackOnlineStatus[0]){
-						res.send(JSON.parse(status.server()));
-					} else if (callbackOnlineStatus[0].status == "online"){
-						res.send(JSON.parse(status.notAllowLogin()));
-					} else if (callbackOnlineStatus[0].status == "offline"){
+					if ((!callbackOnlineStatus[0]) || (callbackOnlineStatus[0].status == "offline")) {
 						//(email,expSeconds,response)
 						jwtPayload={
 							userId:callback[0].id,
@@ -67,6 +63,10 @@ router.post('/mobile',function(req,res){
 						//jwtToken.jwtAuth(jwtPayload,60,function(callbackJwt){
 							res.send(JSON.parse(callbackJwt));
 						});
+						//res.send(JSON.parse(status.server()));
+						//log.info("userProfile: Null rows found when authentication");
+					} else if (callbackOnlineStatus[0].status == "online"){
+						res.send(JSON.parse(status.notAllowLogin()));
 					}
 				});
 				//update lastlogin

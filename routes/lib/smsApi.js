@@ -54,7 +54,7 @@ var smsSend = {
 							}
 						});
 					} else {
-						dbQuery.setInsert(dbQuery.insertOtp,["sms_verification",'NULL',otp,mobile,timestamp,0],function (callbackB){
+						dbQuery.setInsert(dbQuery.insertOtp,["sms_verification",0,otp,mobile,timestamp,0],function (callbackB){
 							if (callbackB){
 								var jsonString=JSON.stringify({"description":"OTP has been sent."});
 								callbackotp(status.stateSuccess(jsonString));
@@ -128,7 +128,7 @@ var smsSend = {
 						});
 					} else {
 						log.info("recovery code not found in user_passwdrecovery table");
-						dbQuery.setInsert(dbQuery.insertRecoveryCode,["user_passwdrecovery",'NULL',recoveryCode,mobile,timestamp,0],function (callbackB){
+						dbQuery.setInsert(dbQuery.insertRecoveryCode,["user_passwdrecovery",0,recoveryCode,mobile,timestamp,0],function (callbackB){
 							if (callbackB){
 								var jsonString=JSON.stringify({"description":"Recovery Code has been sent."});
 								callbackRecoveryCode(status.stateSuccess(jsonString));

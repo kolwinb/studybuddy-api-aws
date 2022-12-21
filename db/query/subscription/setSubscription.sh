@@ -10,7 +10,7 @@ upass=${line#*:}
 
 
 #msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
-msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
+msql="mysql -h172.31.48.100 -u$uname -p$upass studybuddy"
 #total answered by given user
 
 function main(){
@@ -33,7 +33,7 @@ read gradeId
 
 dateTime=$(date '+%Y-%m-%d %H:%M:%S')
 dateObj=$(date)
-echo "INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES('NULL',$userId,$planId,$gradeId,'$dateTime')" | $msql
+echo "INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES(0,$userId,$planId,$gradeId,'$dateTime')" | $msql
 
 printf "/n/n"
 

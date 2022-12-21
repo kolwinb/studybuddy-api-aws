@@ -9,7 +9,7 @@ var log = require('./log');
 
 const properties = require('./properties');
 
-var cert=fs.readFileSync('private.pem');           
+var cert=fs.readFileSync('private.pem');
 //custom jwt module
 var jwtModule = require('./jwtToken');
 const status = require('./status');
@@ -441,6 +441,7 @@ const gameReqFrom = (user1id,user2id,data,battleId) => {
 		//battleId : callbackStatus[0].id
 		}
 	}
+
 	try {
 		lookup[user2id].send(JSON.stringify(jsonData));
 	} catch(e) {
@@ -500,67 +501,67 @@ const gameReq = (uniqId,data) => {
 	user2id=data.payload.to;
 	//const userId = data.payload.to;
 		//find actor A sufficient balance
-		dbQuery.getSelect(dbQuery.whereLessCoin,[user1id],function(callbackLessCoin){
-			if (!callbackLessCoin[0]) {
-				sendError(lookup[user1id],status.wsUserNotFound());
-			} else if (callbackLessCoin[0].balance < properties.gameCoinMin) {
-				sendError(lookup[user1id],status.wsLessFund());
-			} else {
-				//find actor B sufficient balance
-				dbQuery.getSelect(dbQuery.whereLessCoin,[user2id],function(callbackLessCoin){
-					if (!callbackLessCoin[0]) {
-						sendError(lookup[user1id],status.wsReqUserNotFound());
-					} else if (callbackLessCoin[0].balance < properties.gameCoinMin) {
-						sendError(lookup[user1id],status.wsReqLessFund());
-					} else {
-						// geting others parties running battle status
-						dbQuery.getSelect(dbQuery.whereUserBStatus,[user2id,user2id],function(callbackUserB){
-							if (callbackUserB[0]) {
-								var userGameTime=toTimestamp(callbackUserB[0].datetime);
-								var currentStamp=toTimestamp(new Date()); //get timestamp
-								var timeLimit=toTimestamp(callbackUserB[0].datetime)+(Number(properties.limitTimeInSec) * Number(properties.battleQuestionThreshold));
-								if (timeLimit > currentStamp){
-									log.info("ongoing session found");
-									sendError(lookup[user1id],status.wsOngoingError());
-								} else if (timeLimit < currentStamp) {
-									log.info("user2id battle timeout ("+timeLimit+") : "+callbackUserB[0].id+" : "+callbackUserB[0].status);
+	dbQuery.getSelect(dbQuery.whereLessCoin,[user1id],function(callbackLessCoin){
+		if (!callbackLessCoin[0]) {
+			sendError(lookup[user1id],status.wsUserNotFound());
+		} else if (callbackLessCoin[0].balance < properties.gameCoinMin) {
+			sendError(lookup[user1id],status.wsLessFund());
+		} else {
+			//find actor B sufficient balance
+			dbQuery.getSelect(dbQuery.whereLessCoin,[user2id],function(callbackLessCoin){
+				if (!callbackLessCoin[0]) {
+					sendError(lookup[user1id],status.wsReqUserNotFound());
+				} else if (callbackLessCoin[0].balance < properties.gameCoinMin) {
+					sendError(lookup[user1id],status.wsReqLessFund());
+				} else {
+					// geting others parties running battle status
+					dbQuery.getSelect(dbQuery.whereUserBStatus,[user2id,user2id],function(callbackUserB){
+						if (callbackUserB[0]) {
+							var userGameTime=toTimestamp(callbackUserB[0].datetime);
+							var currentStamp=toTimestamp(new Date()); //get timestamp
+							var timeLimit=toTimestamp(callbackUserB[0].datetime)+(Number(properties.limitTimeInSec) * Number(properties.battleQuestionThreshold));
+							if (timeLimit > currentStamp){
+								log.info("ongoing session found");
+								sendError(lookup[user1id],status.wsOngoingError());
+							} else if (timeLimit < currentStamp) {
+								log.info("user2id battle timeout ("+timeLimit+") : "+callbackUserB[0].id+" : "+callbackUserB[0].status);
 
-									dbQuery.setUpdate(dbQuery.updateGameRunning,['timeout',dateTime,callbackUserB[0].id], function(callbackTimeout){
-										if (!callbackTimeout) {
-											log.error("update battle_pool  gamereq table error");
-										} else {
-											//console.log("game timout");
-											battleHandler(user1id,user2id,data,dateTime);
-											//sendError(lookup[user1id],status.wsOngoingError());
-											//sendError(lookup[user2id],status.wsOngoingError());
-										}
-									});
-							 	}
-
-								//if (userGameTime.getTime() 
-							} else if (!callbackUserB[0]) {
-								//find running battle when req event
-								dbQuery.getSelect(dbQuery.whereGameReq,[user1id,user2id,'running'],function(callbackRunning){
-									if (!callbackRunning[0]) {
-										battleHandler(user1id,user2id,data,dateTime);
+								dbQuery.setUpdate(dbQuery.updateGameRunning,['timeout',dateTime,callbackUserB[0].id], function(callbackTimeout){
+									if (!callbackTimeout) {
+										log.error("update battle_pool  gamereq table error");
 									} else {
-										const battleId=callbackRunning[0].id
-										dbQuery.setUpdate(dbQuery.updateGameReq,['waiting',dateTime,user1id,user2id,battleId],function(callbackUpdate) {
-											if (!callbackUpdate){
-												console.log("update database error");
-											} else {
-												console.log("change previous running status to cancel on battleId: "+battleId);
-												battleHandler(user1id,user2id,data,dateTime);
-											}
-										});
+										//console.log("game timout");
+										battleHandler(user1id,user2id,data,dateTime);
+										//sendError(lookup[user1id],status.wsOngoingError());
+										//sendError(lookup[user2id],status.wsOngoingError());
 									}
 								});
-							}
-						});
-					}
-				});
-			}
-		});
+						 	}
+
+							//if (userGameTime.getTime() 
+						} else if (!callbackUserB[0]) {
+							//find running battle when req event
+							dbQuery.getSelect(dbQuery.whereGameReq,[user1id,user2id,'running'],function(callbackRunning){
+								if (!callbackRunning[0]) {
+									battleHandler(user1id,user2id,data,dateTime);
+								} else {
+									const battleId=callbackRunning[0].id
+									dbQuery.setUpdate(dbQuery.updateGameReq,['waiting',dateTime,user1id,user2id,battleId],function(callbackUpdate) {
+										if (!callbackUpdate){
+											console.log("update database error");
+										} else {
+											console.log("change previous running status to cancel on battleId: "+battleId);
+											battleHandler(user1id,user2id,data,dateTime);
+										}
+									});
+								}
+							});
+						}
+					});
+				}
+			});
+		}
+	});
 }
 
 const setBattleCoinState = (userId,battleId,dateTime) => {

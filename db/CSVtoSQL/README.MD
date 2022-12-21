@@ -1,3 +1,6 @@
+1. cat *.csv > all
+2. ./replace.sh
+3. ./splittable.sh
 revision only video
 
 

@@ -328,7 +328,6 @@ router.post('/setSignup',function(req,res,next) {
 													content=JSON.stringify({								
 														"description":"Profile data added."
 														});
-														
 													res.send(JSON.parse(status.stateSuccess(content)));
 												}
 											});

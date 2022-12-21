@@ -174,6 +174,9 @@ var State ={
 //	userRegistered: function(){
 //		return  JSON.stringify({"status":"success,"Activation has been verified."})
 //	},
+	wrongUsernamePassword: function(){
+		return   sendError(1025,"Wrong username and/or password")
+	},
 	userNotFound: function(){
 		return   sendError(1001,"Authentication Failed. User not found.")
 	},

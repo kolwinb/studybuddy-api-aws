@@ -1,6 +1,6 @@
 #!/bin/bash
 
-line=$(head -n 1 .access)
+line=$(head -n 1 ../.access)
 uname=${line%:*}
 upass=${line#*:}
 
@@ -13,7 +13,8 @@ function funMain() {
 printf "Enter Directory Name :"
 read dirName
 
-msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
+#msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
+msql="mysql -N -h172.31.48.100 -u$uname -p$upass studybuddy"
 
 videoId=$(echo "SELECT count(id) FROM video" | $msql)
 questionId=$(echo "SELECT count(id) FROM mcq_question" | $msql) 

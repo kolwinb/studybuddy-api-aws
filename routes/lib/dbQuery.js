@@ -506,7 +506,8 @@ whereMiningMcqRandList:" \
 			FROM ( \
 					SELECT \
 					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
-					FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId \
+					/* FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId */ \
+					CEIL(RAND()* MAX(id)) as randId \
 					FROM video \
 					WHERE grade=? AND lesson <> 0 \
 					GROUP BY subject_id \
@@ -546,7 +547,8 @@ whereMiningGameRandList:" \
 			FROM ( \
 					SELECT \
 					/* FLOOR(RAND()*(MAX(id)-MIN(id))+MIN(id)) as randId */ \
-					FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId \
+					/* FLOOR(RAND()*((MIN(id)+20)-MIN(id))+MIN(id)) as randId */ \
+					CEIL(RAND()* MAX(id)) as randId \
 					FROM video \
 					WHERE grade=? AND lesson <> 0 \
 					GROUP BY subject_id \
