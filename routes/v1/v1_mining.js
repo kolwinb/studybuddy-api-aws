@@ -98,17 +98,19 @@ router.post('/getIqList',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
                             //console.log("getLessonList :"+studentId);
-                            dbQuery.getSelect(dbQuery.whereUserRole,[studentId,0],function(callbackRole){
+                            //dbQuery.getSelect(dbQuery.whereUserRole,[studentId,0],function(callbackRole){
+                            dbQuery.getSelect(dbQuery.whereUserRoleStatus,[studentId],function(callbackRole){
                                 console.log("whereUserRole :"+JSON.stringify(callbackRole[0]));
                                 if (!callbackRole[0]){
                                     res.send(JSON.parse(status.server()));
                                 } else {
                                     //console.log('roleId : '+callbackRole[0].role_id+', lessonLimit :"+callbackRole[0]>
-                                    const planLimit=callbackRole[0].planLimit;
+                                    //const planLimit=callbackRole[0].planLimit;
+                                    var expAt=callbackRole[0].expAt;
                                     //const planStarted=callbackRole[0].plan_started;
                                     //switch(planLimit){
                                     //case 0:
-                                    if (planLimit == 0){
+                                    if (expAt == 0){
                                         console.log("student id :"+studentId+" plan Limit :" + planLimit);
                                         res.send(JSON.parse(status.planExpired()));
                                     } else {
@@ -151,17 +153,19 @@ router.post('/getMcqList',function(req,res,next) {
 					if (callback){
 						jwtModule.jwtGetUserId(rtoken,function(callback){
 							const studentId=callback.userId
-                            dbQuery.getSelect(dbQuery.whereUserRole,[studentId,0],function(callbackRole){
+                            //dbQuery.getSelect(dbQuery.whereUserRole,[studentId,0],function(callbackRole){
+                            dbQuery.getSelect(dbQuery.whereUserRoleStatus,[studentId],function(callbackRole){
                                 console.log("whereUserRole :"+JSON.stringify(callbackRole[0]));
                                 if (!callbackRole[0]){
                                     res.send(JSON.parse(status.server()));
                                 } else {
                                     //console.log('roleId : '+callbackRole[0].role_id+', lessonLimit :"+callbackRole[0]>
-                                    const planLimit=callbackRole[0].planLimit;
+                                    //const planLimit=callbackRole[0].planLimit;
+                                    var expAt=callbackRole[0].expAt;
                                     //const planStarted=callbackRole[0].plan_started;
                                     //switch(planLimit){
                                     //case 0:
-                                    if (planLimit == 0){
+                                    if (expAt == 0){
                                         console.log("student id :"+studentId+" plan Limit :" + planLimit);
                                         res.send(JSON.parse(status.planExpired()));
                                     } else {

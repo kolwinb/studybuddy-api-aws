@@ -21,7 +21,8 @@ if [ ! $dirName ]; then
 	printf "Empty dir not allowed\n"
     funMain
 else
-	msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
+#	msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
+	msql="mysql -N -h172.31.48.100 -u$uname -p$upass studybuddy"
 	let startAt=$(echo "SELECT count(id) FROM video;" | $msql)+1
 	echo $startAt
 	echo "ALTER TABLE video auto_increment=$startAt;" | $msql
@@ -47,7 +48,7 @@ else
 	long_desc=$(echo $line | cut -d'~' -f9)
 
 	echo "subject : "$sub" : id :"$subject_id
-	echo "INSERT INTO video VALUES ('NULL','$grade','$syllabus','$subject_id','$name','$episode','$term','$lesson','$lesson_name','$short_desc','$long_desc');" | $msql
+	echo "INSERT INTO video VALUES (0,'$grade','$syllabus','$subject_id','$name','$episode','$term','$lesson','$lesson_name','$short_desc','$long_desc');" | $msql
 	#echo $district$province
 	done < $dirName/videoList.csv
 fi

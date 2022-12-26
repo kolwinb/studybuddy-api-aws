@@ -20,7 +20,8 @@ read dirName
 if [ ! $dirName ]; then
 	printf "Empty dir not allowed\n"
 else
-    msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
+#    msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
+    msql="mysql -N -h172.31.48.100 -u$uname -p$upass studybuddy"
     let startAt=$(echo "SELECT count(id) FROM iq_question;" | $msql)+1
     echo $startAt
 	echo "ALTER TABLE iq_question  AUTO_INCREMENT = $startAt;" | $msql
@@ -30,7 +31,7 @@ else
 	question=$(echo $line | cut -d'~' -f2) #question
 
 
-	echo "INSERT INTO iq_question VALUES ('NULL','$level_id','$question');" | $msql
+	echo "INSERT INTO iq_question VALUES (0,'$level_id','$question');" | $msql
 	#echo $district$province
 	done < $dirName/iq_question.csv
 fi

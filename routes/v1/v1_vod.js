@@ -169,18 +169,21 @@ router.post('/getLessonList',function(req,res,next) {
 						jwtModule.jwtGetUserId(rtoken,function(callbackU){
  							const studentId=callbackU.userId;
  							//console.log("getLessonList :"+studentId);
- 							dbQuery.getSelect(dbQuery.whereUserRole,[studentId,gradeId],function(callbackRole){
+ 							//dbQuery.getSelect(dbQuery.whereUserRole,[studentId,gradeId],function(callbackRole){
+ 							dbQuery.getSelect(dbQuery.whereUserRoleStatus,[studentId],function(callbackRole){
  								console.log("whereUserRole :"+JSON.stringify(callbackRole[0]));
  								if (!callbackRole[0]){
  									res.send(JSON.parse(status.server()));
  								} else {
  									//console.log('roleId : '+callbackRole[0].role_id+', lessonLimit :"+callbackRole[0].planLimit);
- 									const planLimit=callbackRole[0].planLimit;
+ 									//const planLimit=callbackRole[0].planLimit;
+ 									const expAt=callbackRole[0].expAt;
+ 									//const planLimit=1000
  									//const planStarted=callbackRole[0].plan_started;
  									//switch(planLimit){
  									//case 0:
- 									if (planLimit == 0){
-  										console.log("student id :"+studentId+" plan Limit :" + planLimit);
+ 									if (expAt == 0){
+  										console.log("student id :"+studentId+" expAt :" + expAt);
 										res.send(JSON.parse(status.planExpired()));
  										/*
        									//dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,properties.lessonUnlimit,studentId],function(callbackLessonList){
@@ -195,11 +198,11 @@ router.post('/getLessonList',function(req,res,next) {
        									});
        									*/
        								//	break;
-       								
        								//case (> 0):
        								} else {
        									//dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,syllabusId,subjectId,planLimit],function(callbackLessonList){
-       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,subjectId,planLimit,studentId],function(callbackLessonList){
+       									//dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,subjectId,planLimit,studentId],function(callbackLessonList){
+       									dbQuery.getLessonList(dbQuery.selectLessonList,[studentId,studentId,studentId,gradeId,subjectId,1000,studentId],function(callbackLessonList){
        										varCallback=JSON.parse(callbackLessonList);
        										if(varCallback.status=='error'){
        											res.send(JSON.parse(varCallback))
@@ -245,11 +248,12 @@ router.post('/getLesson',function(req,res,next) {
  								if (!callbackUser[0]){
  					  				res.send(JSON.parse(status.misbehaviour()));
  								} else {
- 									dbQuery.getSelect(dbQuery.whereUserRoleLesson,[studentId,videoId],function(callbackRole){
+ 									//dbQuery.getSelect(dbQuery.whereUserRoleLesson,[studentId,videoId],function(callbackRole){
+ 									dbQuery.getSelect(dbQuery.whereUserRoleStatus,[studentId],function(callbackRole){
  										console.log("wherePlanStatus :"+callbackRole[0].planStatus);
  										if (!callbackRole[0]){
  											res.send(JSON.parse(status.server()));
- 										} else if (!callbackRole[0].planStatus) {
+ 										} else if (callbackRole[0].expAt == 0) {
 											res.send(JSON.parse(status.planExpired()));
  										} else {
 											dbQuery.getLesson(dbQuery.videoData,[videoId,videoId,videoId],function(callbackLesson){

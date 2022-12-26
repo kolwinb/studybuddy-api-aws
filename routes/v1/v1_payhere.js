@@ -49,7 +49,7 @@ router.post('/',function(req,res,next) {
 	console.log("md5sig : "+md5sig+", md5Local :"+md5Local);
 
 	const varDateTime=new Date();
-//	if (md5sig == md5Local){
+	if (md5sig == md5Local){
 		dbQuery.getSelect(dbQuery.whereOrderPaymentId,[order_id,payment_id],function (callbackOnline){
 			//if (!callbackOnline[0]) {
 			if (!callbackOnline[0]) {
@@ -71,9 +71,9 @@ router.post('/',function(req,res,next) {
 				});
 			}
 		});
-//	} else {
-//		res.sendStatus(406); //not acceptable
-//	}
+	} else {
+		res.sendStatus(406); //not acceptable
+	}
 
  });
 

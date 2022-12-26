@@ -104,7 +104,7 @@ router.post('/resetPassword',function(req,res,next) {
 	const currentPassword=req.body.current_password;
 	const newPassword=req.body.new_password;
 	
-	console.log("token :"+rtoken+", currentPassword :"+currentPassword+", new password :"+newPassword+", apikey :"+apiKey+", apisecret :"+apiSecret);
+	//console.log("token :"+rtoken+", currentPassword :"+currentPassword+", new password :"+newPassword+", apikey :"+apiKey+", apisecret :"+apiSecret);
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
@@ -216,10 +216,8 @@ router.post('/getInfo',function(req,res,next) {
 											//console.log(userProfile.personalInfo);
 											//console.log("userProfile ->"+userProfile[0]['0'].correctAnswers);
 											//console.log("property coin : "+property.coin);
-											
 											//res.send(JSON.parse(status.stateSuccess(userProfile)));
 											res.send(JSON.parse(status.stateSuccess(JSON.stringify(userProfile))));
-											
 										}
 									});
 								}
@@ -229,7 +227,6 @@ router.post('/getInfo',function(req,res,next) {
 						res.send(JSON.parse(status.tokenExpired()));
 					}
    				});
-   				
     		} else {
        		return res.status(403).send(JSON.parse(status.tokenNone()));
   		}

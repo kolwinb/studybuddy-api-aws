@@ -8,7 +8,7 @@ var cert=fs.readFileSync('private.pem');
 
 router.get('/privacy',function(req,res) {
 //       res.json({success:true,signature:'valid'});
-res.sendFile('../studybuddy/routes/templates/privacy.html');
+res.sendFile('/opt/API/studybuddy-api-aws/routes/templates/privacy.html');
 
  });
 

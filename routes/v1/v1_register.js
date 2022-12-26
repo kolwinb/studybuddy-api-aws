@@ -110,6 +110,7 @@ router.post('/',function(req,res){
 	}
 });
 
+//reset password
 router.post('/setPassword',function(req,res){
 	const rtoken = req.body.token || req.query.token || req.headers['x-access-token'];
 	const api_key = req.body.api_key;
@@ -132,6 +133,7 @@ router.post('/setPassword',function(req,res){
 					} else	if (callbackVerify[0].is_verify == 1){
                     	var dateTime= new Date();
 						var createdTime=callbackVerify[0].created;
+						var uniqId=callbackVerify[0].uniqId;
 						var timeDiff=Math.abs(dateTime.getTime() - createdTime.getTime());
                     	if (timeDiff  <= 150000){
 							dbQuery.setUpdate(dbQuery.updateUserPassword,["user",password,mobileNo],function(callbackUpdate){
@@ -139,17 +141,21 @@ router.post('/setPassword',function(req,res){
 									res.send(JSON.parse(status.server()));
 								} else {
 									//deactivating recovery code
-									const dateTime=new Date();
+									//const dateTime=new Date();
 									dbQuery.setUpdate(dbQuery.updateRecoveryCodeActivation,["user_passwdrecovery",dateTime,0,mobileNo],function(callbackDeactivate){
 										if(callbackDeactivate){
 											content=JSON.stringify({"description":"Password reset has been done."});
+											dbQuery.setUpdate(dbQuery.updateOnlineStatus,["offline",uniqId],function(callbackOnlineStatus){
+												if(callbackOnineStatus){
+													log.info("reset password online status : offline");
+												}
+											});
 											res.send(JSON.parse(status.stateSuccess(content)));
 										} else {
 											res.send(JSON.parse(status.server()));
 										}
-									
 									});
-								}			
+								}
 							});
 						} else {
                         	res.send(JSON.parse(status.otpExpired()));

@@ -835,7 +835,11 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					school.school_name as school, \
 					district.district_english as district, \
 					province.province_english as province, \
-					student_language.language as language \
+					student_language.language as language, \
+					(CASE WHEN user_role.name = 'teacher' \
+						THEN 'True' \
+						ELSE 'False' \
+					END) AS grantAll \
 				FROM user_profile \
 				INNER JOIN school ON user_profile.school_id = school.id \
 				INNER JOIN district	ON school.district_id = district.id \
@@ -991,7 +995,25 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					END) AS planStatus \
 					FROM student_subscription_grade as subP \
 					WHERE (subP.plan_id =? AND subP.grade_id = ?) AND subP.user_id = ?;",
-		whereUserRoleLesson: "SELECT \
+		whereUserRoleStatus: "SELECT \
+					(CASE \
+						WHEN ssg.plan_id =1 \
+							THEN 1 \
+						WHEN ssg.plan_id = 3 \
+							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.trial)+" MONTH) \
+						WHEN ssg.plan_id = 4 \
+							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
+						WHEN ssg.plan_id = 5 \
+							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.premium)+" MONTH) \
+							ELSE 0 \
+					END) as expAt \
+					FROM grade \
+					INNER JOIN student_subscription_grade as ssg ON ssg.grade_id=grade.id \
+					INNER JOIN subscription_plan ON subscription_plan.id = ssg.plan_id \
+					INNER JOIN user ON user.id=ssg.user_id \
+					WHERE ssg.user_id=?;",
+		/*
+ 		whereUserRoleLesson: "SELECT \
 					(CASE \
 						WHEN user.role_id = 1 \
 							THEN True \
@@ -1051,6 +1073,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					FROM user \
 					LEFT JOIN student_subscription_grade as ssg ON ssg.user_id=user.id \
 					WHERE user.id = ? AND ssg.grade_id = ?",
+				*/
 	whereStudent: "SELECT * FROM ??  WHERE student_id = ?",
 	whereProfileData:"SELECT * FROM user_profile WHERE user_id=?",
 	whereUserProfile: "SELECT * \

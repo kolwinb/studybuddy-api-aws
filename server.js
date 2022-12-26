@@ -81,6 +81,12 @@ app.use('/studybuddy/v1/rsa/',require('./routes/v1/rsaEncryption'));
 //privacy links
 app.use('/studybuddy/v1/pages/',require('./routes/v1/v1_pages'));
 
+//terms and conditions
+app.use('/studybuddy/v1/tscs/',require('./routes/v1/v1_tscs'));
+app.use('/studybuddy/v1/tscs/',require('./routes/v1/v1_tscs'));
+app.use('/studybuddy/v1/tscs/',require('./routes/v1/v1_tscs'));
+app.use('/studybuddy/v1/tscs/',require('./routes/v1/v1_tscs'));
+
 
 //pbkdf2 testing 
 app.use('/studybuddy/v1/test_encrypt_password_pbkdf2',require('./routes/v1/test_encrypt_password_pbkdf2'));
