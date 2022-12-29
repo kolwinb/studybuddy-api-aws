@@ -12,4 +12,4 @@ CREATE TABLE `payment_gateway` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-INSERT INTO payment_gateway(`id`,`gateway`) VALUES(0,'Payhere'),(0,'Dialog IdeaMart'),(0,'Mobitel Mspace')
+INSERT INTO payment_gateway(`id`,`gateway`) VALUES(0,'Payhere'),(0,'Dialog IdeaMart'),(0,'Mobitel Mspace'),(0,'Bank Transfer')

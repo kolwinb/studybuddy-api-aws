@@ -750,5 +750,80 @@ router.post('/setSubscription',function(req,res,next) {
 	}
  });
 
+router.post('/paymentGateways',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+									dbQuery.getSelectJson(dbQuery.selectAll,['payment_gateway'],function(callbackGateway){
+										if (!callbackGateway){
+											res.send(JSON.parse(status.server()));
+										} else {
+											res.send(JSON.parse(callbackGateway));
+										}
+									});
+							//	}
+							//});
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ });
+
+router.post('/getSubscription',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	const gatewayId=req.body.gateway_id;
+
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+									dbQuery.getSelectJson(dbQuery.whereSubscription,[gatewayId],function(callbackSubscription){
+										if (!callbackSubscription){
+											res.send(JSON.parse(status.server()));
+										} else {
+											res.send(JSON.parse(callbackSubscription));
+										}
+									});
+							//	}
+							//});
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ })
+
 
 module.exports = router

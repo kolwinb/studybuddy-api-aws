@@ -914,7 +914,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				/* Language List */ \
 				SELECT * FROM student_language; \
 				/* Subscription plan list */ \
-				SELECT * FROM subscription_plan WHERE id > 2;",
+				SELECT id,name,detail,price FROM subscription_plan WHERE id > 2",
 	whereLeaderBoard:"SELECT  \
 							( \
 								 SELECT SUM("+getRewards()+") FROM user WHERE user.id=user_profile.user_id \
@@ -1251,6 +1251,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						",
 	whereOrderPaymentId:"SELECT id FROM payhere_notification WHERE order_id=? AND payment_id=?",
 	selectAll: "SELECT * FROM ??",
+	whereSubscription: "SELECT id,name,detail,price FROM subscription_plan where gateway_id=?",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
 	whereProvince:"SELECT id,province_english as nameInEnglish,province_sinhala as nameInSinhala FROM ??",
 	whereDistrict:"SELECT id,district_english as nameInEnglish,district_sinhala as nameInSinhala FROM ?? WHERE province_id = ?",
