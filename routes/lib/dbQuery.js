@@ -16,8 +16,8 @@ const dayArray=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 var getConnection = function(callback) {
 	pool.getConnection(function(err, connection) {
 		if(err){
-	 		throw err;
-//  			log.error("Mysql Connection Error");
+	 		//throw err;
+/  			log.error("Mysql Connection Error");
   		} else {
   			callback(connection);
   		}
@@ -884,16 +884,22 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				/* Subscribed Details */ \
 				SELECT subscription_plan.name as planName, \
 					subscription_plan.id as planId, \
+					ssg.id as subscriptionId, \
 					grade.id as gradeId, \
 					grade.grade_english as nameE, \
 					grade.grade_sinhala as nameS, \
+					(CASE \
+						WHEN ssg.is_active = 1 \
+							THEN 'True' \
+							ELSE 'False' \
+					END) AS status, \
 					@thumbUrl := CONCAT('http://edutv.lk/img/',grade.grade_english,'.jpg') as thumb, \
 					DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s') as startedAt, \
 					(CASE \
 						WHEN ssg.plan_id =1 \
 							THEN '' \
 						WHEN ssg.plan_id = 3 \
-							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.trial)+" MONTH) \
+							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.basic)+" MONTH) \
 						WHEN ssg.plan_id = 4 \
 							THEN DATE_ADD(DATE_FORMAT(ssg.started,'%Y-%m-%d %H:%m:%s'),INTERVAL "+escape(properties.subscriptionPeriod.standard)+" MONTH) \
 						WHEN ssg.plan_id = 5 \
@@ -903,7 +909,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 					INNER JOIN student_subscription_grade as ssg ON ssg.grade_id=grade.id \
 					INNER JOIN subscription_plan ON subscription_plan.id = ssg.plan_id \
 					INNER JOIN user ON user.id=ssg.user_id \
-					WHERE ssg.user_id=?; \
+					WHERE ssg.user_id=? AND ssg.is_active=1 AND ssg.plan_id != 2; \
 				/* Trial status */ \
 				SELECT \
 					DATE_FORMAT(user.date_joined,'%Y-%m-%d %H:%m:%s') as startedAt, \
@@ -914,7 +920,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 				/* Language List */ \
 				SELECT * FROM student_language; \
 				/* Subscription plan list */ \
-				SELECT id,name,detail,price FROM subscription_plan WHERE id > 2",
+				SELECT * FROM payment_gateway; \
+				/* SELECT id,name,detail,price FROM subscription_plan WHERE id > 2 ; */ ",
 	whereLeaderBoard:"SELECT  \
 							( \
 								 SELECT SUM("+getRewards()+") FROM user WHERE user.id=user_profile.user_id \
@@ -953,7 +960,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 						GROUP BY student_answer.user_id \
 						/* ORDER BY correctAnswers DESC */ \
 						ORDER BY coins DESC \
-						LIMIT "+escape(properties.leaderboardLimit)+";",
+						LIMIT "+escape(properties.leaderboardLimit)+"  \
+						;",
 	whereStudentLikeFavorite: "SELECT * FROM ?? WHERE user_id = ? and video_id = ?",
 	whereStudentAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ?",
 	whereMiningAnswer: "SELECT id FROM ?? WHERE user_id = ?  AND question_id = ? AND stage_id=?",
@@ -1249,7 +1257,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 											) \
 										) \
 						",
-	whereOrderPaymentId:"SELECT id FROM payhere_notification WHERE order_id=? AND payment_id=?",
+	whereOrderPaymentId:"SELECT id FROM payhere_notification WHERE order_id=? AND payment_id=? AND status_code=2 AND status='inactive'",
 	selectAll: "SELECT * FROM ??",
 	whereSubscription: "SELECT id,name,detail,price FROM subscription_plan where gateway_id=?",
 	whereSchool:"SELECT id,school_name as name FROM ?? WHERE district_id = ?",
@@ -1354,9 +1362,9 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertBattleAnswer:"INSERT INTO battle_answer(id,user_id,battle_id,question_id,option_id,started,ended) VALUES(?,?,?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	insertGameReq:"INSERT INTO battle_pool(id,user1id,user2id,status,datetime) VALUES(?,?,?,?,?);SELECT LAST_INSERT_ID();",
 	
-	insertSubscription:"INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES(?,?,?,?,?)",
+	insertSubscription:"INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started,is_active,payhere_id) VALUES(?,?,?,?,?,?,?)",
 	insertAffiliate:"INSERT INTO user_affiliate(id,referrer_id,referee_id,created) VALUES(?,?,?,?)",
-	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",	
+	insertStudentLikeFavorite:"INSERT INTO  ??(id,user_id,video_id,status) VALUES (?,?,?,?)",
 	insertStudentAnswer:"INSERT INTO  student_answer(id,user_id,question_id,option_id,started,ended) \
 							VALUES (?,?,?,?,?,?); \
 							/* insertId undefine fix */ \
@@ -1376,6 +1384,8 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 	insertRecoveryCode:"INSERT INTO ??(id,code,mobile,created,is_verify) VALUES(?,?,?,?,?)",
 
 	updatePayhere:"UPDATE payhere_notification SET status_code=? WHERE order_id=? AND payment_id=?;",
+	updatePaymentActive:"UPDATE payhere_notification SET status='active' WHERE order_id=? AND payment_id=?;",
+	updateSubscription:"UPDATE student_subscription_grade SET is_active=? WHERE id=?;",
 	updateGameStatus:"UPDATE battle_pool SET status=? WHERE id=?;",
 	updateGameReq:"UPDATE battle_pool SET status=?,datetime=? WHERE user1id = ? AND user2id = ? AND id=?;",
 	updateGameRunning:"UPDATE battle_pool SET status=?,datetime=? WHERE id=?;",
@@ -1422,7 +1432,7 @@ chartSubjectQuestion:"SELECT count(video.id) as totalQuestions, \
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
-					throw err;
+					//throw err;
 					log.error(fields+" : db update error");
  					callback(false);
 				} else {
@@ -1454,8 +1464,8 @@ getAnswerInsertId: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) {
-					throw err;
-					//log.info(err);
+					//throw err;
+					log.info(err);
 				} else {
 				//log.info("sql result : "+JSON.parse(JSON.stringify(result[0])))
 				//add LAST_INSERT_ID, undefine fixed
@@ -1732,7 +1742,7 @@ getAnswerInsertId: function(query,fields,callback) {
  				} else {
  					//single row
  					//var normalObj = Object.assign({}, results[0]);
- 					const [activityData,personalData,chartOfSubject,chartOfDay,walletData,subscriptionData,planTrial,languageData,subscriptionPlan] = result;
+ 					const [activityData,personalData,chartOfSubject,chartOfDay,walletData,subscriptionData,planTrial,languageData,paymentOptions] = result;
 					//var subscriptionInfo='';
 					/*
 					const planTrialData = planTrial.map((mysqlObj, index) => {
@@ -1783,7 +1793,7 @@ getAnswerInsertId: function(query,fields,callback) {
  						chartOfSubject:chartSubject,
  						chartOfDay:chartDay,
  						languageList:langList,
- 						subscriptionTypeList:subscriptionPlan,
+ 						paymentOptions:paymentOptions,
  						trialStatus:planTrial,
  						subscribedDetails:subscriptionData
 // 						subscribedDetails:subscriptionDetails
@@ -1825,8 +1835,8 @@ getAnswerInsertId: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err){
-					throw err;
-					//console.log("internal database error");
+					//throw err;
+					console.log("internal database error");
 				}
    				if (!result){
    					callback(JSON.stringify(status.server()));
@@ -1961,8 +1971,8 @@ getAnswerInsertId: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) { 
-					throw err;
-					//console.log("getminingmcqstage9List database server error");
+					//throw err;
+					console.log("getminingmcqstage9List database server error");
 				} else 	if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
@@ -2034,8 +2044,8 @@ getAnswerInsertId: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err) { 
-					throw err;
-					//console.log("getminingmcqstage9List database server error");
+					//throw err;
+					console.log("getminingmcqstage9List database server error");
 				} else 	if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {
@@ -2254,7 +2264,8 @@ getIqList: function(query,fields,callback) {
 		getConnection(function(con) {
 			con.query(query,fields, function (err,result){
 				if (err){
-					throw err;
+					//throw err;
+					console.log(err)
 				} else if (!result){
    					callback(JSON.stringify(status.server()));
  				} else {

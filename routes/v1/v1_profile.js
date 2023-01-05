@@ -696,7 +696,8 @@ router.post('/setSubscription',function(req,res,next) {
 	const gradeId=req.body.grade_id;
 	const order_id=req.body.order_id;
 	const payment_id=req.body.payment_id;
-	
+
+	console.log("order_id :"+order_id+", payment_id :"+payment_id)
 	if ((!apiKey || !apiSecret)){
 		res.send(JSON.parse(status.unAuthApi()));
 	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
@@ -714,26 +715,42 @@ router.post('/setSubscription',function(req,res,next) {
 							//	if (!callbackUser[0].planMode) {
 							//		res.send(JSON.parse(status.invalidPlanId()));
 							//	} else {
-									dbQuery.getSelect(dbQuery.whereSubscriptionStatus,[planId,gradeId,studentId],function(callbackPeriod){
-										if (!callbackPeriod[0]){
-											var dateTime=new Date();
-											dbQuery.setInsert(dbQuery.insertSubscription,[0,studentId,planId,gradeId,dateTime],function(callbackSubscription){
-												if (!callbackSubscription){
-													res.send(JSON.parse(status.server()));
-												} else {
-													dbQuery.setUpdate(dbQuery.updateUserRole,[4,studentId],function(callbackUserRole){
-														if (!callbackUserRole){
+									dbQuery.getSelect(dbQuery.whereOrderPaymentId,[order_id,payment_id],function(callbackOrderPayment){
+										if (!callbackOrderPayment[0]) {
+											res.send(JSON.parse(status.paymentError()));
+										} else {
+											//get payhere notification id
+											var payhereId=callbackOrderPayment[0].id;
+											dbQuery.getSelect(dbQuery.whereSubscriptionStatus,[planId,gradeId,studentId],function(callbackPeriod){
+												if (!callbackPeriod[0]){
+													var dateTime=new Date();
+													//create new subscription record
+													dbQuery.setInsert(dbQuery.insertSubscription,[0,studentId,planId,gradeId,dateTime,1,payhereId],function(callbackSubscription){
+														if (!callbackSubscription){
 															res.send(JSON.parse(status.server()));
 														} else {
-															content=JSON.stringify({"description":"User has been subscribed."});
-															res.send(JSON.parse(status.stateSuccess(content)));														}
-													});	
-
+															dbQuery.setUpdate(dbQuery.updateUserRole,[4,studentId],function(callbackUserRole){
+																if (!callbackUserRole){
+																	res.send(JSON.parse(status.server()));
+																} else {
+																	//payhere_notification active/inactive of payment
+																	dbQuery.setUpdate(dbQuery.updatePaymentActive,[order_id,payment_id],function(callbackPaymentActive){
+																		if (!callbackPaymentActive) {
+																			res.send(JSON.parse(status.server()));
+																		} else {
+																			content=JSON.stringify({"description":"User has been subscribed."});
+																			res.send(JSON.parse(status.stateSuccess(content)));
+																		}
+																	});
+																}
+															});
+														}
+													});
+												} else {
+													console.log("setSubscription :"+callbackPeriod[0]);
+													res.send(JSON.parse(status.subscriptionFound()));
 												}
 											});
-										} else {
-											console.log("setSubscription :"+callbackPeriod[0]);
-											res.send(JSON.parse(status.subscriptionFound()));
 										}
 									});
 							//	}
@@ -750,7 +767,7 @@ router.post('/setSubscription',function(req,res,next) {
 	}
  });
 
-router.post('/paymentGateways',function(req,res,next) {
+router.post('/getPaymentGateways',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -787,7 +804,7 @@ router.post('/paymentGateways',function(req,res,next) {
 	}
  });
 
-router.post('/getSubscription',function(req,res,next) {
+router.post('/getSubscriptionPlan',function(req,res,next) {
 	const rtoken = req.body.token;
 	const apiKey = req.body.api_key;
 	const apiSecret=req.body.api_secret;
@@ -809,6 +826,49 @@ router.post('/getSubscription',function(req,res,next) {
 											res.send(JSON.parse(status.server()));
 										} else {
 											res.send(JSON.parse(callbackSubscription));
+										}
+									});
+							//	}
+							//});
+						});
+					} else {
+						res.send(JSON.parse(status.tokenExpired()));
+					}
+   				});
+   				
+    		} else {
+       		return res.status(403).send(JSON.parse(status.tokenNone()));
+  		}
+	}
+ })
+
+router.post('/setUnsubscription',function(req,res,next) {
+	const rtoken = req.body.token;
+	const apiKey = req.body.api_key;
+	const apiSecret=req.body.api_secret;
+	const subscriptionId=req.body.subscription_id;
+
+	if ((!apiKey || !apiSecret)){
+		res.send(JSON.parse(status.unAuthApi()));
+	} else if ((apiKey != api_key) && (apiSecret != api_secret)) {
+		res.send(JSON.parse(status.unAuthApi()));
+	} else {
+   		if (rtoken) {
+   				//verify token
+   				jwtModule.jwtVerify(rtoken,function(callback){
+					if (callback){
+						jwtModule.jwtGetUserId(rtoken,function(callback){
+							const studentId=callback.userId
+									//set unsubscription [is_active,subsriptionId]
+									dbQuery.setUpdate(dbQuery.updateSubscription,[0,subscriptionId],function(callbackSubscription){
+										if (!callbackSubscription){
+											res.send(JSON.parse(status.server()));
+										} else {
+											jsonResp=JSON.stringify({
+												"hasUnsubsribed":callbackSubscription
+
+											})
+											res.send(JSON.parse(status.stateSuccess(jsonResp)));
 										}
 									});
 							//	}

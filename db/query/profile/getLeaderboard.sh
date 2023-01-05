@@ -10,7 +10,7 @@ upass=${line#*:}
 
 
 #msql="mysql -N -h192.168.1.120 -u$uname -p$upass studybuddy"
-msql="mysql -h192.168.1.120 -u$uname -p$upass studybuddy"
+msql="mysql -h172.31.48.100 -u$uname -p$upass studybuddy"
 
 printf "\n Leader board : \n"
 echo "SELECT student_answer.user_id, count(student_answer.user_id) as studentMark,user_profile.name as studentName,school.school_name as schoolName,district.district_english as district,province.province_english as province\

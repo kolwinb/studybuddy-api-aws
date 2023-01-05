@@ -70,6 +70,9 @@ var State ={
 	wsLessFund: function(){
 		return  wsSendError(907,"Insufficient funds in your wallet.")
 	},
+	paymentError: function(){
+		return  sendError(1025,"Payment processing error.")
+	},
 	subscriptionFound: function(){
 		return  sendError(1024,"Subscription has not been expired.")
 	},
