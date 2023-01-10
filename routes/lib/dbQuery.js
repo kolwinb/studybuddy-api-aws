@@ -17,7 +17,7 @@ var getConnection = function(callback) {
 	pool.getConnection(function(err, connection) {
 		if(err){
 	 		//throw err;
-/  			log.error("Mysql Connection Error");
+  			log.error("Mysql Connection Error");
   		} else {
   			callback(connection);
   		}

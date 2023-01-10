@@ -33,8 +33,9 @@ read gradeId
 
 dateTime=$(date '+%Y-%m-%d %H:%M:%S')
 dateObj=$(date)
-echo "INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started) VALUES(0,$userId,$planId,$gradeId,'$dateTime')" | $msql
+echo "SET FOREIGN_KEY_CHECKS=0;INSERT INTO student_subscription_grade(id,user_id,plan_id,grade_id,started,is_active,payhere_id) VALUES(0,$userId,$planId,$gradeId,'$dateTime',1,0)" | $msql
 
+echo "insert done"
 printf "/n/n"
 
 echo "SET @userId := $userId; SET @date_joined := (SELECT user.date_joined FROM user WHERE user.id=@userId) ; \
